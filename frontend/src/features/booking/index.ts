@@ -1,0 +1,2 @@
+// Feature: booking
+export {};

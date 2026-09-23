@@ -1,0 +1,26 @@
+{
+  "name": "homecarex-platform",
+  "version": "1.0.0",
+  "description": "HomeCareX - On-Demand Home Services Website Platform",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:backend": "npm run build --workspace=backend",
+    "lint": "npm run lint --workspaces"
+  },
+  "keywords": [
+    "homecarex",
+    "home-services",
+    "react",
+    "express",
+    "mongodb"
+  ],
+  "author": "HomeCareX Team",
+  "license": "UNLICENSED"
+}
