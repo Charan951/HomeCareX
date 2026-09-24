@@ -31,3 +31,8 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Internal planning docs (kept local only)
+docs/
+*.pdf
+MEMORY.md
