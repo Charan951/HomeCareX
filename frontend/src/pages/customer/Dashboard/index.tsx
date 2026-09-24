@@ -1,11 +1,14 @@
-import React from 'react';
+import PageShell from "../../../components/layout/PageShell";
 
-export const CustomerDashboardPage: React.FC = () => {
+/**
+ * Dashboard — route: /
+ * Default export so App.tsx can do: import Dashboard from "./pages/customer/Dashboard";
+ */
+export default function Dashboard() {
   return (
-    <div className="customer-page-container p-6">
-      <h1 className="text-2xl font-bold">Customer Dashboard</h1>
-    </div>
+    <PageShell
+      title="Dashboard"
+      description="Overview of your account at a glance."
+    />
   );
-};
-
-export default CustomerDashboardPage;
+}

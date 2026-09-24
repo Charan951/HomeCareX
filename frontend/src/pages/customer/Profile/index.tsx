@@ -1,11 +1,14 @@
-import React from 'react';
+import PageShell from "../../../components/layout/PageShell";
 
-export const CustomerProfilePage: React.FC = () => {
+/**
+ * Profile — route: /profile
+ * Default export so App.tsx can do: import Profile from "./pages/customer/Profile";
+ */
+export default function Profile() {
   return (
-    <div className="customer-page-container p-6">
-      <h1 className="text-2xl font-bold">Customer Profile</h1>
-    </div>
+    <PageShell
+      title="Profile"
+      description="Your account profile."
+    />
   );
-};
-
-export default CustomerProfilePage;
+}

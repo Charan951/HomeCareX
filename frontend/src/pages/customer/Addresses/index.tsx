@@ -1,11 +1,14 @@
-import React from 'react';
+import PageShell from "../../../components/layout/PageShell";
 
-export const CustomerAddressesPage: React.FC = () => {
+/**
+ * Addresses — route: /addresses
+ * Default export so App.tsx can do: import Addresses from "./pages/customer/Addresses";
+ */
+export default function Addresses() {
   return (
-    <div className="customer-page-container p-6">
-      <h1 className="text-2xl font-bold">Customer Addresses</h1>
-    </div>
+    <PageShell
+      title="Addresses"
+      description="Manage your saved addresses."
+    />
   );
-};
-
-export default CustomerAddressesPage;
+}

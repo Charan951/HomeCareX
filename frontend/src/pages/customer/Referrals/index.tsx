@@ -1,11 +1,14 @@
-import React from 'react';
+import PageShell from "../../../components/layout/PageShell";
 
-export const CustomerReferralsPage: React.FC = () => {
+/**
+ * Referrals — route: /referrals
+ * Default export so App.tsx can do: import Referrals from "./pages/customer/Referrals";
+ */
+export default function Referrals() {
   return (
-    <div className="customer-page-container p-6">
-      <h1 className="text-2xl font-bold">Customer Referrals</h1>
-    </div>
+    <PageShell
+      title="Referrals"
+      description="Invite friends and track referrals."
+    />
   );
-};
-
-export default CustomerReferralsPage;
+}

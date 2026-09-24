@@ -1,11 +1,14 @@
-import React from 'react';
+import PageShell from "../../../components/layout/PageShell";
 
-export const CustomerNotificationsPage: React.FC = () => {
+/**
+ * Notifications — route: /notifications
+ * Default export so App.tsx can do: import Notifications from "./pages/customer/Notifications";
+ */
+export default function Notifications() {
   return (
-    <div className="customer-page-container p-6">
-      <h1 className="text-2xl font-bold">Customer Notifications</h1>
-    </div>
+    <PageShell
+      title="Notifications"
+      description="Your notifications."
+    />
   );
-};
-
-export default CustomerNotificationsPage;
+}

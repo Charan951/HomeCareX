@@ -1,11 +1,14 @@
-import React from 'react';
+import PageShell from "../../../components/layout/PageShell";
 
-export const CustomerPaymentsPage: React.FC = () => {
+/**
+ * Payments — route: /payments
+ * Default export so App.tsx can do: import Payments from "./pages/customer/Payments";
+ */
+export default function Payments() {
   return (
-    <div className="customer-page-container p-6">
-      <h1 className="text-2xl font-bold">Customer Payments</h1>
-    </div>
+    <PageShell
+      title="Payments"
+      description="Manage payment methods and history."
+    />
   );
-};
-
-export default CustomerPaymentsPage;
+}

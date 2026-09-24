@@ -1,11 +1,14 @@
-import React from 'react';
+import PageShell from "../../../components/layout/PageShell";
 
-export const CustomerCategoriesPage: React.FC = () => {
+/**
+ * Categories — route: /categories
+ * Default export so App.tsx can do: import Categories from "./pages/customer/Categories";
+ */
+export default function Categories() {
   return (
-    <div className="customer-page-container p-6">
-      <h1 className="text-2xl font-bold">Customer Categories</h1>
-    </div>
+    <PageShell
+      title="Categories"
+      description="Browse service categories."
+    />
   );
-};
-
-export default CustomerCategoriesPage;
+}

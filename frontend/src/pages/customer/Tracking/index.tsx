@@ -1,11 +1,11 @@
-import React from 'react';
+import PageShell from "../../../components/layout/PageShell";
 
-export const CustomerTrackingPage: React.FC = () => {
+/**
+ * Tracking — route: /tracking
+ * Default export so App.tsx can do: import Tracking from "./pages/customer/Tracking";
+ */
+export default function Tracking() {
   return (
-    <div className="customer-page-container p-6">
-      <h1 className="text-2xl font-bold">Customer Tracking</h1>
-    </div>
+    <PageShell title="Tracking" description="Track an active service." />
   );
-};
-
-export default CustomerTrackingPage;
+}

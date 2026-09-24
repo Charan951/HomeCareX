@@ -1,11 +1,14 @@
-import React from 'react';
+import PageShell from "../../../components/layout/PageShell";
 
-export const CustomerWalletPage: React.FC = () => {
+/**
+ * Wallet — route: /wallet
+ * Default export so App.tsx can do: import Wallet from "./pages/customer/Wallet";
+ */
+export default function Wallet() {
   return (
-    <div className="customer-page-container p-6">
-      <h1 className="text-2xl font-bold">Customer Wallet</h1>
-    </div>
+    <PageShell
+      title="Wallet"
+      description="Your wallet balance and transactions."
+    />
   );
-};
-
-export default CustomerWalletPage;
+}
