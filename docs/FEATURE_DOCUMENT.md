@@ -1,40 +1,44 @@
 # Feature Specification Document - HomeCareX
 
-## 1. Public Website
-- Landing Page with hero search, popular categories, and promotional banners.
-- Service catalog exploration and granular service detail pages.
-- Authentication: Login, Registration, Forgot Password, Reset Password with OTP/email.
-- About Us, Contact Us with lead capture form, FAQ, Terms, and Privacy Policy.
+Updated 2026-09-24. Priority: **P0** = must ship in the 1-month MVP, **P1** = ship if time allows, **P2** = Phase 2.
+Owners are listed in [PROJECT_PLAN.md](PROJECT_PLAN.md).
+
+## 1. Public Website (`/`) — Owner: Jakkala Suresh
+| Page | Route | Priority | Key content |
+|---|---|---|---|
+| Home | `/` | P0 | Hero with service + pincode search, popular categories, how it works, promo banners (from admin), testimonials, stats, become-a-partner CTA |
+| Services | `/services` | P0 | Category chips, search, sort, service cards, empty state |
+| Service Details | `/services/:slug` | P0 | Gallery, price, inclusions/exclusions, FAQs, reviews, Book Now (login redirect with return URL) |
+| About Us | `/about` | P0 | Story, mission, trust & safety, team |
+| Contact Us | `/contact` | P0 | Lead capture form (saved via API), office info, map |
+| FAQ | `/faq` | P0 | Searchable accordion grouped by topic |
+| Terms / Privacy | `/terms`, `/privacy` | P0 | Static legal content |
+| Login / Register | `/login`, `/register` | P0 | Customer registration; partner interest form |
+| Forgot / Reset Password | `/forgot-password`, `/reset-password` | P0 | Email → OTP → new password |
+| 404 / 403 | `*`, `/unauthorized` | P0 | Friendly error pages |
 
 ## 2. Customer Dashboard (`/customer/*`)
-- Overview Dashboard: Active bookings, quick actions, recommended services.
-- Category & Service catalog with localized filters and search.
-- Multi-step Booking flow: Address selection, schedule slot, add-on selection, coupon redemption.
-- Real-time Partner Tracking: Live map visualization, ETA, and partner contact.
-- Payment Management: Saved methods, transaction receipts, in-app wallet.
-- Booking History: Completed, upcoming, and canceled service records with invoice downloads.
-- Reviews & Ratings: Star ratings and structured feedback post-service.
-- Support: In-app support tickets and help center.
-- Referrals & Promotions: Referral code generation and reward tracking.
+- **P0** Overview dashboard: active booking, quick actions, upcoming bookings, recommended services.
+- **P0** Category & service catalog with search and filters.
+- **P0** Multi-step booking: service + add-ons → address → date/slot → review + coupon → payment.
+- **P0** Payments: Razorpay checkout (test mode), transaction history, receipts. Wallet balance + transactions.
+- **P0** Bookings: Upcoming / Completed / Cancelled tabs, details with status timeline, cancel/reschedule, invoice PDF.
+- **P0** Live tracking: map with partner marker, ETA, status stepper (Socket.IO).
+- **P0** Reviews & ratings after completion. Addresses CRUD. Profile + change password.
+- **P1** Support tickets + help center. Referrals (code, share, rewards). Notifications page.
 
-## 3. Partner Dashboard (`/partner/*`)
-- Partner Dashboard: Daily job schedule, performance metrics, active job status.
-- KYC & Onboarding: Identity proof upload, background verification submission, bank account linking.
-- Training Modules: Standard operating procedures and safety compliance guidelines.
-- Availability & Service Radius: Geofence and working hours configuration.
-- Job Dispatch: Incoming booking requests with accept/reject timers.
-- Active Job Execution: Turn-by-turn navigation, customer arrival confirmation, start-job OTP validation, checklist completion, extra parts charge requests, end-job completion.
-- Earnings & Payouts: Detailed earnings breakdown, commission deductions, payout history, bank transfer requests.
-- SOS & Safety: Instant emergency alert trigger notifying admin and emergency contacts.
+## 3. Admin Portal (`/admin/*`)
+- **P0** Executive dashboard: GMV, bookings today, active partners, new customers, cancellation rate, trends.
+- **P0** Customers: list, detail (bookings, lifetime value), block/unblock.
+- **P0** Partners & KYC: list, document review, approve/reject with reason, suspend.
+- **P0** Categories (tree, icons, ordering) and Services (content, media, FAQs).
+- **P0** Pricing: fixed/hourly base price, add-ons, surge windows, cancellation fee, preview calculator.
+- **P0** Bookings operations: global list, detail timeline, assign/reassign partner, status override, cancel + refund.
+- **P0** Finance: payments, refunds queue, partner payout batches.
+- **P0** Roles & Permissions (RBAC) and Audit logs.
+- **P1** Coupons, marketing banners, support desk, reports + CSV export, platform settings.
 
-## 4. Admin Portal (`/admin/*`)
-- Executive Dashboard: Real-time GMV, active bookings, partner utilization, customer retention.
-- Partner Management & KYC Verification: Document inspection, approval/rejection workflows, suspension.
-- Customer Management: User profiles, booking history, lifetime value.
-- Service & Category Hierarchy: Dynamic taxonomy management, icon/media assets, description.
-- Dynamic Pricing Engine: Base fares, surge pricing, hourly rates, fixed rates, cancellation fees.
-- Booking Operations: Global booking view, manual reassignments, status overrides.
-- Financial Management: Payment transactions, partner payout batches, refund processing.
-- Marketing & Promotions: Coupon codes, discount rules, campaign banners.
-- Support Desk: Ticket assignment, resolution tracking, customer satisfaction metrics.
-- Audit & Security: Immutable system audit logs, role-based access control (RBAC), security settings.
+## 4. Partner Dashboard (`/partner/*`) — Phase 2 (P2)
+Backend only in the MVP: list assigned jobs, accept, start with OTP, complete, and send location updates.
+The full UI (KYC upload, training, availability & radius, dispatch timers, earnings, payouts, SOS) is Phase 2.
+The route folders already exist under `frontend/src/pages/partner/`.
