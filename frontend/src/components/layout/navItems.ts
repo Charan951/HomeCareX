@@ -1,4 +1,6 @@
-export type NavIconName = "home" | "calendar" | "grid" | "user";
+import { ACTIVE_BOOKING } from "../../mocks/customerMockData";
+
+export type NavIconName = "home" | "calendar" | "grid" | "user" | "list" | "map-pin";
 
 export interface NavItem {
   to: string;
@@ -12,6 +14,8 @@ export interface NavItem {
 export const CUSTOMER_NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Overview", end: true, icon: "home" },
   { to: "/bookings", label: "Bookings", icon: "calendar" },
+  { to: "/tracking", label: "Live Tracking", icon: "map-pin" },
+  { to: `/bookings/${ACTIVE_BOOKING.id}`, label: "Booking Details", icon: "list" },
   { to: "/services", label: "Services", icon: "grid" },
   { to: "/profile", label: "Profile", icon: "user" },
 ];

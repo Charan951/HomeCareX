@@ -49,6 +49,22 @@ export default function NavIcon({ name, className = "" }: NavIconProps) {
           <path d="M4 20c0-4 4-6 8-6s8 2 8 6" strokeLinecap="round" />
         </svg>
       );
+      case "map-pin":
+      return (
+        <svg {...common}>
+          <path d="M12 21s-7-6.5-7-11a7 7 0 1 1 14 0c0 4.5-7 11-7 11z" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="12" cy="10" r="2.5" />
+        </svg>
+      );
+       case "list":
+      return (
+        <svg {...common}>
+          <path d="M8 6h13M8 12h13M8 18h13" strokeLinecap="round" />
+          <circle cx="3.5" cy="6" r="1.2" fill="currentColor" stroke="none" />
+          <circle cx="3.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+          <circle cx="3.5" cy="18" r="1.2" fill="currentColor" stroke="none" />
+        </svg>
+      );
     default:
       return null;
   }

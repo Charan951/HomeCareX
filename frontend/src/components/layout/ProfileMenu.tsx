@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface ProfileMenuProps {
   userName?: string;
@@ -8,6 +9,7 @@ interface ProfileMenuProps {
 export default function ProfileMenu({ userName = "Guest", onLogout = () => {} }: ProfileMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Close on outside click — standard dropdown behavior
   useEffect(() => {
@@ -44,7 +46,14 @@ export default function ProfileMenu({ userName = "Guest", onLogout = () => {} }:
           className="absolute right-0 mt-2 w-48 bg-panel border border-line rounded shadow-lg py-1 z-20"
         >
           <div className="px-4 py-2 text-sm text-muted border-b border-line">{userName}</div>
-          <button role="menuitem" className="w-full text-left px-4 py-2 text-sm hover:bg-canvas transition-colors">
+          <button
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              navigate("/profile");
+            }}
+            className="w-full text-left px-4 py-2 text-sm hover:bg-canvas transition-colors"
+          >
             View profile
           </button>
           <button role="menuitem" className="w-full text-left px-4 py-2 text-sm hover:bg-canvas transition-colors">
