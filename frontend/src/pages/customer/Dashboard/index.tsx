@@ -7,7 +7,7 @@ import PageShell from "../../../components/layout/PageShell";
 export default function Dashboard() {
   return (
     <PageShell
-      title="Dashboard"
+      title="Overview"
       description="Overview of your account at a glance."
     />
   );
