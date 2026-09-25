@@ -20,7 +20,6 @@ export default function BottomTabBar() {
           }
         >
           <NavIcon name={item.icon} />
-          {item.label}
         </NavLink>
       ))}
     </nav>
