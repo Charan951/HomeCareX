@@ -17,6 +17,6 @@ const TITLES: Record<string, string> = {
 /** Maps the current pathname to a human-readable page title for the TopBar. */
 export function getPageTitle(pathname: string): string {
   if (TITLES[pathname]) return TITLES[pathname];
-  if (pathname.startsWith("/bookings/")) return "Booking Details";
+  if (pathname.startsWith("/bookings/")) return "CustomerDashboard";
   return "HomeCareX";
 }

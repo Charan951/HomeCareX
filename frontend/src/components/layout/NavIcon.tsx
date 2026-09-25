@@ -56,15 +56,7 @@ export default function NavIcon({ name, className = "" }: NavIconProps) {
           <circle cx="12" cy="10" r="2.5" />
         </svg>
       );
-       case "list":
-      return (
-        <svg {...common}>
-          <path d="M8 6h13M8 12h13M8 18h13" strokeLinecap="round" />
-          <circle cx="3.5" cy="6" r="1.2" fill="currentColor" stroke="none" />
-          <circle cx="3.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
-          <circle cx="3.5" cy="18" r="1.2" fill="currentColor" stroke="none" />
-        </svg>
-      );
+     
     default:
       return null;
   }

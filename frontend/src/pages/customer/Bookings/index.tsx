@@ -41,19 +41,19 @@ export default function Bookings() {
       {filtered.length === 0 ? (
         <p className="text-muted text-sm py-8 text-center">No {tab.toLowerCase()} bookings.</p>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((b) => (
             <Link
               key={b.id}
               to={b.status === "In Progress" ? "/tracking" : `/bookings/${b.id}`}
               className="block bg-panel border border-line rounded p-4 hover:border-brand transition-colors"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-medium text-ink">{b.service}</div>
-                  <div className="text-xs text-muted mt-0.5">{b.category} · {b.id}</div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium text-ink truncate">{b.service}</div>
+                  <div className="text-xs text-muted mt-0.5 truncate">{b.category} · {b.id}</div>
                 </div>
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${statusBadgeClass(b.status)}`}>{b.status}</span>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap shrink-0 ${statusBadgeClass(b.status)}`}>{b.status}</span>
               </div>
               <div className="flex items-center justify-between mt-3 text-sm">
                 <span className="text-muted">{b.scheduledAt}</span>
