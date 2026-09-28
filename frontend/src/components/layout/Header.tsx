@@ -1,59 +1,124 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 
         {/* Logo */}
-        <div>
+        <NavLink to="/">
           <img
             src="/logo.png"
             alt="HomeCareX"
-            className="h-12 w-auto"
+            className="h-16 w-auto"
           />
-        </div>
+        </NavLink>
+
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          <a href="/" className="text-gray-700 hover:text-brand-600">
+
+          {/* Home */}
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              isActive
+                ? "text-[#ff8a3d] font-bold transition"
+                : "text-gray-700 hover:text-[#4338ca] transition"
+            }
+          >
             Home
-          </a>
+          </NavLink>
 
-          <a href="/services" className="text-gray-700 hover:text-brand-600">
+
+          {/* Services */}
+          <NavLink
+            to="/services"
+            className={({ isActive }) =>
+              isActive
+                ? "text-[#ff8a3d] font-bold transition"
+                : "text-gray-700 hover:text-[#4338ca] transition"
+            }
+          >
             Services
-          </a>
+          </NavLink>
 
-          <a href="/about" className="text-gray-700 hover:text-brand-600">
+
+          {/* About */}
+          <NavLink
+            to="/about"
+            className={({ isActive }) =>
+              isActive
+                ? "text-[#ff8a3d] font-bold transition"
+                : "text-gray-700 hover:text-[#4338ca] transition"
+            }
+          >
             About
-          </a>
+          </NavLink>
 
-          <a href="/contact" className="text-gray-700 hover:text-brand-600">
+
+          {/* Contact */}
+          <NavLink
+            to="/contact"
+            className={({ isActive }) =>
+              isActive
+                ? "text-[#ff8a3d] font-bold transition"
+                : "text-gray-700 hover:text-[#4338ca] transition"
+            }
+          >
             Contact
-          </a>
+          </NavLink>
+
         </nav>
+
 
         {/* Desktop Buttons */}
         <div className="hidden md:flex items-center gap-4">
-         <Link to="/login" className="text-brand-600 font-medium">Login</Link>
 
-          <Link to="/register" className="bg-brand-600 text-white px-5 py-2.5 rounded-lg hover:bg-brand-700">
+          {/* Login */}
+          <NavLink
+            to="/login"
+            className={({ isActive }) =>
+              isActive
+                ? "text-[#ff8a3d] font-bold transition"
+                : "text-[#4338ca] font-medium hover:text-[#ff8a3d] transition"
+            }
+          >
+            Login
+          </NavLink>
+
+
+          {/* Register */}
+          <NavLink
+            to="/register"
+            className={({ isActive }) =>
+              isActive
+                ? "bg-[#4338ca] text-white px-5 py-2.5 rounded-lg font-medium transition"
+                : "bg-[#ff8a3d] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#4338ca] transition"
+            }
+          >
             Register
-          </Link>
+          </NavLink>
+
         </div>
+
 
         {/* Mobile Menu Button */}
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="md:hidden text-2xl text-gray-700"
+          className="md:hidden text-2xl text-[#4338ca]"
           aria-label="Toggle menu"
         >
           ☰
         </button>
+
       </div>
+
 
       {/* Mobile Drawer */}
       {isMenuOpen && (
@@ -61,49 +126,98 @@ const Header: React.FC = () => {
 
           <nav className="flex flex-col px-6 py-4 gap-4">
 
-            <a
-              href="/"
+            {/* Mobile Home */}
+            <NavLink
+              to="/"
+              end
               onClick={() => setIsMenuOpen(false)}
-              className="text-gray-700"
+              className={({ isActive }) =>
+                isActive
+                  ? "text-[#ff8a3d] font-bold transition"
+                  : "text-gray-700 hover:text-[#4338ca] transition"
+              }
             >
               Home
-            </a>
+            </NavLink>
 
-            <a
-              href="/services"
+
+            {/* Mobile Services */}
+            <NavLink
+              to="/services"
               onClick={() => setIsMenuOpen(false)}
-              className="text-gray-700"
+              className={({ isActive }) =>
+                isActive
+                  ? "text-[#ff8a3d] font-bold transition"
+                  : "text-gray-700 hover:text-[#4338ca] transition"
+              }
             >
               Services
-            </a>
+            </NavLink>
 
-            <a
-              href="/about"
+
+            {/* Mobile About */}
+            <NavLink
+              to="/about"
               onClick={() => setIsMenuOpen(false)}
-              className="text-gray-700"
+              className={({ isActive }) =>
+                isActive
+                  ? "text-[#ff8a3d] font-bold transition"
+                  : "text-gray-700 hover:text-[#4338ca] transition"
+              }
             >
               About
-            </a>
+            </NavLink>
 
-            <a
-              href="/contact"
+
+            {/* Mobile Contact */}
+            <NavLink
+              to="/contact"
               onClick={() => setIsMenuOpen(false)}
-              className="text-gray-700"
+              className={({ isActive }) =>
+                isActive
+                  ? "text-[#ff8a3d] font-bold transition"
+                  : "text-gray-700 hover:text-[#4338ca] transition"
+              }
             >
               Contact
-            </a>
+            </NavLink>
+
 
             <hr />
 
-           <Link to="/login" className="text-brand-600 font-medium">Login</Link>
 
-            <Link to="/register" className="bg-brand-600 text-white px-5 py-2.5 rounded-lg hover:bg-brand-700">
+            {/* Mobile Login */}
+            <NavLink
+              to="/login"
+              onClick={() => setIsMenuOpen(false)}
+              className={({ isActive }) =>
+                isActive
+                  ? "text-[#ff8a3d] font-bold transition"
+                  : "text-[#4338ca] font-medium hover:text-[#ff8a3d] transition"
+              }
+            >
+              Login
+            </NavLink>
+
+
+            {/* Mobile Register */}
+            <NavLink
+              to="/register"
+              onClick={() => setIsMenuOpen(false)}
+              className={({ isActive }) =>
+                isActive
+                  ? "bg-[#4338ca] text-white px-5 py-2.5 rounded-lg font-medium transition"
+                  : "bg-[#ff8a3d] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#4338ca] transition"
+              }
+            >
               Register
-            </Link>
+            </NavLink>
 
           </nav>
+
         </div>
       )}
+
     </header>
   );
 };
