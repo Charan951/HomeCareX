@@ -1,9 +1,9 @@
 
 import { Outlet } from "react-router-dom";
-import Sidebar from "../components/layout/Sidebar";
-import TopBar from "../components/layout/TopBar";
-import MobileHeader from "../components/layout/MobileHeader";
-import BottomTabBar from "../components/layout/BottomTabBar";
+import Sidebar from "../components/customer/Sidebar";
+import TopBar from "../components/customer/TopBar";
+import MobileHeader from "../components/customer/MobileHeader";
+import BottomTabBar from "../components/customer/BottomTabBar";
 
 interface CustomerLayoutProps {
   userName?: string;
