@@ -1,12 +1,17 @@
-import React from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
-import AdminRoutes from './AdminRoutes';
+import React from "react";
+import { Route, Routes } from "react-router-dom";
 
-export const AppRoutes: React.FC = () => {
+import AdminRoutes from "./AdminRoutes";
+import PublicRoutes from "./PublicRoutes";
+
+const AppRoutes: React.FC = () => {
   return (
     <Routes>
+      {/* Admin */}
       <Route path="/admin/*" element={<AdminRoutes />} />
-      <Route path="/" element={<Navigate to="/admin" replace />} />
+
+      {/* Public website */}
+      <Route path="/*" element={<PublicRoutes />} />
     </Routes>
   );
 };
