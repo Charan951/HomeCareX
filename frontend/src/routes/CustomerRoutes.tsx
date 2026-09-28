@@ -14,6 +14,7 @@ import Services from "../pages/customer/Services";
 import Support from "../pages/customer/Support";
 import Tracking from "../pages/customer/Tracking";
 import Wallet from "../pages/customer/Wallet";
+import Tickets from "@/pages/customer/Tickets";
 
 /**
  * CustomerRoutes — every route the Customer Dashboard serves, nested inside
@@ -27,11 +28,7 @@ export default function CustomerRoutes() {
     <Routes>
       <Route
         element={
-          <CustomerLayout
-            userName="Ananya Rao"
-            notificationCount={3}
-            onLogout={() => console.log("logout clicked")}
-          />
+          <CustomerLayout />
         }
       >
         <Route path="/" element={<Dashboard />} />
@@ -45,7 +42,10 @@ export default function CustomerRoutes() {
         <Route path="/referrals" element={<Referrals />} />
         <Route path="/reviews" element={<Reviews />} />
         <Route path="/services" element={<Services />} />
+
         <Route path="/support" element={<Support />} />
+                        <Route path="/support/tickets" element={<Tickets />} />
+
         <Route path="/tracking" element={<Tracking />} />
         <Route path="/wallet" element={<Wallet />} />
       </Route>

@@ -1,31 +1,34 @@
+import { Bell } from "lucide-react";
+import { Link } from "react-router-dom";
+import clsx from "clsx";
+import { customerPath } from "@/routes/customerPath";
+import { FOCUS_RING } from "./focusRing";
+
 interface NotificationBellProps {
+  /** Unread count (mock for now, see hooks/useUnreadNotifications). */
   count?: number;
-  onClick?: () => void;
 }
 
-/**
- * NotificationBell — a "slot" component: it owns its own icon/badge UI and an
- * onClick hook, but has no opinion about where notifications come from. Wire
- * it up to a real feed (Socket.IO / polling / the `notifications` collection)
- * in a later task; for now it renders count=0 and a no-op click handler by
- * default so CustomerLayout has something concrete to mount.
- */
-export default function NotificationBell({ count = 0, onClick = () => {} }: NotificationBellProps) {
+/** Bell entry point — a real link to /customer/notifications with an unread badge. */
+export default function NotificationBell({ count = 0 }: NotificationBellProps) {
   return (
-    <button
-      onClick={onClick}
+    <Link
+      to={customerPath("/notifications")}
       aria-label={count > 0 ? `Notifications, ${count} unread` : "Notifications"}
-      className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors"
+      className={clsx(
+        "relative flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-canvas",
+        FOCUS_RING,
+      )}
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-        <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M13.73 21a2 2 0 0 1-3.46 0" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      <Bell className="h-5 w-5" aria-hidden="true" />
       {count > 0 && (
-        <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-danger text-white text-[10px] leading-4 text-center font-medium">
+        <span
+          aria-hidden="true"
+          className="absolute right-1 top-1 h-4 min-w-[16px] rounded-full bg-danger px-1 text-center text-[10px] font-medium leading-4 text-white"
+        >
           {count > 9 ? "9+" : count}
         </span>
       )}
-    </button>
+    </Link>
   );
 }
