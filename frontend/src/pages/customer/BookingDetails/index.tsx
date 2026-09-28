@@ -14,7 +14,7 @@ export default function BookingDetails() {
   return (
     <div className="space-y-6">
       <div>
-      <Link to={customerPath("/notifications")} className="text-sm text-brand font-medium">← Back to bookings</Link>
+      <Link to={customerPath("/bookings")} className="text-sm text-brand font-medium">← Back to bookings</Link>
       </div>
 
       <div className="bg-panel border border-line rounded p-6">

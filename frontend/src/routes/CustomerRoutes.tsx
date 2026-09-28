@@ -28,7 +28,11 @@ export default function CustomerRoutes() {
     <Routes>
       <Route
         element={
-          <CustomerLayout />
+          <CustomerLayout
+            userName="Ananya Rao"
+            notificationCount={3}
+            onLogout={() => console.log("logout clicked")}
+          />
         }
       >
         <Route path="/" element={<Dashboard />} />
@@ -44,7 +48,7 @@ export default function CustomerRoutes() {
         <Route path="/services" element={<Services />} />
 
         <Route path="/support" element={<Support />} />
-                        <Route path="/support/tickets" element={<Tickets />} />
+        <Route path="/support/tickets" element={<Tickets />} />
 
         <Route path="/tracking" element={<Tracking />} />
         <Route path="/wallet" element={<Wallet />} />

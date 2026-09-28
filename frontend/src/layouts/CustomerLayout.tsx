@@ -1,17 +1,39 @@
-import { Suspense } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { BottomNav, LoadingState, OfflineBanner, RouteErrorBoundary, Sidebar, TopBar } from "@/components/customer";
+import {
+  BottomNav,
+  LoadingState,
+  MobileDrawer,
+  OfflineBanner,
+  RouteErrorBoundary,
+  Sidebar,
+  TopBar,
+} from "@/components/customer";
+import { useHiddenPageScrollbar } from "@/hooks/useHiddenPageScrollbar";
+import { useSidebarOpen } from "@/hooks/useSidebarOpen";
 
 /**
  * CustomerLayout — the shell every /customer/* page renders inside.
- *  - md+   : Sidebar (left, grouped) + TopBar + content
- *  - mobile: TopBar + content + BottomNav (Home / Bookings / Support / Profile)
+ *  - md+   : Sidebar (left, grouped; the TopBar hamburger collapses it) + TopBar + content
+ *  - mobile: TopBar (hamburger opens a slide-in MobileDrawer with the full menu)
+ *            + content + BottomNav (Home / Bookings / Support / Profile)
  * The content area always shows something: a spinner while a page chunk loads,
  * an error card if a page crashes, and an offline banner when the network drops.
  * `min-w-0` on the column stops wide content from causing horizontal scroll.
  */
 export default function CustomerLayout() {
   const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const [sidebarOpen, toggleSidebar] = useSidebarOpen();
+  useHiddenPageScrollbar();
+  const openMenu = useCallback(() => setMenuOpen(true), []);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
+
+  // Any navigation closes the mobile drawer.
+  useEffect(() => {
+    closeMenu();
+  }, [pathname, closeMenu]);
 
   return (
     <div className="flex min-h-screen bg-canvas">
@@ -22,10 +44,16 @@ export default function CustomerLayout() {
         Skip to content
       </a>
 
-      <Sidebar />
+      <Sidebar open={sidebarOpen} />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
+        <TopBar
+          menuOpen={menuOpen}
+          onMenuClick={openMenu}
+          menuButtonRef={menuButtonRef}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={toggleSidebar}
+        />
         <OfflineBanner />
 
         <main
@@ -41,6 +69,7 @@ export default function CustomerLayout() {
         </main>
       </div>
 
+      <MobileDrawer open={menuOpen} onClose={closeMenu} returnFocusRef={menuButtonRef} />
       <BottomNav />
     </div>
   );
