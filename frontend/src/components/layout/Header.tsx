@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -37,13 +38,11 @@ const Header: React.FC = () => {
 
         {/* Desktop Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          <button className="text-brand-600 font-medium">
-            Login
-          </button>
+         <Link to="/login" className="text-brand-600 font-medium">Login</Link>
 
-          <button className="bg-brand-600 text-white px-5 py-2.5 rounded-lg hover:bg-brand-700">
+          <Link to="/register" className="bg-brand-600 text-white px-5 py-2.5 rounded-lg hover:bg-brand-700">
             Register
-          </button>
+          </Link>
         </div>
 
         {/* Mobile Menu Button */}
@@ -96,13 +95,11 @@ const Header: React.FC = () => {
 
             <hr />
 
-            <button className="text-left text-brand-600 font-medium">
-              Login
-            </button>
+           <Link to="/login" className="text-brand-600 font-medium">Login</Link>
 
-            <button className="bg-brand-600 text-white px-5 py-2.5 rounded-lg">
+            <Link to="/register" className="bg-brand-600 text-white px-5 py-2.5 rounded-lg hover:bg-brand-700">
               Register
-            </button>
+            </Link>
 
           </nav>
         </div>
