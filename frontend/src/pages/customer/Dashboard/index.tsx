@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { BOOKINGS, CATEGORIES, WALLET_BALANCE, PROFILE } from "../../../mocks/customerMockData";
 import { statusBadgeClass } from "../../../utils/statusBadge";
+import { customerPath } from "@/routes/customerPath";
 
 const upcoming = BOOKINGS.filter((b) => b.status !== "Completed" && b.status !== "Cancelled").length;
 const completed = BOOKINGS.filter((b) => b.status === "Completed").length;
@@ -31,7 +32,7 @@ export default function Dashboard() {
       <div className="bg-panel border border-line rounded p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-ink">Recent bookings</h3>
-          <Link to="/bookings" className="text-sm text-brand font-medium">View all</Link>
+          <Link to={customerPath("/bookings")} className="text-sm text-brand font-medium">View all</Link>
         </div>
         <div className="space-y-3">
           {BOOKINGS.slice(0, 4).map((b) => (

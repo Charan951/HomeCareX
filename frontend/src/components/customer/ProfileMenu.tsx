@@ -1,3 +1,4 @@
+import { customerPath } from "@/routes/customerPath";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -50,7 +51,7 @@ export default function ProfileMenu({ userName = "Guest", onLogout = () => {} }:
             role="menuitem"
             onClick={() => {
               setOpen(false);
-              navigate("/profile");
+              navigate(customerPath("/profile"));
             }}
             className="w-full text-left px-4 py-2 text-sm hover:bg-canvas transition-colors"
           >

@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { BOOKINGS, TRACKING_TIMELINE } from "../../../mocks/customerMockData";
 import { statusBadgeClass } from "../../../utils/statusBadge";
+import { customerPath } from "@/routes/customerPath";
 
 export default function BookingDetails() {
   const { id } = useParams();
@@ -13,7 +14,7 @@ export default function BookingDetails() {
   return (
     <div className="space-y-6">
       <div>
-        <Link to="/bookings" className="text-sm text-brand font-medium">← Back to bookings</Link>
+      <Link to={customerPath("/notifications")} className="text-sm text-brand font-medium">← Back to bookings</Link>
       </div>
 
       <div className="bg-panel border border-line rounded p-6">
