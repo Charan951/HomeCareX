@@ -1,7 +1,54 @@
-import React from 'react';
+import { Routes, Route } from "react-router-dom";
+import CustomerLayout from "../layouts/CustomerLayout";
+import Dashboard from "../pages/customer/Dashboard";
+import Addresses from "../pages/customer/Addresses";
+import Bookings from "../pages/customer/Bookings";
+import BookingDetails from "../pages/customer/BookingDetails";
+import Categories from "../pages/customer/Categories";
+import Notifications from "../pages/customer/Notifications";
+import Payments from "../pages/customer/Payments";
+import Profile from "../pages/customer/Profile";
+import Referrals from "../pages/customer/Referrals";
+import Reviews from "../pages/customer/Reviews";
+import Services from "../pages/customer/Services";
+import Support from "../pages/customer/Support";
+import Tracking from "../pages/customer/Tracking";
+import Wallet from "../pages/customer/Wallet";
 
-export const CustomerRoutes: React.FC = () => {
-  return null;
-};
-
-export default CustomerRoutes;
+/**
+ * CustomerRoutes — every route the Customer Dashboard serves, nested inside
+ * CustomerLayout (Sidebar/TopBar on desktop, MobileHeader/BottomTabBar on
+ * mobile). Mounted once from App.tsx so App.tsx only owns the top-level
+ * BrowserRouter, not the full route list — keeps App.tsx readable as the
+ * project grows Partner/Admin route groups alongside this one.
+ */
+export default function CustomerRoutes() {
+  return (
+    <Routes>
+      <Route
+        element={
+          <CustomerLayout
+            userName="Ananya Rao"
+            notificationCount={3}
+            onLogout={() => console.log("logout clicked")}
+          />
+        }
+      >
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/addresses" element={<Addresses />} />
+        <Route path="/bookings" element={<Bookings />} />
+        <Route path="/bookings/:id" element={<BookingDetails />} />
+        <Route path="/categories" element={<Categories />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/payments" element={<Payments />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/referrals" element={<Referrals />} />
+        <Route path="/reviews" element={<Reviews />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/tracking" element={<Tracking />} />
+        <Route path="/wallet" element={<Wallet />} />
+      </Route>
+    </Routes>
+  );
+}
