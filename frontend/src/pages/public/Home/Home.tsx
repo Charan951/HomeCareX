@@ -1,5 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+
+/* =========================================================
+   SERVICES DATA
+========================================================= */
 
 const services = [
   {
@@ -46,6 +50,10 @@ const services = [
   },
 ];
 
+/* =========================================================
+   FAQ DATA
+========================================================= */
+
 const faqs = [
   {
     question: "What services does HomeCareX provide?",
@@ -74,8 +82,94 @@ const faqs = [
   },
 ];
 
+/* =========================================================
+   HOME COMPONENT
+========================================================= */
+
 const Home: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  /*
+    Store which elements have already appeared.
+    We use a Set so an element animates only once.
+  */
+  const [visibleItems, setVisibleItems] = useState<Set<string>>(
+    new Set()
+  );
+
+  /*
+    IntersectionObserver reference
+  */
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  /* =========================================================
+     SCROLL ANIMATION
+  ========================================================= */
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const element = entry.target as HTMLElement;
+            const animationId = element.dataset.animationId;
+
+            if (!animationId) return;
+
+            setVisibleItems((previous) => {
+              const updated = new Set(previous);
+              updated.add(animationId);
+              return updated;
+            });
+
+            observerRef.current?.unobserve(element);
+          }
+        });
+      },
+      {
+        threshold: 0.12,
+        rootMargin: "0px 0px -50px 0px",
+      }
+    );
+
+    const elements = document.querySelectorAll(
+      "[data-scroll-animation]"
+    );
+
+    elements.forEach((element) => {
+      observerRef.current?.observe(element);
+    });
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, []);
+
+  /* =========================================================
+     ANIMATION CLASS
+  ========================================================= */
+
+  const revealClass = (
+    id: string,
+    delay: number = 0
+  ): string => {
+    const isVisible = visibleItems.has(id);
+
+    return `
+      transition-all
+      ease-out
+      duration-700
+      ${
+        isVisible
+          ? "translate-y-0 opacity-100"
+          : "translate-y-12 opacity-0"
+      }
+    `;
+  };
+
+  /* =========================================================
+     FAQ TOGGLE
+  ========================================================= */
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
@@ -90,32 +184,83 @@ const Home: React.FC = () => {
 
       <section className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-orange-50">
 
-        {/* Decorative Background */}
+        {/* Orange Blob */}
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -top-32
+            -right-32
+            h-96
+            w-96
+            rounded-full
+            bg-[#ff8a3d]/20
+            blur-3xl
+            animate-blob
+          "
+        />
 
-        <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#ff8a3d]/10 blur-3xl" />
+        {/* Indigo Blob */}
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -bottom-32
+            -left-32
+            h-96
+            w-96
+            rounded-full
+            bg-[#4338ca]/20
+            blur-3xl
+            animate-blob-slow
+          "
+        />
 
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-[#4338ca]/10 blur-3xl" />
+        {/* Center Blob */}
+        <div
+          className="
+            pointer-events-none
+            absolute
+            left-1/2
+            top-1/2
+            h-64
+            w-64
+            -translate-x-1/2
+            -translate-y-1/2
+            rounded-full
+            bg-[#ff8a3d]/10
+            blur-3xl
+            animate-floaty
+          "
+        />
 
-        <div className="relative max-w-7xl mx-auto px-6 py-16 sm:py-20 lg:py-24">
+        <div className="relative z-10 mx-auto max-w-7xl px-6 py-16 sm:py-20 lg:py-24">
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
 
-            {/* LEFT CONTENT */}
+            {/* =================================================
+                HERO LEFT
+            ================================================== */}
 
-            <div>
+            <div
+              data-scroll-animation
+              data-animation-id="hero-content"
+              className={revealClass("hero-content")}
+            >
 
               <span
                 className="
+                  mb-6
                   inline-flex
                   items-center
-                  px-4 py-2
                   rounded-full
                   bg-[#ff8a3d]/10
-                  text-[#ff8a3d]
+                  px-4
+                  py-2
                   text-sm
                   font-bold
                   tracking-wide
-                  mb-6
+                  text-[#ff8a3d]
                 "
               >
                 YOUR HOME, OUR CARE
@@ -124,12 +269,12 @@ const Home: React.FC = () => {
               <h1
                 className="
                   text-4xl
-                  sm:text-5xl
-                  lg:text-6xl
                   font-extrabold
-                  text-[#4338ca]
                   leading-[1.1]
                   tracking-tight
+                  text-[#4338ca]
+                  sm:text-5xl
+                  lg:text-6xl
                 "
               >
                 Professional Care
@@ -143,11 +288,11 @@ const Home: React.FC = () => {
               <p
                 className="
                   mt-6
-                  text-base
-                  sm:text-lg
-                  text-gray-600
-                  leading-8
                   max-w-xl
+                  text-base
+                  leading-8
+                  text-gray-600
+                  sm:text-lg
                 "
               >
                 HomeCareX connects you with reliable professionals
@@ -156,9 +301,9 @@ const Home: React.FC = () => {
                 taking care of your home simple and convenient.
               </p>
 
-              {/* BUTTONS */}
+              {/* Buttons */}
 
-              <div className="flex flex-wrap gap-4 mt-8">
+              <div className="mt-8 flex flex-wrap gap-4">
 
                 <a
                   href="#services"
@@ -166,16 +311,17 @@ const Home: React.FC = () => {
                     inline-flex
                     items-center
                     justify-center
-                    px-7 py-3.5
                     rounded-lg
                     bg-[#4338ca]
-                    text-white
+                    px-7
+                    py-3.5
                     font-semibold
+                    text-white
                     shadow-md
-                    hover:bg-[#ff8a3d]
-                    hover:-translate-y-0.5
                     transition-all
                     duration-300
+                    hover:-translate-y-1
+                    hover:bg-[#ff8a3d]
                   "
                 >
                   Explore Services
@@ -188,17 +334,18 @@ const Home: React.FC = () => {
                     inline-flex
                     items-center
                     justify-center
-                    px-7 py-3.5
                     rounded-lg
                     border-2
                     border-[#4338ca]
-                    text-[#4338ca]
+                    px-7
+                    py-3.5
                     font-semibold
-                    hover:bg-[#4338ca]
-                    hover:text-white
-                    hover:-translate-y-0.5
+                    text-[#4338ca]
                     transition-all
                     duration-300
+                    hover:-translate-y-1
+                    hover:bg-[#4338ca]
+                    hover:text-white
                   "
                 >
                   Learn More
@@ -206,36 +353,47 @@ const Home: React.FC = () => {
 
               </div>
 
-              {/* STATS */}
+              {/* Stats */}
 
-              <div className="grid grid-cols-3 gap-5 sm:gap-8 mt-12 pt-8 border-t border-gray-200">
+              <div
+                className="
+                  mt-12
+                  grid
+                  grid-cols-3
+                  gap-5
+                  border-t
+                  border-gray-200
+                  pt-8
+                  sm:gap-8
+                "
+              >
 
                 <div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#4338ca]">
+                  <h3 className="text-2xl font-extrabold text-[#4338ca] sm:text-3xl">
                     6+
                   </h3>
 
-                  <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500 sm:text-sm">
                     Home Services
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#4338ca]">
+                  <h3 className="text-2xl font-extrabold text-[#4338ca] sm:text-3xl">
                     24/7
                   </h3>
 
-                  <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500 sm:text-sm">
                     Support
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-[#4338ca]">
+                  <h3 className="text-2xl font-extrabold text-[#4338ca] sm:text-3xl">
                     100%
                   </h3>
 
-                  <p className="mt-1 text-xs sm:text-sm text-gray-500">
+                  <p className="mt-1 text-xs text-gray-500 sm:text-sm">
                     Convenience
                   </p>
                 </div>
@@ -245,62 +403,115 @@ const Home: React.FC = () => {
             </div>
 
 
-            {/* RIGHT IMAGE */}
+            {/* =================================================
+                HERO IMAGE
+            ================================================== */}
 
-            <div className="relative">
+            <div
+              data-scroll-animation
+              data-animation-id="hero-image"
+              className={revealClass("hero-image")}
+            >
 
-              <div className="absolute -top-6 -right-6 w-32 h-32 bg-[#ff8a3d]/20 rounded-full blur-2xl" />
+              <div className="relative">
 
-              <div className="absolute -bottom-6 -left-6 w-40 h-40 bg-[#4338ca]/20 rounded-full blur-2xl" />
-
-              <div
-                className="
-                  relative
-                  bg-white
-                  p-3
-                  rounded-3xl
-                  shadow-2xl
-                  border
-                  border-white
-                "
-              >
-
-                <img
-                  src="/images/home-cleaning.jpg"
-                  alt="HomeCareX Services"
-                  className="
-                    w-full
-                    h-[320px]
-                    sm:h-[400px]
-                    lg:h-[470px]
-                    object-cover
-                    rounded-2xl
-                  "
-                />
-
-                {/* Image Badge */}
+                {/* Orange Blob */}
 
                 <div
                   className="
+                    pointer-events-none
                     absolute
-                    left-6
-                    bottom-6
-                    bg-white
-                    rounded-xl
-                    shadow-lg
-                    px-5
-                    py-4
+                    -right-10
+                    -top-10
+                    h-40
+                    w-40
+                    rounded-full
+                    bg-[#ff8a3d]/30
+                    blur-2xl
+                    animate-floaty
+                  "
+                />
+
+                {/* Indigo Blob */}
+
+                <div
+                  className="
+                    pointer-events-none
+                    absolute
+                    -bottom-10
+                    -left-10
+                    h-48
+                    w-48
+                    rounded-full
+                    bg-[#4338ca]/30
+                    blur-2xl
+                    animate-blob-slow
+                  "
+                />
+
+                {/* Image Card */}
+
+                <div
+                  className="
+                    group
+                    relative
+                    rounded-3xl
                     border
-                    border-gray-100
+                    border-white
+                    bg-white
+                    p-3
+                    shadow-2xl
+                    transition-all
+                    duration-500
+                    hover:-translate-y-2
+                    hover:shadow-3xl
                   "
                 >
-                  <p className="text-xs text-gray-500">
-                    Trusted Home Care
-                  </p>
 
-                  <p className="text-lg font-bold text-[#4338ca]">
-                    Simple. Reliable. Convenient.
-                  </p>
+                  <img
+                    src="/images/home-cleaning.jpg"
+                    alt="HomeCareX Services"
+                    className="
+                      h-[320px]
+                      w-full
+                      rounded-2xl
+                      object-cover
+                      transition-transform
+                      duration-700
+                      group-hover:scale-[1.03]
+                      sm:h-[400px]
+                      lg:h-[470px]
+                    "
+                  />
+
+                  {/* Image Badge */}
+
+                  <div
+                    className="
+                      absolute
+                      bottom-6
+                      left-6
+                      rounded-xl
+                      border
+                      border-gray-100
+                      bg-white
+                      px-5
+                      py-4
+                      shadow-lg
+                      transition-transform
+                      duration-500
+                      group-hover:-translate-y-1
+                    "
+                  >
+                    <p className="text-xs text-gray-500">
+                      Trusted Home Care
+                    </p>
+
+                    <p className="text-lg font-bold text-[#4338ca]">
+                      Simple. Reliable. Convenient.
+                    </p>
+                  </div>
+
                 </div>
 
               </div>
@@ -308,7 +519,6 @@ const Home: React.FC = () => {
             </div>
 
           </div>
-
         </div>
       </section>
 
@@ -319,172 +529,199 @@ const Home: React.FC = () => {
 
       <section
         id="services"
-        className="py-20 sm:py-24 bg-gray-50"
+        className="bg-gray-50 py-20 sm:py-24"
       >
 
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="mx-auto max-w-7xl px-6">
 
-          {/* SECTION HEADING */}
+          {/* Section Heading */}
 
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div
+            data-scroll-animation
+            data-animation-id="services-heading"
+            className={revealClass("services-heading")}
+          >
 
-            <span
-              className="
-                text-[#ff8a3d]
-                font-bold
-                text-sm
-                uppercase
-                tracking-widest
-              "
-            >
-              Our Services
-            </span>
+            <div className="mx-auto mb-14 max-w-2xl text-center">
 
-            <h2
-              className="
-                mt-3
-                text-3xl
-                sm:text-4xl
-                font-extrabold
-                text-[#4338ca]
-              "
-            >
-              Everything Your Home Needs
-            </h2>
+              <span
+                className="
+                  text-sm
+                  font-bold
+                  uppercase
+                  tracking-widest
+                  text-[#ff8a3d]
+                "
+              >
+                Our Services
+              </span>
 
-            <p className="mt-4 text-gray-600 leading-7">
-              Professional home services delivered with convenience,
-              reliability and care.
-            </p>
+              <h2
+                className="
+                  mt-3
+                  text-3xl
+                  font-extrabold
+                  text-[#4338ca]
+                  sm:text-4xl
+                "
+              >
+                Everything Your Home Needs
+              </h2>
+
+              <p className="mt-4 leading-7 text-gray-600">
+                Professional home services delivered with convenience,
+                reliability and care.
+              </p>
+
+            </div>
 
           </div>
 
 
-          {/* SERVICE CARDS */}
+          {/* Service Cards */}
 
           <div
             className="
               grid
               grid-cols-1
+              gap-7
               sm:grid-cols-2
               lg:grid-cols-3
-              gap-7
             "
           >
 
-            {services.map((service) => (
+            {services.map((service, index) => {
 
-              <div
-                key={service.id}
-                className="
-                  group
-                  bg-white
-                  rounded-2xl
-                  overflow-hidden
-                  border
-                  border-gray-100
-                  shadow-sm
-                  hover:shadow-xl
-                  hover:-translate-y-1
-                  transition-all
-                  duration-300
-                "
-              >
+              const animationId = `service-${service.id}`;
 
-                {/* IMAGE */}
-
-                <div className="relative overflow-hidden">
-
-                  <img
-                    src={service.image}
-                    alt={service.title}
-                    className="
-                      w-full
-                      h-56
-                      object-cover
-                      group-hover:scale-105
-                      transition-transform
-                      duration-500
-                    "
-                  />
-
-                  {/* Image Overlay */}
+              return (
+                <div
+                  key={service.id}
+                  data-scroll-animation
+                  data-animation-id={animationId}
+                  className={revealClass(animationId)}
+                  style={{
+                    transitionDelay: `${index * 100}ms`,
+                  }}
+                >
 
                   <div
                     className="
-                      absolute
-                      inset-0
-                      bg-gradient-to-t
-                      from-[#4338ca]/40
-                      to-transparent
-                      opacity-0
-                      group-hover:opacity-100
-                      transition-opacity
-                      duration-300
+                      group
+                      h-full
+                      overflow-hidden
+                      rounded-2xl
+                      border
+                      border-gray-100
+                      bg-white
+                      shadow-sm
+                      transition-all
+                      duration-500
+                      hover:-translate-y-3
+                      hover:shadow-2xl
                     "
-                  />
+                  >
+
+                    {/* Image */}
+
+                    <div className="relative overflow-hidden">
+
+                      <img
+                        src={service.image}
+                        alt={service.title}
+                        className="
+                          h-56
+                          w-full
+                          object-cover
+                          transition-transform
+                          duration-700
+                          group-hover:scale-110
+                        "
+                      />
+
+                      <div
+                        className="
+                          absolute
+                          inset-0
+                          bg-gradient-to-t
+                          from-[#4338ca]/50
+                          to-transparent
+                          opacity-0
+                          transition-opacity
+                          duration-500
+                          group-hover:opacity-100
+                        "
+                      />
+
+                    </div>
+
+
+                    {/* Content */}
+
+                    <div className="p-6">
+
+                      <h3
+                        className="
+                          text-xl
+                          font-bold
+                          text-[#4338ca]
+                          transition-colors
+                          duration-300
+                          group-hover:text-[#ff8a3d]
+                        "
+                      >
+                        {service.title}
+                      </h3>
+
+                      <p
+                        className="
+                          mt-3
+                          text-sm
+                          leading-7
+                          text-gray-600
+                        "
+                      >
+                        {service.description}
+                      </p>
+
+                      <Link
+                        to={`/services/${service.id}`}
+                        className="
+                          mt-5
+                          inline-flex
+                          items-center
+                          text-sm
+                          font-bold
+                          text-[#ff8a3d]
+                          transition-colors
+                          duration-300
+                          hover:text-[#4338ca]
+                        "
+                      >
+                        Learn More
+
+                        <span
+                          className="
+                            ml-1
+                            transition-transform
+                            duration-300
+                            group-hover:translate-x-2
+                          "
+                        >
+                          →
+                        </span>
+                      </Link>
+
+                    </div>
+
+                  </div>
 
                 </div>
-
-
-                {/* CARD CONTENT */}
-
-                <div className="p-6">
-
-                  <h3
-                    className="
-                      text-xl
-                      font-bold
-                      text-[#4338ca]
-                      group-hover:text-[#ff8a3d]
-                      transition-colors
-                      duration-300
-                    "
-                  >
-                    {service.title}
-                  </h3>
-
-                  <p
-                    className="
-                      mt-3
-                      text-gray-600
-                      leading-7
-                      text-sm
-                    "
-                  >
-                    {service.description}
-                  </p>
-
-                  <Link
-                    to={`/services/${service.id}`}
-                    className="
-                      inline-flex
-                      items-center
-                      mt-5
-                      text-[#ff8a3d]
-                      font-bold
-                      text-sm
-                      hover:text-[#4338ca]
-                      transition-colors
-                      duration-300
-                    "
-                  >
-                    Learn More
-                    <span className="ml-1 group-hover:translate-x-1 transition-transform duration-300">
-                      →
-                    </span>
-                  </Link>
-
-                </div>
-
-              </div>
-
-            ))}
+              );
+            })}
 
           </div>
-
         </div>
-
       </section>
 
 
@@ -492,210 +729,257 @@ const Home: React.FC = () => {
           WHY HOMECAREX
       ====================================================== */}
 
-      <section className="py-20 sm:py-24 bg-white">
+      <section className="bg-white py-20 sm:py-24">
 
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="mx-auto max-w-7xl px-6">
 
-          <div className="text-center max-w-2xl mx-auto">
+          {/* Heading */}
 
-            <span
-              className="
-                text-[#ff8a3d]
-                font-bold
-                text-sm
-                uppercase
-                tracking-widest
-              "
-            >
-              Why HomeCareX
-            </span>
+          <div
+            data-scroll-animation
+            data-animation-id="why-heading"
+            className={revealClass("why-heading")}
+          >
 
-            <h2
-              className="
-                mt-3
-                text-3xl
-                sm:text-4xl
-                font-extrabold
-                text-[#4338ca]
-              "
-            >
-              Why Choose HomeCareX?
-            </h2>
+            <div className="mx-auto max-w-2xl text-center">
 
-            <p className="mt-4 text-gray-600 leading-7">
-              We make home maintenance easier, faster and more
-              convenient for everyone.
-            </p>
+              <span
+                className="
+                  text-sm
+                  font-bold
+                  uppercase
+                  tracking-widest
+                  text-[#ff8a3d]
+                "
+              >
+                Why HomeCareX
+              </span>
+
+              <h2
+                className="
+                  mt-3
+                  text-3xl
+                  font-extrabold
+                  text-[#4338ca]
+                  sm:text-4xl
+                "
+              >
+                Why Choose HomeCareX?
+              </h2>
+
+              <p className="mt-4 leading-7 text-gray-600">
+                We make home maintenance easier, faster and more
+                convenient for everyone.
+              </p>
+
+            </div>
 
           </div>
 
 
+          {/* Cards */}
+
           <div
             className="
+              mt-14
               grid
               grid-cols-1
-              md:grid-cols-3
               gap-7
-              mt-14
+              md:grid-cols-3
             "
           >
 
-            {/* CARD 1 */}
+            {/* Card 1 */}
 
             <div
-              className="
-                group
-                text-center
-                p-8
-                rounded-2xl
-                bg-indigo-50
-                border
-                border-indigo-100
-                hover:shadow-lg
-                hover:-translate-y-1
-                transition-all
-                duration-300
-              "
+              data-scroll-animation
+              data-animation-id="why-card-1"
+              className={revealClass("why-card-1")}
+              style={{ transitionDelay: "0ms" }}
             >
 
               <div
                 className="
-                  w-16
-                  h-16
-                  mx-auto
-                  flex
-                  items-center
-                  justify-center
+                  group
+                  h-full
                   rounded-2xl
-                  bg-[#4338ca]
-                  text-white
-                  text-2xl
-                  shadow-md
-                  group-hover:bg-[#ff8a3d]
-                  transition-colors
-                  duration-300
+                  border
+                  border-indigo-100
+                  bg-indigo-50
+                  p-8
+                  text-center
+                  transition-all
+                  duration-500
+                  hover:-translate-y-3
+                  hover:shadow-xl
                 "
               >
-                🏠
+
+                <div
+                  className="
+                    mx-auto
+                    flex
+                    h-16
+                    w-16
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    bg-[#4338ca]
+                    text-2xl
+                    text-white
+                    shadow-md
+                    transition-all
+                    duration-500
+                    group-hover:rotate-6
+                    group-hover:scale-110
+                    group-hover:bg-[#ff8a3d]
+                  "
+                >
+                  🏠
+                </div>
+
+                <h3 className="mt-5 text-xl font-bold text-[#4338ca]">
+                  Trusted Professionals
+                </h3>
+
+                <p className="mt-3 leading-7 text-gray-600">
+                  Connect with professionals who can help
+                  take care of your home.
+                </p>
+
               </div>
-
-              <h3 className="text-xl font-bold text-[#4338ca] mt-5">
-                Trusted Professionals
-              </h3>
-
-              <p className="text-gray-600 mt-3 leading-7">
-                Connect with professionals who can help
-                take care of your home.
-              </p>
 
             </div>
 
 
-            {/* CARD 2 */}
+            {/* Card 2 */}
 
             <div
-              className="
-                group
-                text-center
-                p-8
-                rounded-2xl
-                bg-orange-50
-                border
-                border-orange-100
-                hover:shadow-lg
-                hover:-translate-y-1
-                transition-all
-                duration-300
-              "
+              data-scroll-animation
+              data-animation-id="why-card-2"
+              className={revealClass("why-card-2")}
+              style={{ transitionDelay: "150ms" }}
             >
 
               <div
                 className="
-                  w-16
-                  h-16
-                  mx-auto
-                  flex
-                  items-center
-                  justify-center
+                  group
+                  h-full
                   rounded-2xl
-                  bg-[#ff8a3d]
-                  text-white
-                  text-2xl
-                  shadow-md
-                  group-hover:bg-[#4338ca]
-                  transition-colors
-                  duration-300
+                  border
+                  border-orange-100
+                  bg-orange-50
+                  p-8
+                  text-center
+                  transition-all
+                  duration-500
+                  hover:-translate-y-3
+                  hover:shadow-xl
                 "
               >
-                ⭐
+
+                <div
+                  className="
+                    mx-auto
+                    flex
+                    h-16
+                    w-16
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    bg-[#ff8a3d]
+                    text-2xl
+                    text-white
+                    shadow-md
+                    transition-all
+                    duration-500
+                    group-hover:rotate-6
+                    group-hover:scale-110
+                    group-hover:bg-[#4338ca]
+                  "
+                >
+                  ⭐
+                </div>
+
+                <h3 className="mt-5 text-xl font-bold text-[#4338ca]">
+                  Quality Service
+                </h3>
+
+                <p className="mt-3 leading-7 text-gray-600">
+                  Get reliable and professional services
+                  for your home.
+                </p>
+
               </div>
-
-              <h3 className="text-xl font-bold text-[#4338ca] mt-5">
-                Quality Service
-              </h3>
-
-              <p className="text-gray-600 mt-3 leading-7">
-                Get reliable and professional services
-                for your home.
-              </p>
 
             </div>
 
 
-            {/* CARD 3 */}
+            {/* Card 3 */}
 
             <div
-              className="
-                group
-                text-center
-                p-8
-                rounded-2xl
-                bg-indigo-50
-                border
-                border-indigo-100
-                hover:shadow-lg
-                hover:-translate-y-1
-                transition-all
-                duration-300
-              "
+              data-scroll-animation
+              data-animation-id="why-card-3"
+              className={revealClass("why-card-3")}
+              style={{ transitionDelay: "300ms" }}
             >
 
               <div
                 className="
-                  w-16
-                  h-16
-                  mx-auto
-                  flex
-                  items-center
-                  justify-center
+                  group
+                  h-full
                   rounded-2xl
-                  bg-[#4338ca]
-                  text-white
-                  text-2xl
-                  shadow-md
-                  group-hover:bg-[#ff8a3d]
-                  transition-colors
-                  duration-300
+                  border
+                  border-indigo-100
+                  bg-indigo-50
+                  p-8
+                  text-center
+                  transition-all
+                  duration-500
+                  hover:-translate-y-3
+                  hover:shadow-xl
                 "
               >
-                ⏱️
+
+                <div
+                  className="
+                    mx-auto
+                    flex
+                    h-16
+                    w-16
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    bg-[#4338ca]
+                    text-2xl
+                    text-white
+                    shadow-md
+                    transition-all
+                    duration-500
+                    group-hover:rotate-6
+                    group-hover:scale-110
+                    group-hover:bg-[#ff8a3d]
+                  "
+                >
+                  ⏱️
+                </div>
+
+                <h3 className="mt-5 text-xl font-bold text-[#4338ca]">
+                  Quick & Convenient
+                </h3>
+
+                <p className="mt-3 leading-7 text-gray-600">
+                  Make your home maintenance simple and
+                  convenient.
+                </p>
+
               </div>
-
-              <h3 className="text-xl font-bold text-[#4338ca] mt-5">
-                Quick & Convenient
-              </h3>
-
-              <p className="text-gray-600 mt-3 leading-7">
-                Make your home maintenance simple and
-                convenient.
-              </p>
 
             </div>
 
           </div>
 
         </div>
-
       </section>
 
 
@@ -703,149 +987,196 @@ const Home: React.FC = () => {
           HOW IT WORKS
       ====================================================== */}
 
-      <section className="py-20 sm:py-24 bg-gray-50">
+      <section className="bg-gray-50 py-20 sm:py-24">
 
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="mx-auto max-w-7xl px-6">
 
-          <div className="text-center mb-14">
+          {/* Heading */}
 
-            <span
-              className="
-                text-[#ff8a3d]
-                font-bold
-                text-sm
-                uppercase
-                tracking-widest
-              "
-            >
-              Simple Process
-            </span>
+          <div
+            data-scroll-animation
+            data-animation-id="process-heading"
+            className={revealClass("process-heading")}
+          >
 
-            <h2
-              className="
-                mt-3
-                text-3xl
-                sm:text-4xl
-                font-extrabold
-                text-[#4338ca]
-              "
-            >
-              How HomeCareX Works
-            </h2>
+            <div className="mb-14 text-center">
+
+              <span
+                className="
+                  text-sm
+                  font-bold
+                  uppercase
+                  tracking-widest
+                  text-[#ff8a3d]
+                "
+              >
+                Simple Process
+              </span>
+
+              <h2
+                className="
+                  mt-3
+                  text-3xl
+                  font-extrabold
+                  text-[#4338ca]
+                  sm:text-4xl
+                "
+              >
+                How HomeCareX Works
+              </h2>
+
+            </div>
 
           </div>
 
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
 
-            {/* STEP 1 */}
+            {/* Step 1 */}
 
-            <div className="relative text-center">
+            <div
+              data-scroll-animation
+              data-animation-id="step-1"
+              className={revealClass("step-1")}
+            >
 
-              <div
-                className="
-                  w-16
-                  h-16
-                  mx-auto
-                  rounded-full
-                  bg-[#4338ca]
-                  text-white
-                  flex
-                  items-center
-                  justify-center
-                  text-xl
-                  font-bold
-                  shadow-md
-                "
-              >
-                1
+              <div className="relative text-center">
+
+                <div
+                  className="
+                    mx-auto
+                    flex
+                    h-16
+                    w-16
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-[#4338ca]
+                    text-xl
+                    font-bold
+                    text-white
+                    shadow-md
+                    transition-all
+                    duration-500
+                    hover:scale-110
+                    hover:rotate-6
+                  "
+                >
+                  1
+                </div>
+
+                <h3 className="mt-5 text-xl font-bold text-[#4338ca]">
+                  Choose a Service
+                </h3>
+
+                <p className="mt-3 leading-7 text-gray-600">
+                  Select the home service you need from
+                  our available services.
+                </p>
+
               </div>
-
-              <h3 className="text-xl font-bold text-[#4338ca] mt-5">
-                Choose a Service
-              </h3>
-
-              <p className="text-gray-600 mt-3 leading-7">
-                Select the home service you need from
-                our available services.
-              </p>
 
             </div>
 
 
-            {/* STEP 2 */}
+            {/* Step 2 */}
 
-            <div className="relative text-center">
+            <div
+              data-scroll-animation
+              data-animation-id="step-2"
+              className={revealClass("step-2")}
+              style={{ transitionDelay: "150ms" }}
+            >
 
-              <div
-                className="
-                  w-16
-                  h-16
-                  mx-auto
-                  rounded-full
-                  bg-[#ff8a3d]
-                  text-white
-                  flex
-                  items-center
-                  justify-center
-                  text-xl
-                  font-bold
-                  shadow-md
-                "
-              >
-                2
+              <div className="relative text-center">
+
+                <div
+                  className="
+                    mx-auto
+                    flex
+                    h-16
+                    w-16
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-[#ff8a3d]
+                    text-xl
+                    font-bold
+                    text-white
+                    shadow-md
+                    transition-all
+                    duration-500
+                    hover:scale-110
+                    hover:rotate-6
+                  "
+                >
+                  2
+                </div>
+
+                <h3 className="mt-5 text-xl font-bold text-[#4338ca]">
+                  Request the Service
+                </h3>
+
+                <p className="mt-3 leading-7 text-gray-600">
+                  Provide the required details and
+                  submit your service request.
+                </p>
+
               </div>
-
-              <h3 className="text-xl font-bold text-[#4338ca] mt-5">
-                Request the Service
-              </h3>
-
-              <p className="text-gray-600 mt-3 leading-7">
-                Provide the required details and
-                submit your service request.
-              </p>
 
             </div>
 
 
-            {/* STEP 3 */}
+            {/* Step 3 */}
 
-            <div className="relative text-center">
+            <div
+              data-scroll-animation
+              data-animation-id="step-3"
+              className={revealClass("step-3")}
+              style={{ transitionDelay: "300ms" }}
+            >
 
-              <div
-                className="
-                  w-16
-                  h-16
-                  mx-auto
-                  rounded-full
-                  bg-[#4338ca]
-                  text-white
-                  flex
-                  items-center
-                  justify-center
-                  text-xl
-                  font-bold
-                  shadow-md
-                "
-              >
-                3
+              <div className="relative text-center">
+
+                <div
+                  className="
+                    mx-auto
+                    flex
+                    h-16
+                    w-16
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-[#4338ca]
+                    text-xl
+                    font-bold
+                    text-white
+                    shadow-md
+                    transition-all
+                    duration-500
+                    hover:scale-110
+                    hover:rotate-6
+                  "
+                >
+                  3
+                </div>
+
+                <h3 className="mt-5 text-xl font-bold text-[#4338ca]">
+                  Get Your Service
+                </h3>
+
+                <p className="mt-3 leading-7 text-gray-600">
+                  Connect with a professional and get
+                  your home service completed.
+                </p>
+
               </div>
-
-              <h3 className="text-xl font-bold text-[#4338ca] mt-5">
-                Get Your Service
-              </h3>
-
-              <p className="text-gray-600 mt-3 leading-7">
-                Connect with a professional and get
-                your home service completed.
-              </p>
 
             </div>
 
           </div>
 
         </div>
-
       </section>
 
 
@@ -853,210 +1184,322 @@ const Home: React.FC = () => {
           FAQ SECTION
       ====================================================== */}
 
-      <section className="py-20 sm:py-24 bg-white">
+      <section className="bg-white py-20 sm:py-24">
 
-        <div className="max-w-4xl mx-auto px-6">
+        <div className="mx-auto max-w-4xl px-6">
 
-          <div className="text-center mb-12">
+          {/* FAQ Heading */}
 
-            <span
-              className="
-                text-[#ff8a3d]
-                font-bold
-                text-sm
-                uppercase
-                tracking-widest
-              "
-            >
-              FAQ
-            </span>
+          <div
+            data-scroll-animation
+            data-animation-id="faq-heading"
+            className={revealClass("faq-heading")}
+          >
 
-            <h2
-              className="
-                mt-3
-                text-3xl
-                sm:text-4xl
-                font-extrabold
-                text-[#4338ca]
-              "
-            >
-              Frequently Asked Questions
-            </h2>
+            <div className="mb-12 text-center">
 
-            <p className="text-gray-600 mt-4">
-              Everything you need to know about HomeCareX.
-            </p>
+              <span
+                className="
+                  text-sm
+                  font-bold
+                  uppercase
+                  tracking-widest
+                  text-[#ff8a3d]
+                "
+              >
+                FAQ
+              </span>
+
+              <h2
+                className="
+                  mt-3
+                  text-3xl
+                  font-extrabold
+                  text-[#4338ca]
+                  sm:text-4xl
+                "
+              >
+                Frequently Asked Questions
+              </h2>
+
+              <p className="mt-4 text-gray-600">
+                Everything you need to know about HomeCareX.
+              </p>
+
+            </div>
 
           </div>
 
 
           <div className="space-y-4">
 
-            {faqs.map((faq, index) => (
+            {faqs.map((faq, index) => {
 
-              <div
-                key={faq.question}
-                className="
-                  overflow-hidden
-                  rounded-xl
-                  border
-                  border-gray-200
-                  bg-white
-                  shadow-sm
-                  hover:border-[#4338ca]/30
-                  transition-all
-                  duration-300
-                "
-              >
+              const animationId = `faq-${index}`;
 
-                <button
-                  type="button"
-                  onClick={() => toggleFaq(index)}
-                  className="
-                    w-full
-                    flex
-                    items-center
-                    justify-between
-                    gap-4
-                    px-6
-                    py-5
-                    text-left
-                    hover:bg-indigo-50/40
-                    transition-colors
-                    duration-300
-                  "
+              return (
+                <div
+                  key={faq.question}
+                  data-scroll-animation
+                  data-animation-id={animationId}
+                  className={revealClass(animationId)}
+                  style={{
+                    transitionDelay: `${index * 80}ms`,
+                  }}
                 >
-
-                  <span className="font-semibold text-[#4338ca]">
-                    {faq.question}
-                  </span>
-
-                  <span
-                    className="
-                      flex-shrink-0
-                      w-8
-                      h-8
-                      rounded-full
-                      bg-[#ff8a3d]/10
-                      text-[#ff8a3d]
-                      flex
-                      items-center
-                      justify-center
-                      text-xl
-                      font-medium
-                    "
-                  >
-                    {openFaq === index ? "−" : "+"}
-                  </span>
-
-                </button>
-
-
-                {openFaq === index && (
 
                   <div
                     className="
-                      px-6
-                      pb-5
-                      border-t
-                      border-gray-100
-                      bg-gray-50/50
+                      overflow-hidden
+                      rounded-xl
+                      border
+                      border-gray-200
+                      bg-white
+                      shadow-sm
+                      transition-all
+                      duration-300
+                      hover:border-[#4338ca]/30
+                      hover:shadow-md
                     "
                   >
-                    <p className="pt-4 text-gray-600 leading-7">
-                      {faq.answer}
-                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleFaq(index)}
+                      className="
+                        flex
+                        w-full
+                        items-center
+                        justify-between
+                        gap-4
+                        px-6
+                        py-5
+                        text-left
+                        transition-colors
+                        duration-300
+                        hover:bg-indigo-50/40
+                      "
+                    >
+
+                      <span className="font-semibold text-[#4338ca]">
+                        {faq.question}
+                      </span>
+
+                      <span
+                        className="
+                          flex
+                          h-8
+                          w-8
+                          flex-shrink-0
+                          items-center
+                          justify-center
+                          rounded-full
+                          bg-[#ff8a3d]/10
+                          text-xl
+                          font-medium
+                          text-[#ff8a3d]
+                        "
+                      >
+                        {openFaq === index ? "−" : "+"}
+                      </span>
+
+                    </button>
+
+
+                    {openFaq === index && (
+
+                      <div
+                        className="
+                          border-t
+                          border-gray-100
+                          bg-gray-50/50
+                          px-6
+                          pb-5
+                        "
+                      >
+
+                        <p className="pt-4 leading-7 text-gray-600">
+                          {faq.answer}
+                        </p>
+
+                      </div>
+
+                    )}
+
                   </div>
 
-                )}
-
-              </div>
-
-            ))}
+                </div>
+              );
+            })}
 
           </div>
 
         </div>
-
       </section>
 
 
       {/* =====================================================
-          CALL TO ACTION
+          CTA SECTION
+          WHITE BACKGROUND
       ====================================================== */}
 
-      <section className="relative overflow-hidden py-20 bg-[#4338ca]">
+      <section
+        className="
+          relative
+          overflow-hidden
+          bg-white
+          py-20
+        "
+      >
 
-        {/* Decorative circles */}
+        {/* Orange Blob */}
 
-        <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-[#ff8a3d]/20 blur-3xl" />
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -right-32
+            -top-32
+            h-96
+            w-96
+            rounded-full
+            bg-[#ff8a3d]/10
+            blur-3xl
+            animate-blob
+          "
+        />
 
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-white/10 blur-3xl" />
+        {/* Indigo Blob */}
 
-        <div className="relative max-w-5xl mx-auto px-6 text-center">
+        <div
+          className="
+            pointer-events-none
+            absolute
+            -bottom-32
+            -left-32
+            h-96
+            w-96
+            rounded-full
+            bg-[#4338ca]/10
+            blur-3xl
+            animate-blob-slow
+          "
+        />
 
-          <span
-            className="
-              inline-block
-              px-4 py-2
-              rounded-full
-              bg-white/10
-              text-orange-200
-              text-sm
-              font-semibold
-            "
-          >
-            HOMECAREX
-          </span>
 
-          <h2
-            className="
-              mt-5
-              text-3xl
-              sm:text-4xl
-              md:text-5xl
-              font-extrabold
-              text-white
-            "
-          >
-            Need Help With Your Home?
-          </h2>
+        <div
+          data-scroll-animation
+          data-animation-id="cta"
+          className={revealClass("cta")}
+        >
 
-          <p
-            className="
-              mt-5
-              text-indigo-100
-              max-w-2xl
-              mx-auto
-              leading-7
-            "
-          >
-            HomeCareX makes it easy to find the right
-            home service for your needs.
-          </p>
+          <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
 
-          <a
-            href="#services"
-            className="
-              inline-flex
-              items-center
-              mt-8
-              px-8 py-3.5
-              bg-[#ff8a3d]
-              text-white
-              font-bold
-              rounded-lg
-              shadow-md
-              hover:bg-white
-              hover:text-[#4338ca]
-              hover:-translate-y-0.5
-              transition-all
-              duration-300
-            "
-          >
-            Explore Our Services
-            <span className="ml-2">→</span>
-          </a>
+            {/* Label */}
+
+            <span
+              className="
+                inline-block
+                rounded-full
+                bg-gray-100
+                px-4
+                py-2
+                text-sm
+                font-bold
+                tracking-wide
+                text-[#4338ca]
+              "
+            >
+              HOMECAREX
+            </span>
+
+
+            {/* Heading */}
+
+            <h2
+              className="
+                mt-5
+                text-3xl
+                font-extrabold
+                text-[#4338ca]
+                sm:text-4xl
+                lg:text-5xl
+              "
+            >
+              Take Care of Your Home
+              <br />
+              With Confidence
+            </h2>
+
+
+            {/* Description */}
+
+            <p
+              className="
+                mx-auto
+                mt-5
+                max-w-2xl
+                leading-7
+                text-gray-600
+              "
+            >
+              Find reliable home services and make your
+              home maintenance simple and convenient.
+            </p>
+
+
+            {/* Buttons */}
+
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+
+              <Link
+                to="/services"
+                className="
+                  inline-flex
+                  items-center
+                  justify-center
+                  rounded-lg
+                  bg-[#ff8a3d]
+                  px-7
+                  py-3.5
+                  font-semibold
+                  text-white
+                  shadow-lg
+                  transition-all
+                  duration-300
+                  hover:-translate-y-1
+                  hover:bg-[#4338ca]
+                "
+              >
+                Explore Services
+              </Link>
+
+              <Link
+                to="/contact"
+                className="
+                  inline-flex
+                  items-center
+                  justify-center
+                  rounded-lg
+                  border-2
+                  border-[#4338ca]
+                  px-7
+                  py-3.5
+                  font-semibold
+                  text-[#4338ca]
+                  transition-all
+                  duration-300
+                  hover:-translate-y-1
+                  hover:bg-[#4338ca]
+                  hover:text-white
+                "
+              >
+                Contact Us
+              </Link>
+
+            </div>
+
+          </div>
 
         </div>
 

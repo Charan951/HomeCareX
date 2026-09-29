@@ -35,3 +35,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialSta
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+/*
+ * Custom hook
+ */
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error(
+      "useAuth must be used inside AuthProvider"
+    );
+  }
+
+  return context;
+};
