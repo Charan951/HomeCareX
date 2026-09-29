@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useAuth } from '@/context/AuthContext';
 import { useClickOutside } from '@/hooks/useClickOutside';
 
 export const ProfileMenu: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  const { logout } = useAuth();
   const [open, setOpen] = useState(false);
   const ref = useClickOutside<HTMLDivElement>(open, () => setOpen(false));
 
@@ -20,8 +22,7 @@ export const ProfileMenu: React.FC = () => {
 
   const signOut = () => {
     setOpen(false);
-    useAuthStore.setState({ isAuthenticated: false, user: null });
-    navigate('/login');
+    void logout().finally(() => navigate('/login', { replace: true }));
   };
 
   return (

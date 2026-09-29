@@ -28,11 +28,7 @@ export default function CustomerRoutes() {
     <Routes>
       <Route
         element={
-          <CustomerLayout
-            userName="Ananya Rao"
-            notificationCount={3}
-            onLogout={() => console.log("logout clicked")}
-          />
+<CustomerLayout />
         }
       >
         <Route path="/" element={<Dashboard />} />

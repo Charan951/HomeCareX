@@ -151,7 +151,7 @@ const Home: React.FC = () => {
 
   const revealClass = (
     id: string,
-    delay: number = 0
+    _delay: number = 0
   ): string => {
     const isVisible = visibleItems.has(id);
 
