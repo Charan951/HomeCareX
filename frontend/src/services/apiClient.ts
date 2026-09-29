@@ -2,7 +2,7 @@ import axios from 'axios';
 import { emitSessionExpired } from '@/features/auth/sessionEvents';
 
 const apiBaseUrl = (
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1'
+  import.meta.env.VITE_API_BASE_URL || '/api/v1'
 ).replace(/\/+$/, '');
 
 export const apiClient = axios.create({

@@ -1,50 +1,292 @@
-import React from 'react';
-import { Mail, MapPin, Phone } from 'lucide-react';
+import {
+  Facebook,
+  Instagram,
+  Twitter,
+  Linkedin,
+} from "lucide-react";
+import { NavLink } from "react-router-dom";
 
-const Footer: React.FC = () => {
+const Footer = () => {
   return (
-    <footer className="border-t-4 border-blue-600 bg-slate-950 text-white">
-      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8 lg:py-12">
-        <div className="grid gap-9 sm:grid-cols-2 lg:grid-cols-[1.2fr_0.8fr_1fr] lg:gap-12">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight">
-              HOME<span className="text-blue-400">CARE</span>X
+    <footer className="bg-[#2D1B69] text-white">
+      <div className="mx-auto max-w-7xl px-6 py-7">
+
+        {/* ================= FOOTER CONTENT ================= */}
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+
+          {/* ================= BRAND ================= */}
+          <div className="lg:col-span-2">
+
+            <h2 className="text-2xl font-bold">
+              HOME
+              <span className="text-[#ff8a3d]">CARE</span>
+              X
             </h2>
-            <p className="mt-3 max-w-xs text-sm leading-6 text-slate-400">
+
+            <p className="mt-2 text-sm text-gray-300">
               Your Home, Our Care
             </p>
+
+            <p className="mt-2 max-w-xs text-sm leading-5 text-gray-400">
+              Reliable home services delivered with care, quality and
+              professionalism.
+            </p>
+
+            {/* Contact Details */}
+            <div className="mt-4 space-y-2 text-sm text-gray-300">
+              <p>📞 +91 9390212572</p>
+              <p>✉️ support@homecarex.com</p>
+              <p>📍 India</p>
+            </div>
+
           </div>
 
+          {/* ================= COMPANY ================= */}
           <div>
-            <h3 className="text-sm font-semibold text-white">Quick links</h3>
-            <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-              <li>Home</li>
-              <li>Services</li>
-              <li>About</li>
-              <li>Contact</li>
+
+            <h3 className="mb-3 text-base font-semibold">
+              Company
+            </h3>
+
+            <ul className="space-y-2 text-sm">
+
+              <li>
+                <NavLink
+                  to="/"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Home
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/about"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  About
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/contact"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Contact
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/careers"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Careers
+                </NavLink>
+              </li>
+
             </ul>
+
           </div>
 
+          {/* ================= SERVICES ================= */}
           <div>
-            <h3 className="text-sm font-semibold text-white">Contact us</h3>
-            <ul className="mt-4 space-y-3 text-sm text-slate-300">
-              <li className="flex items-center gap-3">
-                <Phone aria-hidden="true" size={16} className="shrink-0 text-blue-400" />
-                <span>+91 9390212572</span>
+
+            <h3 className="mb-3 text-base font-semibold">
+              Services
+            </h3>
+
+            <ul className="space-y-2 text-sm">
+
+              <li>
+                <NavLink
+                  to="/services"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Cleaning
+                </NavLink>
               </li>
-              <li className="flex items-center gap-3">
-                <Mail aria-hidden="true" size={16} className="shrink-0 text-blue-400" />
-                <span>support@homecarex.com</span>
+
+              <li>
+                <NavLink
+                  to="/services"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Nursing
+                </NavLink>
               </li>
-              <li className="flex items-center gap-3">
-                <MapPin aria-hidden="true" size={16} className="shrink-0 text-blue-400" />
-                <span>India</span>
+
+              <li>
+                <NavLink
+                  to="/services"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Elder Care
+                </NavLink>
               </li>
+
+              <li>
+                <NavLink
+                  to="/services"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Baby Care
+                </NavLink>
+              </li>
+
             </ul>
+
+          </div>
+
+          {/* ================= SUPPORT ================= */}
+          <div>
+
+            <h3 className="mb-3 text-base font-semibold">
+              Support
+            </h3>
+
+            <ul className="space-y-2 text-sm">
+
+              <li>
+                <NavLink
+                  to="/help"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Help Center
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/contact"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Contact Us
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/faq"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  FAQ
+                </NavLink>
+              </li>
+
+            </ul>
+
+          </div>
+
+          {/* ================= LEGAL ================= */}
+          <div>
+
+            <h3 className="mb-3 text-base font-semibold">
+              Legal
+            </h3>
+
+            <ul className="space-y-2 text-sm">
+
+              <li>
+                <NavLink
+                  to="/privacy"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Privacy Policy
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/terms"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Terms & Conditions
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/cookies"
+                  className="text-gray-300 transition hover:text-[#ff8a3d]"
+                >
+                  Cookie Policy
+                </NavLink>
+              </li>
+
+            </ul>
+
           </div>
         </div>
 
-        <div className="mt-9 border-t border-slate-800 pt-5 text-center text-xs text-slate-500 sm:text-left">
+        {/* ================= SOCIAL MEDIA ================= */}
+        <div className="mt-6 flex flex-col items-center justify-between gap-4 border-t border-white/20 pt-5 sm:flex-row">
+
+          <div>
+
+            <h3 className="text-base font-semibold">
+              Follow Us
+            </h3>
+
+            <p className="mt-1 text-sm text-gray-400">
+              Stay connected with HomeCareX.
+            </p>
+
+          </div>
+
+          <div className="flex items-center gap-3">
+
+            {/* Facebook */}
+            <a
+              href="https://www.facebook.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all duration-200 hover:-translate-y-1 hover:bg-[#ff8a3d]"
+            >
+              <Facebook size={17} />
+            </a>
+
+            {/* Instagram */}
+            <a
+              href="https://www.instagram.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all duration-200 hover:-translate-y-1 hover:bg-[#ff8a3d]"
+            >
+              <Instagram size={17} />
+            </a>
+
+            {/* X / Twitter */}
+            <a
+              href="https://x.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="X Twitter"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all duration-200 hover:-translate-y-1 hover:bg-[#ff8a3d]"
+            >
+              <Twitter size={17} />
+            </a>
+
+            {/* LinkedIn */}
+            <a
+              href="https://www.linkedin.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all duration-200 hover:-translate-y-1 hover:bg-[#ff8a3d]"
+            >
+              <Linkedin size={17} />
+            </a>
+
+          </div>
+
+        </div>
+
+        {/* ================= COPYRIGHT ================= */}
+        <div className="mt-5 border-t border-white/20 pt-4 text-center text-sm text-gray-300">
           © 2026 HomeCareX. All rights reserved.
         </div>
       </div>
