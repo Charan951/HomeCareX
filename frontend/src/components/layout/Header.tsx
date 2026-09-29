@@ -1,223 +1,116 @@
-import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState } from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
+
+const publicLinks = [
+  { to: '/', label: 'Home', end: true },
+  { to: '/services', label: 'Services' },
+  { to: '/about', label: 'About' },
+  { to: '/contact', label: 'Contact' },
+];
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const getLinkClassName = (isActive: boolean) =>
+    `relative inline-flex min-h-10 items-center text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-4 ${
+      isActive
+        ? 'text-blue-700 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 after:bg-blue-700'
+        : 'text-slate-600 hover:text-blue-700'
+    }`;
+
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
+      <div className="mx-auto flex min-h-[4.5rem] max-w-7xl items-center justify-between gap-5 px-5 sm:px-6 lg:px-8">
+        <Link to="/" aria-label="HomeCareX home" className="flex shrink-0 items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+          <img src="/logo.png" alt="HomeCareX" className="h-10 w-auto object-contain sm:h-11" />
+        </Link>
 
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-
-        {/* Logo */}
-        <NavLink to="/">
-          <img
-            src="/logo.png"
-            alt="HomeCareX"
-            className="h-16 w-auto"
-          />
-        </NavLink>
-
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
-
-          {/* Home */}
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) =>
-              isActive
-                ? "text-[#ff8a3d] font-bold transition"
-                : "text-gray-700 hover:text-[#4338ca] transition"
-            }
-          >
-            Home
-          </NavLink>
-
-
-          {/* Services */}
-          <NavLink
-            to="/services"
-            className={({ isActive }) =>
-              isActive
-                ? "text-[#ff8a3d] font-bold transition"
-                : "text-gray-700 hover:text-[#4338ca] transition"
-            }
-          >
-            Services
-          </NavLink>
-
-
-          {/* About */}
-          <NavLink
-            to="/about"
-            className={({ isActive }) =>
-              isActive
-                ? "text-[#ff8a3d] font-bold transition"
-                : "text-gray-700 hover:text-[#4338ca] transition"
-            }
-          >
-            About
-          </NavLink>
-
-
-          {/* Contact */}
-          <NavLink
-            to="/contact"
-            className={({ isActive }) =>
-              isActive
-                ? "text-[#ff8a3d] font-bold transition"
-                : "text-gray-700 hover:text-[#4338ca] transition"
-            }
-          >
-            Contact
-          </NavLink>
-
+        <nav aria-label="Main navigation" className="hidden items-center gap-7 md:flex lg:gap-9">
+          {publicLinks.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) => getLinkClassName(isActive)}
+            >
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
 
-
-        {/* Desktop Buttons */}
-        <div className="hidden md:flex items-center gap-4">
-
-          {/* Login */}
+        <div className="hidden items-center gap-5 md:flex">
           <NavLink
             to="/login"
             className={({ isActive }) =>
-              isActive
-                ? "text-[#ff8a3d] font-bold transition"
-                : "text-[#4338ca] font-medium hover:text-[#ff8a3d] transition"
+              `text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-4 ${
+                isActive ? 'text-blue-800' : 'text-slate-600 hover:text-blue-700'
+              }`
             }
           >
             Login
           </NavLink>
-
-
-          {/* Register */}
           <NavLink
             to="/register"
             className={({ isActive }) =>
-              isActive
-                ? "bg-[#4338ca] text-white px-5 py-2.5 rounded-lg font-medium transition"
-                : "bg-[#ff8a3d] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#4338ca] transition"
+              `inline-flex min-h-10 items-center justify-center rounded-md px-4 text-sm font-semibold text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
+                isActive ? 'bg-blue-800' : 'bg-blue-700 hover:bg-blue-800'
+              }`
             }
           >
             Register
           </NavLink>
-
         </div>
 
-
-        {/* Mobile Menu Button */}
         <button
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="md:hidden text-2xl text-[#4338ca]"
-          aria-label="Toggle menu"
+          type="button"
+          onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-md text-slate-700 transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 md:hidden"
+          aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          aria-expanded={isMenuOpen}
+          aria-controls="mobile-navigation"
         >
-          ☰
+          {isMenuOpen ? <X aria-hidden="true" size={22} /> : <Menu aria-hidden="true" size={22} />}
         </button>
-
       </div>
 
-
-      {/* Mobile Drawer */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-white">
-
-          <nav className="flex flex-col px-6 py-4 gap-4">
-
-            {/* Mobile Home */}
-            <NavLink
-              to="/"
-              end
-              onClick={() => setIsMenuOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? "text-[#ff8a3d] font-bold transition"
-                  : "text-gray-700 hover:text-[#4338ca] transition"
-              }
-            >
-              Home
-            </NavLink>
-
-
-            {/* Mobile Services */}
-            <NavLink
-              to="/services"
-              onClick={() => setIsMenuOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? "text-[#ff8a3d] font-bold transition"
-                  : "text-gray-700 hover:text-[#4338ca] transition"
-              }
-            >
-              Services
-            </NavLink>
-
-
-            {/* Mobile About */}
-            <NavLink
-              to="/about"
-              onClick={() => setIsMenuOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? "text-[#ff8a3d] font-bold transition"
-                  : "text-gray-700 hover:text-[#4338ca] transition"
-              }
-            >
-              About
-            </NavLink>
-
-
-            {/* Mobile Contact */}
-            <NavLink
-              to="/contact"
-              onClick={() => setIsMenuOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? "text-[#ff8a3d] font-bold transition"
-                  : "text-gray-700 hover:text-[#4338ca] transition"
-              }
-            >
-              Contact
-            </NavLink>
-
-
-            <hr />
-
-
-            {/* Mobile Login */}
-            <NavLink
-              to="/login"
-              onClick={() => setIsMenuOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? "text-[#ff8a3d] font-bold transition"
-                  : "text-[#4338ca] font-medium hover:text-[#ff8a3d] transition"
-              }
-            >
-              Login
-            </NavLink>
-
-
-            {/* Mobile Register */}
-            <NavLink
-              to="/register"
-              onClick={() => setIsMenuOpen(false)}
-              className={({ isActive }) =>
-                isActive
-                  ? "bg-[#4338ca] text-white px-5 py-2.5 rounded-lg font-medium transition"
-                  : "bg-[#ff8a3d] text-white px-5 py-2.5 rounded-lg font-medium hover:bg-[#4338ca] transition"
-              }
-            >
-              Register
-            </NavLink>
-
+        <div id="mobile-navigation" className="border-t border-slate-200 bg-white md:hidden">
+          <nav aria-label="Mobile navigation" className="mx-auto flex max-w-7xl flex-col px-5 py-3 sm:px-6">
+            {publicLinks.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={() => setIsMenuOpen(false)}
+                className={({ isActive }) =>
+                  `flex min-h-12 items-center border-b border-slate-100 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    isActive ? 'text-blue-700' : 'text-slate-700 hover:text-blue-700'
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+            <div className="flex gap-3 py-4">
+              <NavLink
+                to="/login"
+                onClick={() => setIsMenuOpen(false)}
+                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-blue-300 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                Login
+              </NavLink>
+              <NavLink
+                to="/register"
+                onClick={() => setIsMenuOpen(false)}
+                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md bg-blue-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+              >
+                Register
+              </NavLink>
+            </div>
           </nav>
-
         </div>
       )}
-
     </header>
   );
 };

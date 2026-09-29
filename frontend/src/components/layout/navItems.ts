@@ -1,5 +1,3 @@
-import { ACTIVE_BOOKING } from "../../mocks/customerMockData";
-
 export type NavIconName = "home" | "calendar" | "grid" | "user" | "list" | "map-pin";
 
 export interface NavItem {

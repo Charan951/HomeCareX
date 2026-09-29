@@ -853,7 +853,7 @@ const Home: React.FC = () => {
           FAQ SECTION
       ====================================================== */}
 
-      <section className="py-20 sm:py-24 bg-white">
+      <section id="faqs" className="scroll-mt-24 py-20 sm:py-24 bg-white">
 
         <div className="max-w-4xl mx-auto px-6">
 

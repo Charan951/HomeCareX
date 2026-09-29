@@ -1,6 +1,9 @@
 import { Router } from 'express';
 
+import leadsRoutes from '../modules/leads/leads.routes';
+
 export const rootRouter = Router();
 
-// Routes will be registered here under /api/v1
+rootRouter.use(leadsRoutes);
+
 export default rootRouter;
