@@ -1,14 +1,26 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       colors: {
+        // ---- Customer dashboard tokens ----
+        canvas: "#FAFAFC",
+        panel: "#FFFFFF",
+        line: "#E4E4EF",
+        ink: "#1E1B2E",
+        muted: "#6B6880",
+        danger: "#DC2626",
+        "danger-soft": "#FDE8E8",
+        "accent-soft": "#FFEADB",
+
+        // ---- Brand (logo: HOME = orange, CAREX = indigo) ----
+        // Customer pages use the bare/soft names (bg-brand, bg-brand-soft) = indigo.
+        // Public/Auth pages use the numbered shades (brand-400/500/600) = orange.
+        // Both are kept so neither side needs to change class names.
         brand: {
+          DEFAULT: "#4338CA",
+          soft: "#EEECFB",
           50: "#fff5ef",
           100: "#ffe4d1",
           200: "#ffc79e",
@@ -18,8 +30,9 @@ export default {
           600: "#f5731f",
           700: "#e0600f",
         },
-
+        // Customer: bare `accent` = orange. Public/Auth: numbered shades = indigo.
         accent: {
+          DEFAULT: "#FF8A3D",
           50: "#eef2ff",
           100: "#e0e7ff",
           200: "#c7d2fe",
@@ -32,50 +45,31 @@ export default {
           900: "#312e81",
         },
       },
-
+      fontFamily: {
+        sans: ["'Poppins'", "system-ui", "sans-serif"],
+      },
+      borderRadius: { DEFAULT: "10px" },
+      // NOTE: these were mistakenly nested inside `colors` after the merge,
+      // so animate-blob / animate-floaty etc. never generated. Moved up a level.
       keyframes: {
         blob: {
-          "0%, 100%": {
-            transform: "translate(0px, 0px) scale(1)",
-          },
-          "33%": {
-            transform: "translate(30px, -50px) scale(1.1)",
-          },
-          "66%": {
-            transform: "translate(-20px, 20px) scale(0.95)",
-          },
+          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
+          "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+          "66%": { transform: "translate(-20px, 20px) scale(0.95)" },
         },
-
         floaty: {
-          "0%, 100%": {
-            transform: "translateY(0px)",
-          },
-          "50%": {
-            transform: "translateY(-12px)",
-          },
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-12px)" },
         },
-
         fadeUp: {
-          "0%": {
-            opacity: "0",
-            transform: "translateY(16px)",
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translateY(0)",
-          },
+          "0%": { opacity: "0", transform: "translateY(16px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
-
         shimmer: {
-          "0%": {
-            backgroundPosition: "-200% 0",
-          },
-          "100%": {
-            backgroundPosition: "200% 0",
-          },
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
       },
-
       animation: {
         blob: "blob 10s infinite ease-in-out",
         "blob-slow": "blob 16s infinite ease-in-out",
@@ -85,6 +79,5 @@ export default {
       },
     },
   },
-
   plugins: [],
 };

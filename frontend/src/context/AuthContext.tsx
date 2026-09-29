@@ -1,100 +1,39 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { createContext, useCallback, useMemo, useState } from "react";
+import type { AuthContextValue, AuthStatus, AuthUser } from "../types/auth";
 
-interface User {
-  id: string;
-  name?: string;
-  email?: string;
-  role?: string;
-}
+export const AuthContext = createContext<AuthContextValue | null>(null);
 
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  loading: boolean;
-  login: (token: string, user?: User) => void;
-  logout: () => void;
-}
+// MOCK user until the real auth provider is merged.
+const MOCK_CUSTOMER: AuthUser = {
+  id: "cust-001",
+  name: "Ananya Rao",
+  email: "ananya.rao@example.com",
+  phone: "+91 98765 43210",
+  role: "customer",
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(
-  undefined
-);
-
-export const AuthProvider: React.FC<{
+interface AuthProviderProps {
   children: React.ReactNode;
-}> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  /** Lets tests / Storybook start in any state. Defaults to a signed-in customer. */
+  initialStatus?: AuthStatus;
+}
 
-  /*
-   * Get authentication information
-   * when the application starts.
-   */
-  useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
+/** MOCK provider — replace the internals with the shared auth implementation. */
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children, initialStatus = "authenticated" }) => {
+  const [status, setStatus] = useState<AuthStatus>(initialStatus);
+  const [user, setUser] = useState<AuthUser | null>(initialStatus === "authenticated" ? MOCK_CUSTOMER : null);
 
-    if (savedToken) {
-      setToken(savedToken);
-    }
-
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error("Invalid saved user data");
-        localStorage.removeItem("user");
-      }
-    }
-
-    setLoading(false);
+  const logout = useCallback(async () => {
+    setUser(null);
+    setStatus("unauthenticated");
   }, []);
 
-  /*
-   * Login
-   */
-  const login = (newToken: string, newUser?: User) => {
-    localStorage.setItem("token", newToken);
-
-    setToken(newToken);
-
-    if (newUser) {
-      localStorage.setItem("user", JSON.stringify(newUser));
-      setUser(newUser);
-    }
-  };
-
-  /*
-   * Logout
-   */
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    setToken(null);
-    setUser(null);
-  };
-
-  const value: AuthContextType = {
-    user,
-    token,
-    isAuthenticated: !!token,
-    loading,
-    login,
-    logout,
-  };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo<AuthContextValue>(
+    () => ({ user, status, isAuthenticated: status === "authenticated" && user !== null, logout }),
+    [user, status, logout],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 /*

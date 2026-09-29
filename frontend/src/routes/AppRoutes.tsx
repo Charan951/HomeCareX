@@ -1,5 +1,7 @@
-import React from "react";
-import { Route, Routes } from "react-router-dom";
+import React from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import AdminRoutes from './AdminRoutes';
+import CustomerRoutes from './CustomerRoutes';
 
 import AdminRoutes from "./AdminRoutes";
 import PublicRoutes from "./PublicRoutes";
@@ -9,9 +11,8 @@ const AppRoutes: React.FC = () => {
     <Routes>
       {/* Admin */}
       <Route path="/admin/*" element={<AdminRoutes />} />
-
-      {/* Public website */}
-      <Route path="/*" element={<PublicRoutes />} />
+      <Route path="/" element={<Navigate to="/admin" replace />} />
+      <Route path="/customer/*" element={<CustomerRoutes />} />
     </Routes>
   );
 };
