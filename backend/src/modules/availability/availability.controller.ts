@@ -16,7 +16,8 @@ const handleError = (err: unknown, res: Response) => {
 
 export const getAvailability = async (_req: Request, res: Response) => {
   try {
-    const data = await service.getAvailability(res.locals.partnerId);
+    const partnerId = res.locals.auth.sub as string;
+    const data = await service.getAvailability(partnerId);
     res.json({ data });
   } catch (err) {
     handleError(err, res);
@@ -26,7 +27,8 @@ export const getAvailability = async (_req: Request, res: Response) => {
 export const patchAvailability = async (req: Request, res: Response) => {
   try {
     const input = updateAvailabilitySchema.parse(req.body);
-    const data = await service.updateAvailability(res.locals.partnerId, input);
+    const partnerId = res.locals.auth.sub as string;
+    const data = await service.updateAvailability(partnerId, input);
     res.json({ data });
   } catch (err) {
     handleError(err, res);
