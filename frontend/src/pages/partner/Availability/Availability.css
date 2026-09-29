@@ -1,0 +1,118 @@
+:root {
+  --indigo: #4338ca;
+  --indigo-dark: #3730a3;
+  --indigo-50: #eef2ff;
+  --indigo-100: #e0e7ff;
+  --orange: #ff8a3d;
+  --orange-50: #fff4ec;
+  --orange-100: #ffe3d0;
+  --ink: #1e1b4b;
+  --muted: #64648a;
+  --line: #e4e6f5;
+  --danger: #b91c1c;
+  --danger-bg: #fee2e2;
+}
+
+body:has(.pa-page) {
+  background: linear-gradient(180deg, var(--indigo-50) 0%, #ffffff 260px);
+  min-height: 100vh;
+}
+
+.pa-page { max-width: 480px; margin: 0 auto; padding: 28px 16px 40px; color: var(--ink); }
+.pa-title { font-size: 1.5rem; font-weight: 800; margin: 0 0 18px; color: var(--indigo); letter-spacing: -.01em; }
+.pa-muted { color: var(--muted); margin: 2px 0 0; font-size: .85rem; }
+.pa-error { color: var(--danger); background: var(--danger-bg); padding: 8px 12px; border-radius: 10px;
+  border-left: 4px solid var(--danger); }
+.pa-link { color: var(--indigo); font-weight: 600; }
+
+.pa-btn { padding: 12px 18px; border-radius: 12px; border: none; background: var(--indigo);
+  color: #fff; cursor: pointer; font-weight: 700; font-size: .95rem;
+  box-shadow: 0 6px 16px rgba(67, 56, 202, .25); transition: background .15s, transform .1s; }
+.pa-btn:hover:not(:disabled) { background: var(--indigo-dark); }
+.pa-btn:active:not(:disabled) { transform: translateY(1px); }
+.pa-btn:disabled { background: #b9b6e6; box-shadow: none; cursor: not-allowed; }
+
+/* Status card */
+.pa-status-card { display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  border-radius: 16px; padding: 20px; margin-bottom: 16px;
+  background: #fff; border: 1px solid var(--line); border-left: 6px solid var(--orange);
+  box-shadow: 0 4px 14px rgba(67, 56, 202, .08); transition: background .25s; }
+.pa-status { font-size: 1.15rem; font-weight: 800; margin: 0; }
+.pa-status-on { background: linear-gradient(135deg, var(--indigo) 0%, #5b4fe0 100%);
+  border-color: var(--indigo); border-left-color: var(--orange); color: #fff; }
+.pa-status-on .pa-muted { color: rgba(255, 255, 255, .88); }
+
+/* Working hours link row */
+.pa-link-row { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px;
+  color: inherit; text-decoration: none; box-shadow: 0 2px 8px rgba(67, 56, 202, .05);
+  transition: border-color .15s, box-shadow .15s; }
+.pa-link-row:hover { border-color: var(--orange); box-shadow: 0 4px 14px rgba(255, 138, 61, .2); }
+.pa-link-row svg { color: var(--indigo); flex-shrink: 0; }
+.pa-label { display: block; font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.pa-value { display: block; font-weight: 700; margin-top: 3px; color: var(--indigo); }
+
+/* Switch */
+.pa-switch { position: relative; flex-shrink: 0; width: 56px; height: 32px; border-radius: 16px;
+  border: none; background: #c7c9e6; cursor: pointer; transition: background .2s; }
+.pa-switch.pa-on { background: var(--orange); }
+.pa-switch:disabled { opacity: .6; cursor: wait; }
+.pa-knob { position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: transform .2s; }
+.pa-on .pa-knob { transform: translateX(24px); }
+
+/* Focus */
+.pa-switch:focus-visible, .pa-btn:focus-visible, .pa-link:focus-visible,
+.pa-link-row:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+.pa-week { background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  padding: 14px 18px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(67, 56, 202, .05); }
+.pa-chips { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.pa-chip { flex: 1; min-width: 40px; text-align: center; padding: 7px 0; border-radius: 10px;
+  font-size: .75rem; font-weight: 800; text-transform: uppercase;
+  background: var(--indigo-100); color: var(--indigo); }
+.pa-chip-off { background: var(--orange-50); color: #b5470a; border: 1px dashed var(--orange); }
+
+@media (max-width: 400px) {
+  .pa-status-card { padding: 16px; }
+}
+
+/* ---------- Tablet ---------- */
+@media (min-width: 600px) {
+  .pa-page { max-width: 680px; padding-top: 36px; }
+  .pa-title { font-size: 1.75rem; }
+}
+
+/* ---------- Desktop ---------- */
+@media (min-width: 900px) {
+  .pa-page { max-width: 1040px; padding: 40px 32px 56px; }
+
+  /* Availability dashboard: title on top, wide status hero, two cards below */
+  .pa-page:not(.wh-page) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    align-items: stretch;
+  }
+  .pa-page:not(.wh-page) > .pa-title,
+  .pa-page:not(.wh-page) > .pa-error,
+  .pa-page:not(.wh-page) > .pa-status-card { grid-column: 1 / -1; }
+  .pa-page:not(.wh-page) > .pa-title { margin-bottom: 0; font-size: 2rem; }
+
+  .pa-status-card,
+  .pa-week,
+  .pa-link-row { margin-bottom: 0; }
+
+  .pa-status-card { padding: 32px 36px; border-radius: 20px; }
+  .pa-status { font-size: 1.6rem; }
+  .pa-status-card .pa-muted { font-size: 1rem; margin-top: 6px; }
+
+  .pa-switch { width: 72px; height: 40px; border-radius: 20px; }
+  .pa-knob { top: 5px; left: 5px; width: 30px; height: 30px; }
+  .pa-on .pa-knob { transform: translateX(32px); }
+
+  .pa-week, .pa-link-row { padding: 24px 28px; border-radius: 20px; }
+  .pa-chips { gap: 10px; }
+  .pa-chip { padding: 12px 0; font-size: .85rem; }
+  .pa-value { font-size: 1.4rem; margin-top: 8px; }
+  .pa-link-row { align-items: center; }
+}
