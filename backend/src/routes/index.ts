@@ -1,6 +1,8 @@
 import { Router } from 'express';
+import { availabilityRoutes } from '../modules/availability/availability.routes';
 
 export const rootRouter = Router();
 
-// Routes will be registered here under /api/v1
+rootRouter.use('/partner/availability', availabilityRoutes);
+
 export default rootRouter;
