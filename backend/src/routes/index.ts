@@ -5,6 +5,7 @@ import { partnersRoutes } from '../modules/partners/partners.routes';
 import { availabilityRoutes } from '../modules/availability/availability.routes';
 
 import leadsRoutes from '../modules/leads/leads.routes';
+import { bookingsRoutes } from '../modules/bookings/bookings.routes';
 
 export const rootRouter = Router();
 
@@ -14,5 +15,6 @@ rootRouter.use('/admin', auditRoutes); // GET /admin/audit-logs
 rootRouter.use('/admin/partners', partnersRoutes);
 rootRouter.use('/partner/availability', availabilityRoutes);
 rootRouter.use(leadsRoutes); // POST /public/leads
+rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings, GET /bookings/:id
 
 export default rootRouter;

@@ -11,6 +11,11 @@ export const errorHandler = (err: unknown, _req: Request, res: Response, _next: 
   if (err instanceof HttpError) {
     return res.status(err.status).json({ success: false, message: err.message, code: err.code, details: err.details });
   }
+  // Module errors shaped like utils/AppError ({ statusCode, code, message, details }).
+  const e = err as { statusCode?: unknown; code?: unknown; message?: unknown; details?: unknown };
+  if (typeof e?.statusCode === 'number' && e.statusCode >= 400 && e.statusCode < 600 && typeof e.code === 'string') {
+    return res.status(e.statusCode).json({ success: false, message: String(e.message ?? 'Request failed'), code: e.code, details: e.details });
+  }
   console.error(err);
   res.status(500).json({
     success: false,
