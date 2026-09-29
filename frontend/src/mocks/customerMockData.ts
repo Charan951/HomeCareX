@@ -24,6 +24,8 @@ export const CATEGORIES: Category[] = [
 
 export interface Service {
   id: string;
+  /** URL-safe identifier used by the booking flow: /customer/book/:serviceSlug */
+  slug: string;
   categoryId: string;
   name: string;
   price: number;
@@ -33,15 +35,15 @@ export interface Service {
 }
 
 export const SERVICES: Service[] = [
-  { id: "svc-1", categoryId: "cleaning", name: "Deep Home Cleaning", price: 1499, duration: "3 hrs", rating: 4.8, reviewCount: 2140 },
-  { id: "svc-2", categoryId: "cleaning", name: "Sofa & Carpet Shampooing", price: 899, duration: "1.5 hrs", rating: 4.7, reviewCount: 980 },
-  { id: "svc-3", categoryId: "appliance", name: "AC Service & Gas Refill", price: 599, duration: "1 hr", rating: 4.6, reviewCount: 3210 },
-  { id: "svc-4", categoryId: "appliance", name: "RO/Water Purifier Service", price: 399, duration: "45 min", rating: 4.5, reviewCount: 1120 },
-  { id: "svc-5", categoryId: "salon", name: "At-Home Spa for Women", price: 1299, duration: "2 hrs", rating: 4.9, reviewCount: 1560 },
-  { id: "svc-6", categoryId: "electrical", name: "Electrician Visit (General)", price: 249, duration: "30 min", rating: 4.4, reviewCount: 870 },
-  { id: "svc-7", categoryId: "painting", name: "Room Painting (per room)", price: 3499, duration: "1 day", rating: 4.6, reviewCount: 430 },
-  { id: "svc-8", categoryId: "pest", name: "General Pest Control", price: 799, duration: "1 hr", rating: 4.5, reviewCount: 1980 },
-  { id: "svc-9", categoryId: "carpentry", name: "Furniture Assembly", price: 349, duration: "1 hr", rating: 4.7, reviewCount: 640 },
+  { id: "svc-1", slug: "deep-home-cleaning", categoryId: "cleaning", name: "Deep Home Cleaning", price: 1499, duration: "3 hrs", rating: 4.8, reviewCount: 2140 },
+  { id: "svc-2", slug: "sofa-carpet-shampooing", categoryId: "cleaning", name: "Sofa & Carpet Shampooing", price: 899, duration: "1.5 hrs", rating: 4.7, reviewCount: 980 },
+  { id: "svc-3", slug: "ac-service-gas-refill", categoryId: "appliance", name: "AC Service & Gas Refill", price: 599, duration: "1 hr", rating: 4.6, reviewCount: 3210 },
+  { id: "svc-4", slug: "ro-water-purifier-service", categoryId: "appliance", name: "RO/Water Purifier Service", price: 399, duration: "45 min", rating: 4.5, reviewCount: 1120 },
+  { id: "svc-5", slug: "at-home-spa-for-women", categoryId: "salon", name: "At-Home Spa for Women", price: 1299, duration: "2 hrs", rating: 4.9, reviewCount: 1560 },
+  { id: "svc-6", slug: "electrician-visit-general", categoryId: "electrical", name: "Electrician Visit (General)", price: 249, duration: "30 min", rating: 4.4, reviewCount: 870 },
+  { id: "svc-7", slug: "room-painting-per-room", categoryId: "painting", name: "Room Painting (per room)", price: 3499, duration: "1 day", rating: 4.6, reviewCount: 430 },
+  { id: "svc-8", slug: "general-pest-control", categoryId: "pest", name: "General Pest Control", price: 799, duration: "1 hr", rating: 4.5, reviewCount: 1980 },
+  { id: "svc-9", slug: "furniture-assembly", categoryId: "carpentry", name: "Furniture Assembly", price: 349, duration: "1 hr", rating: 4.7, reviewCount: 640 },
 ];
 
 export type BookingStatus =
@@ -169,6 +171,20 @@ export interface SupportTicket {
 export const SUPPORT_TICKETS: SupportTicket[] = [
   { id: "TK-4021", subject: "Extra charge added without approval", category: "Billing", status: "In Review", slaDue: "Today, 6:00 PM", date: "24 Sep" },
   { id: "TK-3988", subject: "Partner arrived late", category: "Service Quality", status: "Resolved", slaDue: "—", date: "10 Sep" },
+];
+
+export interface Offer {
+  id: string;
+  title: string;
+  description: string;
+  code: string;
+  accent: "brand" | "accent";
+}
+
+export const OFFERS: Offer[] = [
+  { id: "off-1", title: "20% off Salon & Spa", description: "Valid on your first at-home spa booking this month.", code: "SPA20", accent: "brand" },
+  { id: "off-2", title: "Flat ₹100 off Home Cleaning", description: "On bookings above ₹1000. Ends this weekend.", code: "CLEAN100", accent: "accent" },
+  { id: "off-3", title: "Refer a friend, earn ₹150", description: "Both of you get wallet credit on their first booking.", code: "REFERRAL", accent: "brand" },
 ];
 
 export const REFERRAL = {

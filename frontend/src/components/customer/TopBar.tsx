@@ -28,7 +28,7 @@ const HAMBURGER = "-ml-2 flex h-11 w-11 items-center justify-center rounded text
  *  - mobile: ☰ opens the slide-in menu, next to the brand link
  *  - md+   : ☰ collapses / expands the sidebar, then the page title
  *            (the brand link appears here while the sidebar is collapsed)
- * Bell + profile menu are on the right at every width.
+ * Bell is on the right at every width; the profile menu (avatar) is desktop-only — on mobile, Log out lives in the drawer.
  */
 export default function TopBar({ menuOpen, onMenuClick, menuButtonRef, sidebarOpen, onToggleSidebar }: TopBarProps) {
   const { pathname } = useLocation();
@@ -74,7 +74,9 @@ export default function TopBar({ menuOpen, onMenuClick, menuButtonRef, sidebarOp
 
       <div className="flex items-center gap-1 md:gap-3">
         <NotificationBell count={unread} />
-        <ProfileMenu />
+        <div className="hidden md:block">
+          <ProfileMenu />
+        </div>
       </div>
     </header>
   );
