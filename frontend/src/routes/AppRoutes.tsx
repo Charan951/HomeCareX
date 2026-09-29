@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import AdminRoutes from './AdminRoutes';
 import PartnerRoutes from './PartnerRoutes';
 
-import AdminRoutes from "./AdminRoutes";
+import CustomerRoutes from './CustomerRoutes';
 import PublicRoutes from "./PublicRoutes";
 
 const AppRoutes: React.FC = () => {
@@ -12,8 +12,9 @@ const AppRoutes: React.FC = () => {
       {/* Admin */}
       <Route path="/admin/*" element={<AdminRoutes />} />
       <Route path="/partner/*" element={<PartnerRoutes />} />
-      <Route path="/" element={<Navigate to="/admin" replace />} />
+      <Route path="/" element={<PublicRoutes />} />
       <Route path="/customer/*" element={<CustomerRoutes />} />
+      <Route path="/*" element={<PublicRoutes />} />
     </Routes>
   );
 };

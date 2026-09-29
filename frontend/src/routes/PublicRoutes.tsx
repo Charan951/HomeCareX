@@ -1,30 +1,150 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 
+import AuthLayout from "../layouts/AuthLayout";
 import PublicLayout from "../layouts/PublicLayout";
 
-import Home from "../pages/public/Home/Home";
-import Services from "../pages/public/Services/Services";
-import About from "../pages/public/About/About";
-import Contact from "../pages/public/Contact/Contact";
+import PageLoader from "../components/common/PageLoader";
+import { ROUTES } from "../constants/routes";
+
+/*
+|--------------------------------------------------------------------------
+| Lazy Loaded Public Pages
+|--------------------------------------------------------------------------
+*/
+
+const Home = lazy(() => import("../pages/public/Home/Home"));
+
+const Services = lazy(
+  () => import("../pages/public/Services/Services")
+);
+
+const About = lazy(
+  () => import("../pages/public/About/About")
+);
+
+const Contact = lazy(
+  () => import("../pages/public/Contact/Contact")
+);
+
+/*
+|--------------------------------------------------------------------------
+| Lazy Loaded Authentication Pages
+|--------------------------------------------------------------------------
+*/
+
+const Login = lazy(
+  () => import("../pages/public/Login")
+);
+
+const Register = lazy(
+  () => import("../pages/public/Register")
+);
+
+const ForgotPassword = lazy(
+  () => import("../pages/public/ForgotPassword")
+);
+
+/*
+|--------------------------------------------------------------------------
+| Lazy Loaded System Pages
+|--------------------------------------------------------------------------
+*/
+
+const Unauthorized = lazy(
+  () => import("../pages/public/Unauthorized")
+);
+
+const NotFound = lazy(
+  () => import("../pages/public/NotFound")
+);
+
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
 
 const PublicRoutes: React.FC = () => {
   return (
-    <Routes>
+    <Suspense fallback={<PageLoader />}>
 
-      <Route element={<PublicLayout />}>
+      <Routes>
 
-        <Route path="/" element={<Home />} />
+        {/* =========================================================
+            Public Layout
+        ========================================================== */}
 
-        <Route path="/services" element={<Services />} />
+        <Route element={<PublicLayout />}>
 
-        <Route path="/about" element={<About />} />
+          {/* Home */}
+          <Route
+            path={ROUTES.HOME}
+            element={<Home />}
+          />
 
-        <Route path="/contact" element={<Contact />} />
+          {/* Services */}
+          <Route
+            path={ROUTES.SERVICES}
+            element={<Services />}
+          />
 
-      </Route>
+          {/* About */}
+          <Route
+            path={ROUTES.ABOUT}
+            element={<About />}
+          />
 
-    </Routes>
+          {/* Contact */}
+          <Route
+            path={ROUTES.CONTACT}
+            element={<Contact />}
+          />
+
+          {/* Unauthorized */}
+          <Route
+            path={ROUTES.UNAUTHORIZED}
+            element={<Unauthorized />}
+          />
+
+          {/* 404 - Any unknown URL */}
+          <Route
+            path="*"
+            element={<NotFound />}
+          />
+
+        </Route>
+
+
+        {/* =========================================================
+            Authentication Layout
+        ========================================================== */}
+
+        <Route element={<AuthLayout />}>
+
+          {/* Login */}
+          <Route
+            path={ROUTES.LOGIN}
+            element={<Login />}
+          />
+
+          {/* Register */}
+          <Route
+            path={ROUTES.REGISTER}
+            element={<Register />}
+          />
+
+          {/* Forgot Password */}
+          <Route
+            path={ROUTES.FORGOT_PASSWORD}
+            element={<ForgotPassword />}
+          />
+
+        </Route>
+
+      </Routes>
+
+    </Suspense>
   );
 };
 
