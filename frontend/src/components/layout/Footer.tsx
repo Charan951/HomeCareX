@@ -218,7 +218,6 @@ const Footer = () => {
             </ul>
 
           </div>
-
         </div>
 
         {/* ================= SOCIAL MEDIA ================= */}
@@ -290,7 +289,6 @@ const Footer = () => {
         <div className="mt-5 border-t border-white/20 pt-4 text-center text-sm text-gray-300">
           © 2026 HomeCareX. All rights reserved.
         </div>
-
       </div>
     </footer>
   );
