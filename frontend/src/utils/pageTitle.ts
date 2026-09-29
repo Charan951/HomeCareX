@@ -15,7 +15,8 @@ const TITLES: Record<string, string> = {
 };
 
 /** Maps the current pathname to a human-readable page title for the TopBar. */
-export function getPageTitle(pathname: string): string {
+export function getPageTitle(rawPath: string): string {
+  const pathname = rawPath.replace(/^\/customer/, "") || "/";
   if (TITLES[pathname]) return TITLES[pathname];
   if (pathname.startsWith("/bookings/")) return "CustomerDashboard";
   return "HomeCareX";

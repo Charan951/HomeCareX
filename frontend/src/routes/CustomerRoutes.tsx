@@ -14,6 +14,7 @@ import Services from "../pages/customer/Services";
 import Support from "../pages/customer/Support";
 import Tracking from "../pages/customer/Tracking";
 import Wallet from "../pages/customer/Wallet";
+import BookServiceShell from "../pages/customer/Book";
 
 /**
  * CustomerRoutes — every route the Customer Dashboard serves, nested inside
@@ -25,19 +26,13 @@ import Wallet from "../pages/customer/Wallet";
 export default function CustomerRoutes() {
   return (
     <Routes>
-      <Route
-        element={
-          <CustomerLayout
-            userName="Ananya Rao"
-            notificationCount={3}
-            onLogout={() => console.log("logout clicked")}
-          />
-        }
-      >
+      {/* CustomerLayout takes NO props */}
+      <Route element={<CustomerLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/addresses" element={<Addresses />} />
         <Route path="/bookings" element={<Bookings />} />
         <Route path="/bookings/:id" element={<BookingDetails />} />
+        <Route path="/book/:serviceSlug" element={<BookServiceShell />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/payments" element={<Payments />} />
