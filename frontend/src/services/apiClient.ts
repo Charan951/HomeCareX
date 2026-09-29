@@ -1,43 +1,41 @@
-// API Service: apiClient
-import axios, { AxiosError } from "axios";
+import axios from 'axios';
+import { emitSessionExpired } from '@/features/auth/sessionEvents';
 
-/** Shared axios instance. Every module's *Api.ts wraps this instead of calling axios directly,
- *  so auth headers / base URL / error normalization stay in one place. */
+const apiBaseUrl = (
+  import.meta.env.VITE_API_BASE_URL || '/api/v1'
+).replace(/\/+$/, '');
+
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000/api/v1",
+  baseURL: apiBaseUrl,
   timeout: 15000,
-  headers: { "Content-Type": "application/json" },
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("auth_token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      emitSessionExpired();
+    }
 
-export interface NormalizedApiError {
-  status: number | null;
-  code: string;
-  message: string;
-  details?: unknown;
-}
+    if (!error.response) {
+      return Promise.reject(new Error('Unable to connect. Please check your internet connection and try again.'));
+    }
 
-/** Turns any axios failure (server error body, network drop, timeout) into one predictable shape
- *  so callers can switch on `code` without checking `error.response` first. */
-export function normalizeApiError(err: unknown): NormalizedApiError {
-  if (axios.isAxiosError(err)) {
-    const axiosErr = err as AxiosError<{ error?: { code?: string; message?: string; details?: unknown } }>;
-    const body = axiosErr.response?.data?.error;
-    if (body?.code) {
-      return { status: axiosErr.response?.status ?? null, code: body.code, message: body.message ?? "Something went wrong", details: body.details };
+    if (error.response.status === 400) {
+      return Promise.reject(new Error('Please check the highlighted fields.'));
     }
-    if (axiosErr.code === "ECONNABORTED") {
-      return { status: null, code: "TIMEOUT", message: "The request timed out. Please try again." };
+
+    if (error.response.status === 429) {
+      return Promise.reject(new Error('Too many submissions. Please try again later.'));
     }
-    if (!axiosErr.response) {
-      return { status: null, code: "NETWORK_ERROR", message: "Couldn't reach the server. Check your connection and try again." };
+
+    if (error.response.status >= 500) {
+      return Promise.reject(new Error('Something went wrong on our side. Please try again.'));
     }
-    return { status: axiosErr.response.status, code: "UNKNOWN_ERROR", message: "Something went wrong. Please try again." };
-  }
-  return { status: null, code: "UNKNOWN_ERROR", message: "Something went wrong. Please try again." };
-}
+
+    return Promise.reject(new Error(error.response.data?.message ?? 'Please check the highlighted fields.'));
+  },
+);

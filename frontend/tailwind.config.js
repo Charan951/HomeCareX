@@ -13,7 +13,7 @@ export default {
         danger: "#DC2626",
         "danger-soft": "#FDE8E8",
         "accent-soft": "#FFEADB",
- 
+
         // ---- Brand (logo: HOME = orange, CAREX = indigo) ----
         // Customer pages use the bare/soft names (bg-brand, bg-brand-soft) = indigo.
         // Public/Auth pages use the numbered shades (brand-400/500/600) = orange.

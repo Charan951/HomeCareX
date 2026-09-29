@@ -1,35 +1,28 @@
-// Middleware: error.middleware
-import type { ErrorRequestHandler, RequestHandler } from 'express';
-import { AppError } from '../utils/AppError';
+import type { NextFunction, Request, Response } from 'express';
+import { HttpError } from '../modules/auth/auth.types';
 
-export const notFoundMiddleware: RequestHandler = (req, _res, next) => {
-  next(new AppError(404, 'ROUTE_NOT_FOUND', `Cannot ${req.method} ${req.originalUrl}`));
+export const notFoundHandler = (req: Request, _res: Response, next: NextFunction) => {
+  next(new HttpError(404, `Route not found: ${req.method} ${req.originalUrl}`, 'NOT_FOUND'));
 };
 
-/** Single place that shapes every error response: { success:false, error:{ code, message, details? } }. */
-export const errorMiddleware: ErrorRequestHandler = (err, _req, res, next) => {
-  if (res.headersSent) return next(err);
-
-  if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      success: false,
-      error: { code: err.code, message: err.message, ...(err.details !== undefined && { details: err.details }) },
-    });
-    return;
+/** Standard error envelope. Never leaks stack traces outside development. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const errorHandler = (err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  if (err instanceof HttpError) {
+    return res.status(err.status).json({ success: false, message: err.message, code: err.code, details: err.details });
   }
-
-  // express.json() failures (malformed JSON, payload too large)
-  const status = (err as { status?: number }).status;
-  const type = (err as { type?: string }).type;
-  if (type === 'entity.parse.failed') {
-    res.status(400).json({ success: false, error: { code: 'INVALID_JSON', message: 'Request body is not valid JSON' } });
-    return;
+  // Module errors shaped like utils/AppError ({ statusCode, code, message, details }).
+  const e = err as { statusCode?: unknown; code?: unknown; message?: unknown; details?: unknown };
+  if (typeof e?.statusCode === 'number' && e.statusCode >= 400 && e.statusCode < 600 && typeof e.code === 'string') {
+    return res.status(e.statusCode).json({ success: false, message: String(e.message ?? 'Request failed'), code: e.code, details: e.details });
   }
-  if (type === 'entity.too.large' || status === 413) {
-    res.status(413).json({ success: false, error: { code: 'PAYLOAD_TOO_LARGE', message: 'Request body is too large' } });
-    return;
-  }
-
-  console.error('[error]', err);
-  res.status(500).json({ success: false, error: { code: 'INTERNAL_ERROR', message: 'Something went wrong' } });
+  console.error(err);
+  res.status(500).json({
+    success: false,
+    message: 'Something went wrong. Please try again.',
+    code: 'INTERNAL_ERROR',
+    ...(process.env.NODE_ENV === 'development' && err instanceof Error ? { stack: err.stack } : {}),
+  });
 };
+
+export const errorMiddleware = errorHandler;

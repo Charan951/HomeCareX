@@ -1,2 +1,2 @@
-# The admin reviews every change
-* @Charan951
+# Only these reviewers can approve changes. Approval from one of them is required to merge.
+* @Charan951 @Naveen3831 @Satya-sai-1304
