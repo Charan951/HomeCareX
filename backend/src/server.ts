@@ -1,9 +1,11 @@
+import 'dotenv/config'; // must run before ./app is evaluated so env-based config (CORS etc.) is picked up
 import http from 'http';
-import app from './app';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-dotenv.config();
+import app from './app';
+import { initSockets } from './sockets';
+
 const server = http.createServer(app);
+initSockets(server);
 const PORT = process.env.PORT || 5000;
 
 const connectDB = async () => {

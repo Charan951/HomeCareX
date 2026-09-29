@@ -1,62 +1,38 @@
-import { Schema, model, Types, type InferRawDocType } from 'mongoose';
-import {
-  ACTOR_ROLES,
-  BOOKING_STATUS,
-  BOOKING_STATUS_VALUES,
-  SLOT_HOLDING_STATUSES,
-} from '../modules/bookings/bookings.constants';
+import { Schema, model, type InferSchemaType } from 'mongoose';
+import { ACTOR_ROLES, BOOKING_STATUSES } from '../modules/bookings/bookings.constants';
 
-const AddressSnapshotSchema = new Schema(
+/** Money fields are INR, rounded to 2 decimals. */
+const PriceBreakdownSchema = new Schema(
   {
-    label: String,
-    contactName: String,
-    contactPhone: String,
-    line1: { type: String, required: true },
-    line2: String,
-    landmark: String,
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    pincode: { type: String, required: true },
-    location: { lat: { type: Number, required: true }, lng: { type: Number, required: true } },
-    sourceAddressId: Types.ObjectId,
+    base: { type: Number, default: 0 },
+    addOns: { type: Number, default: 0 },
+    discount: { type: Number, default: 0 },
+    convenienceFee: { type: Number, default: 0 },
+    tax: { type: Number, default: 0 },
+    total: { type: Number, default: 0 },
   },
   { _id: false },
 );
 
-const PriceLineSchema = new Schema(
+/** A job offer sent to one partner while the booking is searching_for_partner. */
+const OfferSchema = new Schema(
   {
-    kind: { type: String, enum: ['BASE', 'ADDON'], required: true },
-    refId: { type: Schema.Types.ObjectId, required: true },
-    name: { type: String, required: true },
-    unitPrice: { type: Number, required: true, min: 0 },
-    quantity: { type: Number, required: true, min: 1 },
-    amount: { type: Number, required: true, min: 0 },
+    partnerId: { type: Schema.Types.ObjectId, ref: 'Partner', required: true },
+    offeredAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, required: true },
+    response: { type: String, enum: ['pending', 'accepted', 'rejected', 'expired'], default: 'pending' },
   },
   { _id: false },
 );
 
-const PriceSnapshotSchema = new Schema(
+const StatusHistorySchema = new Schema(
   {
-    currency: { type: String, enum: ['INR'], default: 'INR' },
-    lines: { type: [PriceLineSchema], required: true },
-    subtotal: { type: Number, required: true, min: 0 },
-    discount: { type: Number, default: 0, min: 0 },
-    couponCode: String,
-    convenienceFee: { type: Number, default: 0, min: 0 },
-    total: { type: Number, required: true, min: 0 },
-    computedAt: { type: Date, required: true },
-  },
-  { _id: false },
-);
-
-const HistorySchema = new Schema(
-  {
-    from: { type: String, enum: [...BOOKING_STATUS_VALUES, null], default: null },
-    to: { type: String, enum: BOOKING_STATUS_VALUES, required: true },
+    from: { type: String, enum: [...BOOKING_STATUSES, null], default: null },
+    to: { type: String, enum: BOOKING_STATUSES, required: true },
     at: { type: Date, default: Date.now },
-    actorId: Schema.Types.ObjectId,
+    actorId: { type: String },
     actorRole: { type: String, enum: ACTOR_ROLES, required: true },
-    note: String,
+    reason: { type: String },
   },
   { _id: false },
 );
@@ -64,64 +40,43 @@ const HistorySchema = new Schema(
 const BookingSchema = new Schema(
   {
     customerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    serviceId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
-    quantity: { type: Number, required: true, min: 1 },
-    addOns: {
-      type: [
-        new Schema(
-          { addOnId: { type: Schema.Types.ObjectId, required: true }, quantity: { type: Number, required: true, min: 1 } },
-          { _id: false },
-        ),
-      ],
-      default: [],
+    /** Partner._id (not the User id). Null until a partner accepts. */
+    partnerId: { type: Schema.Types.ObjectId, ref: 'Partner', default: null, index: true },
+    categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    /** Snapshots so lists/dashboards don't need joins and stay correct if the catalog changes. */
+    serviceName: { type: String, required: true },
+    customerName: { type: String, required: true },
+    status: { type: String, enum: BOOKING_STATUSES, default: 'created', index: true },
+    statusHistory: { type: [StatusHistorySchema], default: [] },
+    scheduledAt: { type: Date, required: true, index: true },
+    address: {
+      line1: { type: String, required: true },
+      area: { type: String },
+      city: { type: String, required: true },
+      pincode: { type: String },
+      location: {
+        type: { type: String, enum: ['Point'] },
+        coordinates: { type: [Number] }, // [lng, lat]
+      },
     },
-    addressSnapshot: { type: AddressSnapshotSchema, required: true },
-    date: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
-    slot: { type: String, required: true, match: /^\d{2}:\d{2}-\d{2}:\d{2}$/ },
-    priceSnapshot: { type: PriceSnapshotSchema, required: true },
-    status: { type: String, enum: BOOKING_STATUS_VALUES, default: BOOKING_STATUS.PENDING_PAYMENT, required: true },
-    partnerId: { type: Schema.Types.ObjectId, ref: 'Partner', index: true },
-    // Hidden by default. Customer view adds it explicitly; partner/list queries never select it.
-    otp: {
-      type: new Schema({ code: String, verifiedAt: Date }, { _id: false }),
-      select: false,
+    priceBreakdown: { type: PriceBreakdownSchema, default: () => ({}) },
+    /** Partner's share after commission. Used for earnings totals. */
+    partnerEarning: { type: Number, default: 0, min: 0 },
+    offers: { type: [OfferSchema], default: [] },
+    /** Start/end verification codes; never returned to clients by default. */
+    otpCodes: {
+      start: { type: String, select: false },
+      end: { type: String, select: false },
     },
-    history: { type: [HistorySchema], default: [] },
-
-    // ---- server-internal ----
-    slotSeat: { type: Number, required: true, min: 1 },
-    idempotencyKey: { type: String, required: true },
-    requestHash: { type: String, required: true },
-    holdExpiresAt: Date,
+    startedAt: { type: Date },
+    completedAt: { type: Date, index: true },
   },
   { timestamps: true },
 );
 
-/**
- * FINAL safety net against double-booking (Redis lock is the fast path).
- * One ACTIVE booking per (service, date, slot, seat). Seats = slot capacity.
- * Releasing a seat = moving status out of SLOT_HOLDING_STATUSES.
- */
-BookingSchema.index(
-  { serviceId: 1, date: 1, slot: 1, slotSeat: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { status: { $in: SLOT_HOLDING_STATUSES } },
-    name: 'uniq_active_slot_seat',
-  },
-);
+BookingSchema.index({ partnerId: 1, scheduledAt: 1 });
+BookingSchema.index({ 'offers.partnerId': 1, status: 1 });
 
-/** Idempotency: same customer + same key = same booking. */
-BookingSchema.index({ customerId: 1, idempotencyKey: 1 }, { unique: true, name: 'uniq_customer_idem_key' });
-
-/** For the hold-expiry sweeper job. */
-BookingSchema.index(
-  { holdExpiresAt: 1 },
-  { partialFilterExpression: { status: BOOKING_STATUS.PENDING_PAYMENT }, name: 'idx_pending_hold_expiry' },
-);
-
-BookingSchema.index({ status: 1, date: 1 });
-
-export type IBooking = InferRawDocType<(typeof BookingSchema)['obj']>;
+export type Booking = InferSchemaType<typeof BookingSchema>;
 export const BookingModel = model('Booking', BookingSchema);
 export default BookingModel;
