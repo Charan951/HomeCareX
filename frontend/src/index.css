@@ -537,3 +537,18 @@ body {
   gap: 10px;
   margin-top: 20px;
 }
+/* Mobile view: hide avatars (top bar + sidebar footer) */
+@media (max-width: 1023px) {
+  .avatar {
+    display: none;
+  }
+
+  /* The avatar was the tap target for the profile menu, so keep the
+     dropdown reachable by showing the arrow on mobile too */
+  .profile-btn .desktop-only {
+    display: inline-flex;
+  }
+  .profile-btn .profile-name {
+    display: none; /* name stays desktop-only */
+  }
+}

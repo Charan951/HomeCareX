@@ -1,35 +1,25 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Banknote, CalendarCheck, HardHat, Users } from 'lucide-react';
+import { adminApi, type AdminStats } from '@/services/adminApi';
 
-// Simple KPI card data. In a real app this would come from an API call.
-const kpis = [
-  {
-    label: 'Total Bookings',
-    value: '1,284',
-    change: '+8.2% this month',
-    icon: CalendarCheck,
-  },
-  {
-    label: 'Total Customers',
-    value: '3,972',
-    change: '+4.6% this month',
-    icon: Users,
-  },
-  {
-    label: 'Active Partners',
-    value: '256',
-    change: '+2.1% this month',
-    icon: HardHat,
-  },
-  {
-    label: 'Revenue',
-    value: '₹18,42,500',
-    change: '+11.4% this month',
-    icon: Banknote,
-  },
-];
-
+// Bookings and revenue are still sample numbers. Customers and Partners are live from the API.
 export const AdminDashboardPage: React.FC = () => {
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    adminApi.getStats().then(setStats).catch(() => setError(true));
+  }, []);
+
+  const live = (n?: number) => (error ? '—' : n === undefined ? '…' : n.toLocaleString('en-IN'));
+
+  const kpis = [
+    { label: 'Total Bookings', value: '1,284', change: '+8.2% this month', icon: CalendarCheck },
+    { label: 'Total Customers', value: live(stats?.customers), change: 'Registered customers', icon: Users },
+    { label: 'Total Partners', value: live(stats?.partners), change: 'Registered partners', icon: HardHat },
+    { label: 'Revenue', value: '₹18,42,500', change: '+11.4% this month', icon: Banknote },
+  ];
+
   return (
     <div className="admin-page-container p-6">
       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
