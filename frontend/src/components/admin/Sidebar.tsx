@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronDown, LogOut, X } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useAuth } from '@/context/AuthContext';
 import { adminNavGroups, findAdminPage } from '@/config/adminNav';
 import { HomeCarexMark } from '@/components/band/Homecarexmark';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
@@ -29,6 +30,7 @@ export const Sidebar: React.FC = () => {
   const isCollapsed = storedCollapsed && isDesktop;
 
   const user = useAuthStore((s) => s.user);
+  const { logout } = useAuth();
   const displayName = (user?.name as string) ?? 'Admin';
 
   const currentPage = findAdminPage(pathname);
@@ -50,8 +52,7 @@ export const Sidebar: React.FC = () => {
   }, [isMobileMenuOpen, closeMobileMenu]);
 
   const handleSignOut = () => {
-    useAuthStore.setState({ isAuthenticated: false, user: null });
-    navigate('/login');
+    void logout().finally(() => navigate('/login', { replace: true }));
   };
 
   const className = [

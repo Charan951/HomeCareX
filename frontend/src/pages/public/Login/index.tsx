@@ -1,27 +1,65 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Home } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import type { ApiError } from '@/lib/http';
+import { ADMIN_ROLES, type AuthUser } from '@/types/auth';
+
+/** Only same-origin paths are allowed as returnUrl (blocks //evil.com, https://..., javascript:). */
+function safeReturnUrl(raw: string | null): string | null {
+  if (!raw) return null;
+  return raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/\\') ? raw : null;
+}
+
+/** A returnUrl is only honoured when it belongs to the role's own area. */
+function destinationFor(user: AuthUser, returnUrl: string | null): string {
+  const area = ADMIN_ROLES.includes(user.role) ? '/admin' : `/${user.role}`;
+  if (returnUrl && (returnUrl === area || returnUrl.startsWith(`${area}/`))) return returnUrl;
+  return user.home || area;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const LoginPage: React.FC = () => {
+  const { login, user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const returnUrl = safeReturnUrl(params.get('returnUrl'));
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(params.get('expired') ? 'Your session has expired. Please log in again.' : '');
   const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    document.title = 'Log in | HomeCareX';
+  }, []);
+
+  // Already signed in: go straight to the role's dashboard.
+  if (isAuthenticated && user && !loading) return <Navigate to={destinationFor(user, returnUrl)} replace />;
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
     setError('');
-    if (!email || !password) {
-      setError('Please fill in both fields');
+    if (!email.trim() || !password) {
+      setError('Please enter your email and password.');
+      return;
+    }
+    if (!EMAIL_RE.test(email.trim())) {
+      setError('Enter a valid email address.');
       return;
     }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const signedIn = await login({ email: email.trim(), password });
+      navigate(destinationFor(signedIn, returnUrl), { replace: true });
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setError(apiErr.message || 'Login failed. Please try again.');
       setLoading(false);
-      console.log('Login attempt (mock):', { email, password });
-      alert('Login successful (mock)');
-    }, 900);
+    }
   }
 
   return (
@@ -35,18 +73,22 @@ export const LoginPage: React.FC = () => {
       <p className="text-gray-500 mb-6">Log in to your HomeCareX account</p>
 
       {error && (
-        <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 animate-fadeUp">
+        <div role="alert" id="login-error" className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 animate-fadeUp">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate aria-describedby={error ? 'login-error' : undefined}>
         <div className="group">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
           <div className="relative">
             <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500 transition-colors" />
             <input
+              id="login-email"
               type="email"
+              name="email"
+              autoComplete="email"
+              autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
@@ -57,7 +99,7 @@ export const LoginPage: React.FC = () => {
 
         <div className="group">
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <label htmlFor="login-password" className="block text-sm font-medium text-gray-700">Password</label>
             <Link to="/forgot-password" className="text-sm text-brand-600 hover:underline">
               Forgot password?
             </Link>
@@ -65,6 +107,9 @@ export const LoginPage: React.FC = () => {
           <div className="relative">
             <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500 transition-colors" />
             <input
+              id="login-password"
+              name="password"
+              autoComplete="current-password"
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -75,7 +120,7 @@ export const LoginPage: React.FC = () => {
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              tabIndex={-1}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>

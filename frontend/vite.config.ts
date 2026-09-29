@@ -13,5 +13,9 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    // Same-origin API calls in dev, so the refresh cookie works without CORS.
+    proxy: {
+      '/api': { target: 'http://localhost:5000', changeOrigin: true },
+    },
   },
 });
