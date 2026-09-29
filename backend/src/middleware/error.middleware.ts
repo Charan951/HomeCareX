@@ -35,6 +35,11 @@ export const errorHandler = (err: unknown, _req: Request, res: Response, _next: 
   if (err instanceof mongoose.Error.CastError) {
     return send(res, 400, { success: false, message: `Invalid ${err.path}`, code: ERROR_CODES.BAD_REQUEST });
   }
+  // Module errors shaped like utils/AppError ({ statusCode, code, message, details }).
+  const e = err as { statusCode?: unknown; code?: unknown; message?: unknown; details?: unknown };
+  if (typeof e?.statusCode === 'number' && e.statusCode >= 400 && e.statusCode < 600 && typeof e.code === 'string') {
+    return res.status(e.statusCode).json({ success: false, message: String(e.message ?? 'Request failed'), code: e.code, details: e.details });
+  }
   console.error(err);
   res.status(500).json({
     success: false,
