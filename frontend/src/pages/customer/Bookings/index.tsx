@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { BOOKINGS, BookingStatus } from "../../../mocks/customerMockData";
 import { statusBadgeClass } from "../../../utils/statusBadge";
+import { customerPath } from "@/routes/customerPath";
 
 const TABS = ["Upcoming", "Live", "Completed", "Cancelled"] as const;
 type Tab = (typeof TABS)[number];
@@ -45,7 +46,7 @@ export default function Bookings() {
           {filtered.map((b) => (
             <Link
               key={b.id}
-              to={b.status === "In Progress" ? "/tracking" : `/bookings/${b.id}`}
+              to={b.status === "In Progress" ? customerPath("/tracking") : customerPath(`/bookings/${b.id}`)}
               className="block bg-panel border border-line rounded p-4 hover:border-brand transition-colors"
             >
               <div className="flex items-start justify-between gap-2">

@@ -36,9 +36,5 @@ Thumbs.db
 docs/
 *.pdf
 MEMORY.md
-member_issues/
-admin_dashboard.md
-Customer Dashboard.md
-partnerdashboard.md
-public_pages.md
-CONTRIBUTING.md
+
+package.json
