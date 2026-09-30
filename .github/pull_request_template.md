@@ -1,6 +1,8 @@
 ## What does this PR do?
 <!-- One or two lines -->
 
+<!-- REQUIRED: put the issue number after # (one line per day-issue), e.g. "Closes #34".
+     "(#34)" in the title does NOT close the issue - only "Closes #34" in this body does. -->
 Closes #
 
 ## Type

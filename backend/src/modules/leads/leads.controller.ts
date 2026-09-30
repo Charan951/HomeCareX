@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 
+import { HttpError } from '../auth/auth.types';
 import { LeadsService } from './leads.service';
 
 export class LeadsController {
@@ -10,6 +11,10 @@ export class LeadsController {
       const result = await this.leadsService.createLead(req.body);
       res.status(201).json(result);
     } catch (error) {
+      if (error instanceof HttpError) {
+        next(error);
+        return;
+      }
       const message = error instanceof Error ? error.message : 'Invalid lead data';
 
       if (message.toLowerCase().includes('too many requests') || message === 'Too many requests') {

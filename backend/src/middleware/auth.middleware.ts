@@ -1,46 +1,58 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import { authService } from '../modules/auth/auth.service';
+import { AppError } from '../utils/AppError';
+import type { UserRole } from '../models/User';
 
-export type AuthenticatedUser = {
+export const USER_ROLES: readonly UserRole[] = ['customer', 'partner', 'admin'];
+
+export interface AuthUser {
   id: string;
-  email?: string;
-  role: 'CUSTOMER' | 'PARTNER' | 'ADMIN';
-};
+  role: UserRole;
+}
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: AuthenticatedUser;
-    }
+// Extend Express Request to include our custom user object
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: AuthUser;
   }
 }
 
-const isAuthenticatedRole = (role: string | undefined): role is AuthenticatedUser['role'] =>
-  role === 'CUSTOMER' || role === 'PARTNER' || role === 'ADMIN';
+/**
+ * Requires `Authorization: Bearer <access token>`.
+ * Verifies the token using authService and sets `req.user` and `res.locals.auth`.
+ */
+export const authMiddleware: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
+  const header = req.headers.authorization;
+  const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
 
-const attachDevelopmentUser = (req: Request): void => {
-  if (process.env.NODE_ENV !== 'development' || req.user) return;
+  if (!token) {
+    return next(new AppError(401, 'UNAUTHENTICATED', 'Authentication token is missing'));
+  }
 
-  const id = req.get('x-dev-user-id');
-  const role = req.get('x-dev-user-role');
-  const email = req.get('x-dev-user-email');
-
-  if (id && isAuthenticatedRole(role)) {
-    req.user = { id, role, ...(email ? { email } : {}) };
+  try {
+    const payload = authService.verifyAccessToken(token);
+    
+    // Attach to both locals (for views/downstream) and req.user (for type-safe handlers)
+    res.locals.auth = payload;
+    req.user = { id: payload.sub, role: payload.role as UserRole };
+    
+    return next();
+  } catch (err) {
+    // Let the global error handler catch token expiration or invalid signature errors thrown by authService
+    return next(err);
   }
 };
 
-export const authenticate = (req: Request, res: Response, next: NextFunction): void => {
-  attachDevelopmentUser(req);
-
+/** 
+ * Returns the authenticated user or throws 401.
+ * Use this inside controllers that sit behind `authMiddleware` to guarantee type safety. 
+ */
+export function getAuthUser(req: Request): AuthUser {
   if (!req.user) {
-    res.status(401).json({
-      success: false,
-      message: 'Authentication required.',
-    });
-    return;
+    throw new AppError(401, 'UNAUTHENTICATED', 'Authentication is required');
   }
+  return req.user;
+}
 
-  next();
-};
-
-export const authMiddleware = authenticate;
+/** Alias kept for routes that import `authenticate` (partner, availability modules). */
+export const authenticate = authMiddleware;

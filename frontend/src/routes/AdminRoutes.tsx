@@ -1,63 +1,41 @@
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import AdminLayout from '@/layouts/AdminLayout';
+import { RequirePermission } from '@/components/admin/PermissionGate';
 
 import AdminDashboardPage from '@/pages/admin/Dashboard';
-import AdminProfilePage from '@/pages/admin/Profile';
-import AdminReportsPage from '@/pages/admin/Reports';
 import AdminBookingsPage from '@/pages/admin/Bookings';
 import AdminCustomersPage from '@/pages/admin/Customers';
 import AdminPartnersPage from '@/pages/admin/Partners';
+import AdminManagePartnersPage from '@/pages/admin/ManagePartners';
+import AdminSupportPage from '@/pages/admin/Support';
 import AdminCategoriesPage from '@/pages/admin/Categories';
 import AdminServicesPage from '@/pages/admin/Services';
 import AdminPricingPage from '@/pages/admin/Pricing';
 import AdminCouponsPage from '@/pages/admin/Coupons';
 import AdminMarketingPage from '@/pages/admin/Marketing';
 import AdminPaymentsPage from '@/pages/admin/Payments';
-import AdminPayoutsPage from '@/pages/admin/Payouts';
 import AdminRefundsPage from '@/pages/admin/Refunds';
-import AdminSupportPage from '@/pages/admin/Support';
+import AdminPayoutsPage from '@/pages/admin/Payouts';
+import AdminReviewsPage from '@/pages/admin/Reviews';
+import AdminReportsPage from '@/pages/admin/Reports';
 import AdminRolesPermissionsPage from '@/pages/admin/RolesPermissions';
+import AdminStaffPage from '@/pages/admin/Staff';
 import AdminAuditLogsPage from '@/pages/admin/AuditLogs';
 import AdminSettingsPage from '@/pages/admin/Settings';
-<<<<<<< Updated upstream
-=======
 import AdminProfilePage from '@/pages/admin/Profile';
 import AdminNotificationsPage from '@/pages/admin/Notifications';
-import AdminLeadsPage from '@/pages/admin/Leads';
->>>>>>> Stashed changes
+import AdminPartnerDetailsPage from '@/pages/admin/PartnerDetails';
 
-export const AdminRoutes: React.FC = () => {
-  return (
-    <Routes>
-      <Route element={<AdminLayout />}>
-        <Route index element={<AdminDashboardPage />} />
-        <Route path="profile" element={<AdminProfilePage />} />
-        <Route path="reports" element={<AdminReportsPage />} />
-        <Route path="bookings" element={<AdminBookingsPage />} />
-        <Route path="customers" element={<AdminCustomersPage />} />
-        <Route path="partners" element={<AdminPartnersPage />} />
-        <Route path="categories" element={<AdminCategoriesPage />} />
-        <Route path="services" element={<AdminServicesPage />} />
-        <Route path="pricing" element={<AdminPricingPage />} />
-        <Route path="coupons" element={<AdminCouponsPage />} />
-        <Route path="marketing" element={<AdminMarketingPage />} />
-        <Route path="payments" element={<AdminPaymentsPage />} />
-        <Route path="payouts" element={<AdminPayoutsPage />} />
-        <Route path="refunds" element={<AdminRefundsPage />} />
-        <Route path="support" element={<AdminSupportPage />} />
-        <Route path="roles-permissions" element={<AdminRolesPermissionsPage />} />
-        <Route path="audit-logs" element={<AdminAuditLogsPage />} />
-        <Route path="settings" element={<AdminSettingsPage />} />
-        <Route path="*" element={<h1 className="p-6 text-xl font-bold">Page not found</h1>} />
-      </Route>
-    </Routes>
-  );
-};
 
-<<<<<<< Updated upstream
-export default AdminRoutes;
-=======
+interface AdminRoute {
+  /** Relative to /admin. Empty string is the index route. */
+  path: string;
+  element: React.ReactElement;
+  /** Permission key. Leave out until RBAC is wired; the route then stays open. */
+  permission?: string;
+}
+
 // 21 routes. To swap a placeholder for a real page, change only its `element` import.
 export const adminRoutes: AdminRoute[] = [
   { path: '', element: <AdminDashboardPage /> },
@@ -65,8 +43,9 @@ export const adminRoutes: AdminRoute[] = [
   { path: 'bookings', element: <AdminBookingsPage /> },
   { path: 'customers', element: <AdminCustomersPage /> },
   { path: 'partners', element: <AdminPartnersPage /> },
+  { path: 'manage-partners', element: <AdminManagePartnersPage /> },
+  { path: 'partners/:id', element: <AdminPartnerDetailsPage /> },
   { path: 'support', element: <AdminSupportPage /> },
-  { path: 'leads', element: <AdminLeadsPage />, permission: 'leads:read' },
   // Catalog
   { path: 'categories', element: <AdminCategoriesPage /> },
   { path: 'services', element: <AdminServicesPage /> },
@@ -114,4 +93,3 @@ export const AdminRoutes: React.FC = () => (
 );
 
 export default AdminRoutes;
->>>>>>> Stashed changes
