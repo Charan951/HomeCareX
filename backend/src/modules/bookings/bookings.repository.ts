@@ -1,24 +1,48 @@
 import { Types } from 'mongoose';
 import { BookingModel, type IBooking } from '../../models/Booking';
-import { SLOT_HOLDING_STATUSES } from './bookings.constants';
+import { BOOKING_STATUS, SLOT_HOLDING_STATUSES } from './bookings.constants';
 
 export class BookingsRepository {
   /** Active (slot-holding) bookings for a service/date/slot, used to compute remaining seats. */
-  countActiveForSlot(serviceId: string, date: string, slot: string): Promise<number> {
+  countActiveForSlot(serviceId: string, date: string, slot: string, now: Date = new Date()): Promise<number> {
     return BookingModel.countDocuments({
       serviceId: new Types.ObjectId(serviceId),
       date,
       slot,
       status: { $in: SLOT_HOLDING_STATUSES },
+      $nor: [{ status: BOOKING_STATUS.PENDING_PAYMENT, holdExpiresAt: { $lte: now } }],
     }).exec();
+  }
+
+  /** Cancels lapsed PENDING_PAYMENT holds for one slot so their seats are freed. */
+  releaseStaleHolds(serviceId: string, date: string, slot: string, now: Date = new Date()): Promise<unknown> {
+    return BookingModel.updateMany(
+      {
+        serviceId: new Types.ObjectId(serviceId),
+        date,
+        slot,
+        status: BOOKING_STATUS.PENDING_PAYMENT,
+        holdExpiresAt: { $lte: now },
+      },
+      {
+        $set: { status: BOOKING_STATUS.CANCELLED },
+        $push: {
+          history: {
+            from: BOOKING_STATUS.PENDING_PAYMENT,
+            to: BOOKING_STATUS.CANCELLED,
+            at: now,
+            actorRole: 'system',
+            note: 'Payment hold expired',
+          },
+        },
+      }
+    ).exec();
   }
 
   findByCustomerAndIdempotencyKey(customerId: string, idempotencyKey: string): Promise<IBooking | null> {
     return BookingModel.findOne({ customerId: new Types.ObjectId(customerId), idempotencyKey }).exec();
   }
 
-  /** Next free seat number (1..capacity) for (service, date, slot), or null if full. Caller must
-   *  hold the Redis lock (or accept the unique-index race, which this call ultimately relies on). */
   async findFreeSeat(serviceId: string, date: string, slot: string, capacity: number): Promise<number | null> {
     const taken = await BookingModel.find({
       serviceId: new Types.ObjectId(serviceId),
@@ -48,6 +72,13 @@ export class BookingsRepository {
   findByIdForCustomer(id: string, customerId: string): Promise<IBooking | null> {
     if (!Types.ObjectId.isValid(id)) return Promise.resolve(null);
     return BookingModel.findOne({ _id: id, customerId: new Types.ObjectId(customerId) }).exec();
+  }
+
+  /** Return all bookings for a customer sorted by creation time */
+  listForCustomer(customerId: string): Promise<IBooking[]> {
+    return BookingModel.find({ customerId: new Types.ObjectId(customerId) })
+      .sort({ createdAt: -1 })
+      .exec();
   }
 }
 

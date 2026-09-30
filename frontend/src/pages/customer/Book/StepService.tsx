@@ -52,7 +52,11 @@ export default function StepService({ serviceSlug }: { serviceSlug?: string }) {
   useEffect(() => {
     if (!service || service.id !== draftServiceId) return;
     setQuantity(draftQuantity || 1);
-    setSelectedAddOns(new Map(draftAddOns.map((a) => [a.id, { id: a.id, name: "", price: a.price }])));
+    setSelectedAddOns(
+      new Map(
+        draftAddOns.map((a) => [a.id, service.addOns.find((o) => o.id === a.id) ?? { id: a.id, name: a.name ?? "Add-on", price: a.price }]),
+      ),
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once, when the matching service loads
   }, [service]);
 
@@ -79,7 +83,8 @@ export default function StepService({ serviceSlug }: { serviceSlug?: string }) {
       service.slug,
       service.basePrice,
       quantity,
-      [...selectedAddOns.values()].map((a) => ({ id: a.id, quantity: 1, price: a.price })),
+      [...selectedAddOns.values()].map((a) => ({ id: a.id, quantity: 1, price: a.price, name: a.name })),
+      service.name,
     );
   };
 
@@ -97,7 +102,7 @@ export default function StepService({ serviceSlug }: { serviceSlug?: string }) {
   return (
     <div className="space-y-6">
       <div className="border-b border-line pb-4">
-        <h1 className="text-xl font-semibold text-ink">{service.name}</h1>
+        <h3 className="text-xl font-semibold text-ink">{service.name}</h3>
         <p className="mt-1 text-sm text-muted">Base price: ₹{service.basePrice} per unit</p>
       </div>
 

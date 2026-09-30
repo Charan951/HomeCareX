@@ -1,4 +1,4 @@
-import { Component, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 import { ErrorState } from "./StateViews";
 
 interface Props {
@@ -19,7 +19,7 @@ export default class RouteErrorBoundary extends Component<Props, State> {
     return { error };
   }
 
-  componentDidCatch(): void {
+  componentDidCatch(_error: Error, _info: ErrorInfo): void {
     // Hook for Sentry (TRD §16) — intentionally no console logging.
   }
 
@@ -33,6 +33,7 @@ export default class RouteErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return <ErrorState onRetry={() => this.setState({ error: null })} />;
     }
+
     return this.props.children;
   }
 }

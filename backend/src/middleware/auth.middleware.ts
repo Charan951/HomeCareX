@@ -1,10 +1,8 @@
-// Middleware: auth.middleware
-import type { RequestHandler, Request } from 'express';
-import jwt from 'jsonwebtoken';
-import { environmentConfig } from '../config/environment';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import { authService } from '../modules/auth/auth.service';
 import { AppError } from '../utils/AppError';
+import type { UserRole } from '../models/User';
 
-export type UserRole = 'customer' | 'partner' | 'admin';
 export const USER_ROLES: readonly UserRole[] = ['customer', 'partner', 'admin'];
 
 export interface AuthUser {
@@ -12,48 +10,46 @@ export interface AuthUser {
   role: UserRole;
 }
 
+// Extend Express Request to include our custom user object
 declare module 'express-serve-static-core' {
   interface Request {
     user?: AuthUser;
   }
 }
 
-const isRole = (value: unknown): value is UserRole => USER_ROLES.includes(value as UserRole);
-
 /**
- * Verifies `Authorization: Bearer <jwt>` and sets `req.user`.
- * Token contract (until the auth module publishes its own): HS256, `sub` = user id, `role` = customer|partner|admin.
- * `id` / `userId` are accepted as fallbacks for the subject.
+ * Requires `Authorization: Bearer <access token>`.
+ * Verifies the token using authService and sets `req.user` and `res.locals.auth`.
  */
-export const authMiddleware: RequestHandler = (req, _res, next) => {
-  const secret = environmentConfig.jwtSecret;
-  if (!secret) {
-    return next(new AppError(500, 'SERVER_MISCONFIGURED', 'Authentication is not configured'));
-  }
-
+export const authMiddleware: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
   const header = req.headers.authorization;
-  const [scheme, token] = header ? header.split(' ') : [];
-  if (scheme?.toLowerCase() !== 'bearer' || !token) {
+  const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
+
+  if (!token) {
     return next(new AppError(401, 'UNAUTHENTICATED', 'Authentication token is missing'));
   }
 
   try {
-    const payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
-    if (typeof payload === 'string') throw new Error('unexpected payload');
-    const id = payload.sub ?? payload.id ?? payload.userId;
-    if (typeof id !== 'string' || !id || !isRole(payload.role)) throw new Error('invalid claims');
-    req.user = { id, role: payload.role };
+    const payload = authService.verifyAccessToken(token);
+    
+    // Attach to both locals (for views/downstream) and req.user (for type-safe handlers)
+    res.locals.auth = payload;
+    req.user = { id: payload.sub, role: payload.role as UserRole };
+    
     return next();
   } catch (err) {
-    if (err instanceof jwt.TokenExpiredError) {
-      return next(new AppError(401, 'TOKEN_EXPIRED', 'Your session has expired. Please sign in again'));
-    }
-    return next(new AppError(401, 'UNAUTHENTICATED', 'Authentication token is invalid'));
+    // Let the global error handler catch token expiration or invalid signature errors thrown by authService
+    return next(err);
   }
 };
 
-/** Returns the authenticated user or throws 401 (use inside handlers behind authMiddleware). */
+/** 
+ * Returns the authenticated user or throws 401.
+ * Use this inside controllers that sit behind `authMiddleware` to guarantee type safety. 
+ */
 export function getAuthUser(req: Request): AuthUser {
-  if (!req.user) throw new AppError(401, 'UNAUTHENTICATED', 'Authentication is required');
+  if (!req.user) {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Authentication is required');
+  }
   return req.user;
 }

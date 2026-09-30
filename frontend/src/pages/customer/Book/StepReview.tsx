@@ -5,14 +5,16 @@ import { FOCUS_RING } from "@/components/customer/focusRing";
 import { customerPath } from "@/routes/customerPath";
 import { bookingApi, type NormalizedApiError } from "@/services/bookingApi";
 import type { CreateBookingRequest } from "@/types/booking";
+import { formatSlotLabel } from "./components/SlotPicker";
 
 const CONVENIENCE_FEE = 29;
 
 const ERROR_TO_STEP: Record<string, number> = {
   SERVICE_NOT_FOUND: 1,
   ADDRESS_NOT_SERVICEABLE: 2,
-  ADDRESS_LOOKUP_UNAVAILABLE: 2,
+  ADDRESS_NOT_FOUND: 2,
   SLOT_UNAVAILABLE: 3,
+  INVALID_DATE: 3,
 };
 
 export default function StepReview() {
@@ -36,13 +38,13 @@ export default function StepReview() {
   const estimatedTotal = subtotal + CONVENIENCE_FEE;
 
   const canSubmit = useMemo(
-    () => Boolean(draft.serviceId && draft.addressSnapshot && draft.date && draft.slot),
-    [draft.serviceId, draft.addressSnapshot, draft.date, draft.slot],
+    () => Boolean(draft.serviceId && draft.addressId && draft.date && draft.slot),
+    [draft.serviceId, draft.addressId, draft.date, draft.slot],
   );
 
   const handlePay = async () => {
     if (!canSubmit || inFlight.current) return; 
-    if (!draft.serviceId || !draft.addressSnapshot || !draft.date || !draft.slot) return;
+    if (!draft.serviceId || !draft.addressId || !draft.date || !draft.slot) return;
 
     inFlight.current = true;
     setIsSubmitting(true);
@@ -50,28 +52,35 @@ export default function StepReview() {
 
     const payload: CreateBookingRequest = {
       serviceId: draft.serviceId,
-      quantity: draft.quantity,
-      addOns: draft.addOns.map((a) => ({ addOnId: a.id, quantity: a.quantity })),
-      newAddress: draft.addressSnapshot,
+      addressId: draft.addressId,
       date: draft.date,
       slot: draft.slot,
-      couponCode: couponInput.trim() || undefined,
+      quantity: draft.quantity,
+      addOns: draft.addOns.map((a) => ({ addOnId: a.id, quantity: a.quantity })),
       expectedTotal: estimatedTotal,
+      ...(couponInput.trim() ? { couponCode: couponInput.trim() } : {}),
     };
 
     try {
       const { booking } = await bookingApi.createBooking(payload, idempotencyKey);
-      draft.clearDraft();
-      navigate(customerPath(`/bookings/${booking._id}`));
+      // Leave the wizard FIRST. Clearing the draft while it is still mounted makes its step guard
+      // fall back to step 1 and rewrite the URL, cancelling this navigation (React Router's
+      // startTransition defers navigate(); the store update does not). The confirmation page
+      // clears the draft once the wizard is gone. `replace` keeps Back from re-opening step 4.
+      navigate(customerPath(`/bookings/${booking._id}`), { state: { justBooked: true }, replace: true });
     } catch (err) {
       inFlight.current = false; 
       const apiErr = err as NormalizedApiError;
+      
       setError(apiErr);
       setIsSubmitting(false);
 
       const backStep = ERROR_TO_STEP[apiErr.code];
       if (backStep) draft.setStep(backStep);
-      if (apiErr.code === "PRICE_CHANGED") setIdempotencyKey(crypto.randomUUID());
+      
+      if (apiErr.code === "PRICE_CHANGED") {
+        setIdempotencyKey(crypto.randomUUID());
+      }
     }
   };
 
@@ -86,7 +95,7 @@ export default function StepReview() {
   return (
     <div className="space-y-6">
       <div className="border-b border-line pb-4">
-        <h1 className="text-xl font-semibold text-ink">Review &amp; Pay</h1>
+        <h3 className="text-xl font-semibold text-ink">Review &amp; Pay</h3>
         <p className="mt-1 text-sm text-muted">Double-check everything before you confirm.</p>
       </div>
 
@@ -97,14 +106,14 @@ export default function StepReview() {
       )}
 
       <section className="space-y-2 rounded border border-line bg-panel p-4">
-        <h2 className="text-sm font-semibold text-ink">Service</h2>
+        <h4 className="text-sm font-semibold text-ink">{draft.serviceName ?? "Service"}</h4>
         <div className="flex justify-between text-sm text-ink">
           <span>Base price × {draft.quantity}</span>
           <span>₹{draft.basePrice * draft.quantity}</span>
         </div>
         {draft.addOns.map((a) => (
           <div key={a.id} className="flex justify-between text-sm text-muted">
-            <span>Add-on</span>
+            <span>{a.name ?? "Add-on"}</span>
             <span>+₹{a.price}</span>
           </div>
         ))}
@@ -115,7 +124,7 @@ export default function StepReview() {
       </section>
 
       <section className="space-y-1 rounded border border-line bg-panel p-4">
-        <h2 className="text-sm font-semibold text-ink">Address</h2>
+        <h4 className="text-sm font-semibold text-ink">Address</h4>
         <p className="text-sm text-muted">
           {draft.addressSnapshot?.line1}, {draft.addressSnapshot?.city}, {draft.addressSnapshot?.state} —{" "}
           {draft.addressSnapshot?.pincode}
@@ -123,9 +132,9 @@ export default function StepReview() {
       </section>
 
       <section className="space-y-1 rounded border border-line bg-panel p-4">
-        <h2 className="text-sm font-semibold text-ink">Date &amp; Time</h2>
+        <h4 className="text-sm font-semibold text-ink">Date &amp; Time</h4>
         <p className="text-sm text-muted">
-          {draft.date} · {draft.slot}
+          {draft.date} · {formatSlotLabel(draft.slot ?? "")}
         </p>
       </section>
 
@@ -140,7 +149,6 @@ export default function StepReview() {
         />
       </section>
 
-      {/* UPDATED: Added Back Button logic inside the payment block */}
       <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded border border-brand bg-panel p-4">
         <button
           type="button"

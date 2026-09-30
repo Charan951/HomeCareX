@@ -1,20 +1,33 @@
-export type UserRole = "customer" | "partner" | "admin";
-
+export type UserRole = "admin" | "customer" | "partner";
+ 
+export const ADMIN_ROLES: UserRole[] = ["admin"];
+ 
 /** 'expired' = a previously valid session ended (401 / refresh failed). */
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "expired";
-
+ 
 export interface AuthUser {
   id: string;
   name: string;
   email?: string;
   phone?: string;
   role: UserRole;
+  /** resource:action keys; ['*'] for admin. */
+  permissions: string[];
+  /** Landing route for the role: /customer, /partner or /admin. */
+  home: string;
 }
-
+ 
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+ 
 export interface AuthContextValue {
   user: AuthUser | null;
   status: AuthStatus;
   isAuthenticated: boolean;
-  /** Shared logout — clears the session. Customer UI must call this only. */
+  /** Signs in and returns the user so the caller can redirect by role. */
+  login: (input: LoginInput) => Promise<AuthUser>;
+  /** Shared logout: ends the session on the server and clears local state. */
   logout: () => Promise<void>;
 }

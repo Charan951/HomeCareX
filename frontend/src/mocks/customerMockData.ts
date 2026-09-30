@@ -24,6 +24,8 @@ export const CATEGORIES: Category[] = [
 
 export interface Service {
   id: string;
+  /** Booking slug: matches /customer/book/:serviceSlug and the backend service catalog. */
+  slug: string;
   categoryId: string;
   name: string;
   price: number;
@@ -33,15 +35,15 @@ export interface Service {
 }
 
 export const SERVICES: Service[] = [
-  { id: "svc-1", categoryId: "cleaning", name: "Deep Home Cleaning", price: 1499, duration: "3 hrs", rating: 4.8, reviewCount: 2140 },
-  { id: "svc-2", categoryId: "cleaning", name: "Sofa & Carpet Shampooing", price: 899, duration: "1.5 hrs", rating: 4.7, reviewCount: 980 },
-  { id: "svc-3", categoryId: "appliance", name: "AC Service & Gas Refill", price: 599, duration: "1 hr", rating: 4.6, reviewCount: 3210 },
-  { id: "svc-4", categoryId: "appliance", name: "RO/Water Purifier Service", price: 399, duration: "45 min", rating: 4.5, reviewCount: 1120 },
-  { id: "svc-5", categoryId: "salon", name: "At-Home Spa for Women", price: 1299, duration: "2 hrs", rating: 4.9, reviewCount: 1560 },
-  { id: "svc-6", categoryId: "electrical", name: "Electrician Visit (General)", price: 249, duration: "30 min", rating: 4.4, reviewCount: 870 },
-  { id: "svc-7", categoryId: "painting", name: "Room Painting (per room)", price: 3499, duration: "1 day", rating: 4.6, reviewCount: 430 },
-  { id: "svc-8", categoryId: "pest", name: "General Pest Control", price: 799, duration: "1 hr", rating: 4.5, reviewCount: 1980 },
-  { id: "svc-9", categoryId: "carpentry", name: "Furniture Assembly", price: 349, duration: "1 hr", rating: 4.7, reviewCount: 640 },
+  { id: "svc-1", slug: "deep-home-cleaning", categoryId: "cleaning", name: "Deep Home Cleaning", price: 1499, duration: "3 hrs", rating: 4.8, reviewCount: 2140 },
+  { id: "svc-2", slug: "sofa-carpet-shampooing", categoryId: "cleaning", name: "Sofa & Carpet Shampooing", price: 899, duration: "1.5 hrs", rating: 4.7, reviewCount: 980 },
+  { id: "svc-3", slug: "ac-service-gas-refill", categoryId: "appliance", name: "AC Service & Gas Refill", price: 599, duration: "1 hr", rating: 4.6, reviewCount: 3210 },
+  { id: "svc-4", slug: "ro-water-purifier-service", categoryId: "appliance", name: "RO/Water Purifier Service", price: 399, duration: "45 min", rating: 4.5, reviewCount: 1120 },
+  { id: "svc-5", slug: "at-home-spa-women", categoryId: "salon", name: "At-Home Spa for Women", price: 1299, duration: "2 hrs", rating: 4.9, reviewCount: 1560 },
+  { id: "svc-6", slug: "electrician-visit-general", categoryId: "electrical", name: "Electrician Visit (General)", price: 249, duration: "30 min", rating: 4.4, reviewCount: 870 },
+  { id: "svc-7", slug: "room-painting", categoryId: "painting", name: "Room Painting (per room)", price: 3499, duration: "1 day", rating: 4.6, reviewCount: 430 },
+  { id: "svc-8", slug: "general-pest-control", categoryId: "pest", name: "General Pest Control", price: 799, duration: "1 hr", rating: 4.5, reviewCount: 1980 },
+  { id: "svc-9", slug: "furniture-assembly", categoryId: "carpentry", name: "Furniture Assembly", price: 349, duration: "1 hr", rating: 4.7, reviewCount: 640 },
 ];
 
 export type BookingStatus =

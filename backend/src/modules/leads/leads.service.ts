@@ -1,0 +1,50 @@
+import { LeadModel } from './leads.model';
+import { publicLeadSchema } from './leads.validation';
+
+export type PublicLeadInput = {
+  name: string;
+  email?: string;
+  phone: string;
+  city: string;
+  message?: string;
+  skills?: string;
+  source: 'contact' | 'partner';
+  honeypot?: string;
+};
+
+export class LeadsService {
+  async createLead(input: PublicLeadInput) {
+    if (input.honeypot && input.honeypot.trim().length > 0) {
+      return { success: true, message: 'Lead submitted successfully' };
+    }
+
+    const parsed = publicLeadSchema.safeParse({
+      ...input,
+      source: input.source,
+    });
+
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      const message = issue?.message ?? 'Invalid lead data';
+      throw new Error(message);
+    }
+
+    const leadData = {
+      name: parsed.data.name,
+      email: parsed.data.source === 'contact' ? parsed.data.email : undefined,
+      phone: parsed.data.phone.replace(/[\s()-]/g, ''),
+      city: parsed.data.city,
+      message: parsed.data.source === 'contact' ? parsed.data.message : undefined,
+      skills: parsed.data.source === 'partner' ? parsed.data.skills : undefined,
+      source: parsed.data.source,
+      status: 'new',
+    };
+
+    await LeadModel.create(leadData);
+
+    return {
+      success: true,
+      message: 'Lead submitted successfully',
+    };
+  }
+}

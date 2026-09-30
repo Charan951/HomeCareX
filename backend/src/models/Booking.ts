@@ -1,127 +1,106 @@
-import { Schema, model, Types, type InferRawDocType } from 'mongoose';
-import {
-  ACTOR_ROLES,
-  BOOKING_STATUS,
-  BOOKING_STATUS_VALUES,
-  SLOT_HOLDING_STATUSES,
-} from '../modules/bookings/bookings.constants';
+import { Schema, model, type Document, Types } from 'mongoose';
 
-const AddressSnapshotSchema = new Schema(
-  {
-    label: String,
-    contactName: String,
-    contactPhone: String,
-    line1: { type: String, required: true },
-    line2: String,
-    landmark: String,
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    pincode: { type: String, required: true },
-    location: { lat: { type: Number, required: true }, lng: { type: Number, required: true } },
-    sourceAddressId: Types.ObjectId,
-  },
-  { _id: false },
-);
+export const BOOKING_PAYMENT_STATUS = {
+  PENDING: 'PENDING',
+  PAID: 'PAID',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED',
+} as const;
+export type BookingPaymentStatus = (typeof BOOKING_PAYMENT_STATUS)[keyof typeof BOOKING_PAYMENT_STATUS];
 
-const PriceLineSchema = new Schema(
-  {
-    kind: { type: String, enum: ['BASE', 'ADDON'], required: true },
-    refId: { type: Schema.Types.ObjectId, required: true },
-    name: { type: String, required: true },
-    unitPrice: { type: Number, required: true, min: 0 },
-    quantity: { type: Number, required: true, min: 1 },
-    amount: { type: Number, required: true, min: 0 },
-  },
-  { _id: false },
-);
+export interface IBooking extends Document {
+  customerId: Types.ObjectId;
+  serviceId: Types.ObjectId;
+  quantity: number;
+  addOns: Array<{ addOnId: Types.ObjectId; quantity: number }>;
+  addressSnapshot: {
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    pincode: string;
+    location?: { lat: number; lng: number };
+    sourceAddressId?: Types.ObjectId;
+  };
+  date: string;
+  slot: string;
+  priceSnapshot: {
+    currency: string;
+    lines: Array<{
+      kind: 'BASE' | 'ADDON';
+      refId: Types.ObjectId;
+      name: string;
+      unitPrice: number;
+      quantity: number;
+      amount: number;
+    }>;
+    subtotal: number;
+    discount: number;
+    convenienceFee: number;
+    total: number;
+    computedAt: Date;
+  };
+  status: string;
+  paymentStatus: BookingPaymentStatus;
+  history: Array<{
+    from: string | null;
+    to: string;
+    at: Date;
+    actorId?: Types.ObjectId;
+    actorRole: string;
+    note?: string;
+  }>;
+  slotSeat: number;
+  idempotencyKey?: string;
+  requestHash?: string;
+  holdExpiresAt?: Date;
+  partnerId?: Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-const PriceSnapshotSchema = new Schema(
-  {
-    currency: { type: String, enum: ['INR'], default: 'INR' },
-    lines: { type: [PriceLineSchema], required: true },
-    subtotal: { type: Number, required: true, min: 0 },
-    discount: { type: Number, default: 0, min: 0 },
-    couponCode: String,
-    convenienceFee: { type: Number, default: 0, min: 0 },
-    total: { type: Number, required: true, min: 0 },
-    computedAt: { type: Date, required: true },
-  },
-  { _id: false },
-);
-
-const HistorySchema = new Schema(
-  {
-    from: { type: String, enum: [...BOOKING_STATUS_VALUES, null], default: null },
-    to: { type: String, enum: BOOKING_STATUS_VALUES, required: true },
-    at: { type: Date, default: Date.now },
-    actorId: Schema.Types.ObjectId,
-    actorRole: { type: String, enum: ACTOR_ROLES, required: true },
-    note: String,
-  },
-  { _id: false },
-);
-
-const BookingSchema = new Schema(
+const bookingSchema = new Schema<IBooking>(
   {
     customerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    serviceId: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
-    quantity: { type: Number, required: true, min: 1 },
-    addOns: {
-      type: [
-        new Schema(
-          { addOnId: { type: Schema.Types.ObjectId, required: true }, quantity: { type: Number, required: true, min: 1 } },
-          { _id: false },
-        ),
-      ],
-      default: [],
+    serviceId: { type: Schema.Types.ObjectId, required: true },
+    quantity: { type: Number, required: true, default: 1 },
+    addOns: [
+      {
+        addOnId: { type: Schema.Types.ObjectId, required: true },
+        quantity: { type: Number, required: true, default: 1 },
+      },
+    ],
+    addressSnapshot: { type: Schema.Types.Mixed, required: true },
+    date: { type: String, required: true, index: true },
+    slot: { type: String, required: true, index: true },
+    priceSnapshot: { type: Schema.Types.Mixed, required: true },
+    status: { type: String, required: true, index: true },
+    paymentStatus: {
+      type: String,
+      enum: Object.values(BOOKING_PAYMENT_STATUS),
+      default: BOOKING_PAYMENT_STATUS.PENDING,
+      index: true,
     },
-    addressSnapshot: { type: AddressSnapshotSchema, required: true },
-    date: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
-    slot: { type: String, required: true, match: /^\d{2}:\d{2}-\d{2}:\d{2}$/ },
-    priceSnapshot: { type: PriceSnapshotSchema, required: true },
-    status: { type: String, enum: BOOKING_STATUS_VALUES, default: BOOKING_STATUS.PENDING_PAYMENT, required: true },
-    partnerId: { type: Schema.Types.ObjectId, ref: 'Partner', index: true },
-    // Hidden by default. Customer view adds it explicitly; partner/list queries never select it.
-    otp: {
-      type: new Schema({ code: String, verifiedAt: Date }, { _id: false }),
-      select: false,
-    },
-    history: { type: [HistorySchema], default: [] },
-
-    // ---- server-internal ----
-    slotSeat: { type: Number, required: true, min: 1 },
-    idempotencyKey: { type: String, required: true },
-    requestHash: { type: String, required: true },
-    holdExpiresAt: Date,
+    history: [
+      {
+        from: { type: String, default: null },
+        to: { type: String, required: true },
+        at: { type: Date, default: Date.now },
+        actorId: { type: Schema.Types.ObjectId },
+        actorRole: { type: String, required: true },
+        note: { type: String },
+      },
+    ],
+    slotSeat: { type: Number, required: true },
+    idempotencyKey: { type: String, index: true },
+    requestHash: { type: String },
+    holdExpiresAt: { type: Date },
+    partnerId: { type: Schema.Types.ObjectId, ref: 'Partner' },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-/**
- * FINAL safety net against double-booking (Redis lock is the fast path).
- * One ACTIVE booking per (service, date, slot, seat). Seats = slot capacity.
- * Releasing a seat = moving status out of SLOT_HOLDING_STATUSES.
- */
-BookingSchema.index(
-  { serviceId: 1, date: 1, slot: 1, slotSeat: 1 },
-  {
-    unique: true,
-    partialFilterExpression: { status: { $in: SLOT_HOLDING_STATUSES } },
-    name: 'uniq_active_slot_seat',
-  },
-);
+bookingSchema.index({ customerId: 1, idempotencyKey: 1 }, { unique: true, sparse: true, name: 'uniq_customer_idem_key' });
+bookingSchema.index({ serviceId: 1, date: 1, slot: 1, slotSeat: 1 }, { unique: true, name: 'uniq_active_slot_seat' });
 
-/** Idempotency: same customer + same key = same booking. */
-BookingSchema.index({ customerId: 1, idempotencyKey: 1 }, { unique: true, name: 'uniq_customer_idem_key' });
-
-/** For the hold-expiry sweeper job. */
-BookingSchema.index(
-  { holdExpiresAt: 1 },
-  { partialFilterExpression: { status: BOOKING_STATUS.PENDING_PAYMENT }, name: 'idx_pending_hold_expiry' },
-);
-
-BookingSchema.index({ status: 1, date: 1 });
-
-export type IBooking = InferRawDocType<(typeof BookingSchema)['obj']>;
-export const BookingModel = model('Booking', BookingSchema);
-export default BookingModel;
+export const BookingModel = model<IBooking>('Booking', bookingSchema);
