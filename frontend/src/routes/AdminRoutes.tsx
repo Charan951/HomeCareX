@@ -20,6 +20,12 @@ import AdminSupportPage from '@/pages/admin/Support';
 import AdminRolesPermissionsPage from '@/pages/admin/RolesPermissions';
 import AdminAuditLogsPage from '@/pages/admin/AuditLogs';
 import AdminSettingsPage from '@/pages/admin/Settings';
+<<<<<<< Updated upstream
+=======
+import AdminProfilePage from '@/pages/admin/Profile';
+import AdminNotificationsPage from '@/pages/admin/Notifications';
+import AdminLeadsPage from '@/pages/admin/Leads';
+>>>>>>> Stashed changes
 
 export const AdminRoutes: React.FC = () => {
   return (
@@ -49,4 +55,63 @@ export const AdminRoutes: React.FC = () => {
   );
 };
 
+<<<<<<< Updated upstream
 export default AdminRoutes;
+=======
+// 21 routes. To swap a placeholder for a real page, change only its `element` import.
+export const adminRoutes: AdminRoute[] = [
+  { path: '', element: <AdminDashboardPage /> },
+  // Operations
+  { path: 'bookings', element: <AdminBookingsPage /> },
+  { path: 'customers', element: <AdminCustomersPage /> },
+  { path: 'partners', element: <AdminPartnersPage /> },
+  { path: 'support', element: <AdminSupportPage /> },
+  { path: 'leads', element: <AdminLeadsPage />, permission: 'leads:read' },
+  // Catalog
+  { path: 'categories', element: <AdminCategoriesPage /> },
+  { path: 'services', element: <AdminServicesPage /> },
+  { path: 'pricing', element: <AdminPricingPage /> },
+  { path: 'coupons', element: <AdminCouponsPage /> },
+  { path: 'marketing', element: <AdminMarketingPage /> },
+  // Finance
+  { path: 'payments', element: <AdminPaymentsPage /> },
+  { path: 'refunds', element: <AdminRefundsPage /> },
+  { path: 'payouts', element: <AdminPayoutsPage /> },
+  // Quality + Reporting
+  { path: 'reviews', element: <AdminReviewsPage /> },
+  { path: 'reports', element: <AdminReportsPage /> },
+  // System
+  { path: 'roles-permissions', element: <AdminRolesPermissionsPage /> },
+  { path: 'staff', element: <AdminStaffPage /> },
+  { path: 'audit-logs', element: <AdminAuditLogsPage /> },
+  { path: 'settings', element: <AdminSettingsPage /> },
+  // Header-only pages
+  { path: 'profile', element: <AdminProfilePage /> },
+  { path: 'notifications', element: <AdminNotificationsPage /> },
+];
+
+const NotFound: React.FC = () => (
+  <div className="admin-page-container">
+    <h1 className="hcx-page-header__title">Page not found</h1>
+    <p className="hcx-page-header__desc">That admin page doesn&apos;t exist.</p>
+  </div>
+);
+
+export const AdminRoutes: React.FC = () => (
+  <Routes>
+    <Route element={<AdminLayout />}>
+      {adminRoutes.map(({ path, element, permission }) => {
+        const guarded = permission ? <RequirePermission permission={permission}>{element}</RequirePermission> : element;
+        return path === '' ? (
+          <Route key="index" index element={guarded} />
+        ) : (
+          <Route key={path} path={path} element={guarded} />
+        );
+      })}
+      <Route path="*" element={<NotFound />} />
+    </Route>
+  </Routes>
+);
+
+export default AdminRoutes;
+>>>>>>> Stashed changes

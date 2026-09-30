@@ -1,5 +1,10 @@
+<<<<<<< Updated upstream
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+=======
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+>>>>>>> Stashed changes
 
 const services = [
   {
@@ -76,7 +81,101 @@ const faqs = [
 
 const Home: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const location = useLocation();
 
+<<<<<<< Updated upstream
+=======
+  /*
+    Store which elements have already appeared.
+    We use a Set so an element animates only once.
+  */
+  const [visibleItems, setVisibleItems] = useState<Set<string>>(
+    new Set()
+  );
+
+  /*
+    IntersectionObserver reference
+  */
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  /* =========================================================
+     SCROLL ANIMATION
+  ========================================================= */
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const element = entry.target as HTMLElement;
+            const animationId = element.dataset.animationId;
+
+            if (!animationId) return;
+
+            setVisibleItems((previous) => {
+              const updated = new Set(previous);
+              updated.add(animationId);
+              return updated;
+            });
+
+            observerRef.current?.unobserve(element);
+          }
+        });
+      },
+      {
+        threshold: 0.12,
+        rootMargin: "0px 0px -50px 0px",
+      }
+    );
+
+    const elements = document.querySelectorAll(
+      "[data-scroll-animation]"
+    );
+
+    elements.forEach((element) => {
+      observerRef.current?.observe(element);
+    });
+
+    return () => {
+      observerRef.current?.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!location.hash) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.hash]);
+
+  /* =========================================================
+     ANIMATION CLASS
+  ========================================================= */
+
+  const revealClass = (
+    id: string,
+    _delay: number = 0
+  ): string => {
+    const isVisible = visibleItems.has(id);
+
+    return `
+      transition-all
+      ease-out
+      duration-700
+      ${
+        isVisible
+          ? "translate-y-0 opacity-100"
+          : "translate-y-12 opacity-0"
+      }
+    `;
+  };
+
+  /* =========================================================
+     FAQ TOGGLE
+  ========================================================= */
+
+>>>>>>> Stashed changes
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
   };
@@ -853,7 +952,11 @@ const Home: React.FC = () => {
           FAQ SECTION
       ====================================================== */}
 
+<<<<<<< Updated upstream
       <section id="faqs" className="scroll-mt-24 py-20 sm:py-24 bg-white">
+=======
+      <section id="faqs" className="scroll-mt-24 bg-white py-20 sm:py-24">
+>>>>>>> Stashed changes
 
         <div className="max-w-4xl mx-auto px-6">
 
@@ -1035,6 +1138,7 @@ const Home: React.FC = () => {
             home service for your needs.
           </p>
 
+<<<<<<< Updated upstream
           <a
             href="#services"
             className="
@@ -1057,6 +1161,136 @@ const Home: React.FC = () => {
             Explore Our Services
             <span className="ml-2">→</span>
           </a>
+=======
+            {/* Label */}
+
+            <span
+              className="
+                inline-block
+                rounded-full
+                bg-gray-100
+                px-4
+                py-2
+                text-sm
+                font-bold
+                tracking-wide
+                text-[#4338ca]
+              "
+            >
+              HOMECAREX
+            </span>
+
+
+            {/* Heading */}
+
+            <h2
+              className="
+                mt-5
+                text-3xl
+                font-extrabold
+                text-[#4338ca]
+                sm:text-4xl
+                lg:text-5xl
+              "
+            >
+              Take Care of Your Home
+              <br />
+              With Confidence
+            </h2>
+
+
+            {/* Description */}
+
+            <p
+              className="
+                mx-auto
+                mt-5
+                max-w-2xl
+                leading-7
+                text-gray-600
+              "
+            >
+              Find reliable home services and make your
+              home maintenance simple and convenient.
+            </p>
+
+
+            {/* Buttons */}
+
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+
+              <Link
+                to="/services"
+                className="
+                  inline-flex
+                  items-center
+                  justify-center
+                  rounded-lg
+                  bg-[#ff8a3d]
+                  px-7
+                  py-3.5
+                  font-semibold
+                  text-white
+                  shadow-lg
+                  transition-all
+                  duration-300
+                  hover:-translate-y-1
+                  hover:bg-[#4338ca]
+                "
+              >
+                Explore Services
+              </Link>
+
+              <Link
+                to="/contact"
+                className="
+                  inline-flex
+                  items-center
+                  justify-center
+                  rounded-lg
+                  border-2
+                  border-[#4338ca]
+                  px-7
+                  py-3.5
+                  font-semibold
+                  text-[#4338ca]
+                  transition-all
+                  duration-300
+                  hover:-translate-y-1
+                  hover:bg-[#4338ca]
+                  hover:text-white
+                "
+              >
+                Contact Us
+              </Link>
+
+              <Link
+                to="/contact#partner-interest"
+                className="
+                  inline-flex
+                  items-center
+                  justify-center
+                  rounded-lg
+                  border-2
+                  border-[#ff8a3d]
+                  px-7
+                  py-3.5
+                  font-semibold
+                  text-[#b94d0d]
+                  transition-all
+                  duration-300
+                  hover:-translate-y-1
+                  hover:bg-[#ff8a3d]
+                  hover:text-white
+                "
+              >
+                Become a Partner
+              </Link>
+
+            </div>
+
+          </div>
+>>>>>>> Stashed changes
 
         </div>
 

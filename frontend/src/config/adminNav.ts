@@ -9,8 +9,14 @@ import {
   HardHat,
   LayoutDashboard,
   LayoutGrid,
+<<<<<<< Updated upstream
   LifeBuoy,
   ScrollText,
+=======
+  Mail,
+  Megaphone,
+  RotateCcw,
+>>>>>>> Stashed changes
   Settings,
   UserCircle,
   Users,
@@ -59,7 +65,13 @@ export const adminNavGroups: AdminNavGroup[] = [
     items: [
       { label: 'Bookings', path: '/admin/bookings', icon: CalendarCheck },
       { label: 'Customers', path: '/admin/customers', icon: Users },
+<<<<<<< Updated upstream
       { label: 'Partners', path: '/admin/partners', icon: HardHat },
+=======
+      { label: 'Partners & KYC', path: '/admin/partners', icon: HardHat },
+      { label: 'Support', path: '/admin/support', icon: Headset },
+      { label: 'Inbox', path: '/admin/leads', icon: Mail, permission: 'leads:read' },
+>>>>>>> Stashed changes
     ],
   },
   {
@@ -77,10 +89,20 @@ export const adminNavGroups: AdminNavGroup[] = [
     items: [{ label: 'Payments', path: '/admin/payments', icon:CreditCardIcon }],
   },
   {
+<<<<<<< Updated upstream
     groupName: 'Support',
     collapsible: true,
     defaultOpen: true,
     items: [{ label: 'Support Tickets', path: '/admin/support', icon: LifeBuoy }],
+=======
+    groupName: 'Reporting',
+    items: [{ label: 'Reports', path: '/admin/reports', icon: BarChart3 }],
+>>>>>>> Stashed changes
+  },
+  {
+    groupName: 'Quality',
+    hidden: true,
+    items: [{ label: 'Customer Reviews', path: '/admin/reviews', icon: Star }],
   },
   {
     groupName: 'System',

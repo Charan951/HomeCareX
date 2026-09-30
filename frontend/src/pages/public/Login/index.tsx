@@ -1,15 +1,85 @@
+<<<<<<< Updated upstream
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Home } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
+=======
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Home } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import type { ApiError } from '@/lib/http';
+import { ADMIN_ROLES, type AuthUser } from '@/types/auth';
+ 
+/** Only same-origin paths are allowed as returnUrl (blocks //evil.com, https://..., javascript:). */
+function safeReturnUrl(raw: string | null): string | null {
+  if (!raw) return null;
+  return raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/\\') ? raw : null;
+}
+ 
+/** A returnUrl is only honoured when it belongs to the role's own area. */
+function destinationFor(user: AuthUser, returnUrl: string | null): string {
+  const area = ADMIN_ROLES.includes(user.role) ? '/admin' : `/${user.role}`;
+  if (returnUrl && (returnUrl === area || returnUrl.startsWith(`${area}/`))) return returnUrl;
+  return user.home || area;
+}
+ 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+ 
+export const LoginPage: React.FC = () => {
+  const { login, logout, user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const returnUrl = safeReturnUrl(params.get('returnUrl'));
+ 
+>>>>>>> Stashed changes
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+<<<<<<< Updated upstream
 
   function handleSubmit(e: React.FormEvent) {
+=======
+ 
+  useEffect(() => {
+    document.title = 'Log in | HomeCareX';
+  }, []);
+ 
+  // Already signed in: go straight to the role's dashboard.
+  // Already signed in: don't silently jump to that account's page (it hid which account was active).
+  // Let the person continue, or sign out and use a different account (e.g. admin instead of partner).
+  if (isAuthenticated && user && !loading) {
+    return (
+      <div className="bg-white/90 rounded-2xl shadow border border-gray-100 p-8">
+        <h1 className="text-2xl font-bold text-accent-700 mb-1">You&apos;re already signed in</h1>
+        <p className="text-gray-600 mb-6">
+          Signed in as <b>{user.name}</b>
+          {user.email ? ` (${user.email})` : ''} &middot; role: <b>{user.role}</b>
+        </p>
+        <div className="flex flex-col gap-3">
+          <Link
+            to={destinationFor(user, returnUrl)}
+            className="w-full text-center rounded-lg bg-brand-600 text-white font-medium py-2.5 hover:bg-brand-700"
+          >
+            Continue to my dashboard
+          </Link>
+          <button
+            type="button"
+            onClick={() => void logout()}
+            className="w-full rounded-lg border border-gray-300 py-2.5 font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Log out and use another account
+          </button>
+        </div>
+      </div>
+    );
+  }
+ 
+  async function handleSubmit(e: React.FormEvent) {
+>>>>>>> Stashed changes
     e.preventDefault();
     setError('');
     if (!email || !password) {
@@ -23,24 +93,29 @@ export const LoginPage: React.FC = () => {
       alert('Login successful (mock)');
     }, 900);
   }
-
+ 
   return (
     <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(67,56,202,0.3)] border border-gray-100 p-8 relative">
       {/* Premium icon badge */}
       <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/30 mb-5">
         <Home size={22} className="text-white" />
       </div>
-
+ 
       <h1 className="text-2xl font-bold text-accent-700 mb-1">Welcome back</h1>
       <p className="text-gray-500 mb-6">Log in to your HomeCareX account</p>
-
+ 
       {error && (
         <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 animate-fadeUp">
           {error}
         </div>
       )}
+<<<<<<< Updated upstream
 
       <form onSubmit={handleSubmit} className="space-y-4">
+=======
+ 
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate aria-describedby={error ? 'login-error' : undefined}>
+>>>>>>> Stashed changes
         <div className="group">
           <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
           <div className="relative">
@@ -54,7 +129,7 @@ export const LoginPage: React.FC = () => {
             />
           </div>
         </div>
-
+ 
         <div className="group">
           <div className="flex items-center justify-between mb-1">
             <label className="block text-sm font-medium text-gray-700">Password</label>
@@ -81,7 +156,7 @@ export const LoginPage: React.FC = () => {
             </button>
           </div>
         </div>
-
+ 
         <button
           type="submit"
           disabled={loading}
@@ -103,7 +178,7 @@ export const LoginPage: React.FC = () => {
           )}
         </button>
       </form>
-
+ 
       <p className="text-center text-sm text-gray-500 mt-6">
         Don't have an account?{' '}
         <Link to="/register" className="text-brand-600 font-medium hover:underline">
@@ -113,5 +188,5 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
-
+ 
 export default LoginPage;
