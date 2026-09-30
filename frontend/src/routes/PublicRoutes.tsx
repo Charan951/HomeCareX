@@ -1,7 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 
-import AuthLayout from "../layouts/AuthLayout";
 import PublicLayout from "../layouts/PublicLayout";
 
 import PageLoader from "../components/common/PageLoader";
@@ -11,6 +10,8 @@ import { ROUTES } from "../constants/routes";
 |--------------------------------------------------------------------------
 | Lazy Loaded Public Pages
 |--------------------------------------------------------------------------
+| Auth screens (/login, /register, /forgot-password) and /unauthorized are
+| registered in AppRoutes, which matches them before this catch-all tree.
 */
 
 const Home = lazy(() => import("../pages/public/Home/Home"));
@@ -24,35 +25,7 @@ const About = lazy(
 );
 
 const Contact = lazy(
-  () => import("../pages/public/Contact/Contact")
-);
-
-/*
-|--------------------------------------------------------------------------
-| Lazy Loaded Authentication Pages
-|--------------------------------------------------------------------------
-*/
-
-const Login = lazy(
-  () => import("../pages/public/Login")
-);
-
-const Register = lazy(
-  () => import("../pages/public/Register")
-);
-
-const ForgotPassword = lazy(
-  () => import("../pages/public/ForgotPassword")
-);
-
-/*
-|--------------------------------------------------------------------------
-| Lazy Loaded System Pages
-|--------------------------------------------------------------------------
-*/
-
-const Unauthorized = lazy(
-  () => import("../pages/public/Unauthorized")
+  () => import("../pages/public/Contact")
 );
 
 const NotFound = lazy(
@@ -68,82 +41,17 @@ const NotFound = lazy(
 const PublicRoutes: React.FC = () => {
   return (
     <Suspense fallback={<PageLoader />}>
-
       <Routes>
-
-        {/* =========================================================
-            Public Layout
-        ========================================================== */}
-
         <Route element={<PublicLayout />}>
-
-          {/* Home */}
-          <Route
-            path={ROUTES.HOME}
-            element={<Home />}
-          />
-
-          {/* Services */}
-          <Route
-            path={ROUTES.SERVICES}
-            element={<Services />}
-          />
-
-          {/* About */}
-          <Route
-            path={ROUTES.ABOUT}
-            element={<About />}
-          />
-
-          {/* Contact */}
-          <Route
-            path={ROUTES.CONTACT}
-            element={<Contact />}
-          />
-
-          {/* Unauthorized */}
-          <Route
-            path={ROUTES.UNAUTHORIZED}
-            element={<Unauthorized />}
-          />
+          <Route path={ROUTES.HOME} element={<Home />} />
+          <Route path={ROUTES.SERVICES} element={<Services />} />
+          <Route path={ROUTES.ABOUT} element={<About />} />
+          <Route path={ROUTES.CONTACT} element={<Contact />} />
 
           {/* 404 - Any unknown URL */}
-          <Route
-            path="*"
-            element={<NotFound />}
-          />
-
+          <Route path="*" element={<NotFound />} />
         </Route>
-
-
-        {/* =========================================================
-            Authentication Layout
-        ========================================================== */}
-
-        <Route element={<AuthLayout />}>
-
-          {/* Login */}
-          <Route
-            path={ROUTES.LOGIN}
-            element={<Login />}
-          />
-
-          {/* Register */}
-          <Route
-            path={ROUTES.REGISTER}
-            element={<Register />}
-          />
-
-          {/* Forgot Password */}
-          <Route
-            path={ROUTES.FORGOT_PASSWORD}
-            element={<ForgotPassword />}
-          />
-
-        </Route>
-
       </Routes>
-
     </Suspense>
   );
 };

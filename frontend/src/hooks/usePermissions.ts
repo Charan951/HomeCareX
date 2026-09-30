@@ -4,14 +4,14 @@ export type PermissionMatch = 'any' | 'all';
 
 /**
  * Reads permissions from the signed-in user (`user.permissions: string[]`).
- * `super_admin` role or a `'*'` permission passes every check.
+ * The `admin` role or a `'*'` permission passes every check.
  * An empty/undefined requirement always passes, so pages without a permission
  * key stay visible until RBAC is wired to real data.
  */
 export function usePermissions() {
   const user = useAuthStore((state) => state.user);
   const granted = Array.isArray(user?.permissions) ? (user?.permissions as string[]) : [];
-  const isSuperAdmin = user?.role === 'super_admin' || granted.includes('*');
+  const isSuperAdmin = user?.role === 'admin' || granted.includes('*');
 
   const can = (required?: string | string[], match: PermissionMatch = 'any'): boolean => {
     const list = required === undefined ? [] : Array.isArray(required) ? required : [required];
