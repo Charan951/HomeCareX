@@ -1,8 +1,8 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
-/** Forwards rejected promises from async route handlers to the error middleware (Express 4). */
+/** Forwards rejected promises to the error middleware (Express 4 does not do this itself). */
 export const asyncHandler =
-  (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>): RequestHandler =>
+  (fn: (req: Request, res: Response, next: NextFunction) => Promise<unknown>): RequestHandler =>
   (req, res, next) => {
     fn(req, res, next).catch(next);
   };

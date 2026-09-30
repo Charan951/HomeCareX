@@ -1,21 +1,18 @@
 import { useEffect } from 'react';
 import { useParams, useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 import { bookingApi, type NormalizedApiError } from '@/services/bookingApi';
 import { useBookingDraftStore } from '@/features/booking';
 import { ErrorState, LoadingState } from '@/components/customer';
 import { formatSlotLabel } from '../Book/components/SlotPicker';
 import type { BookingStatus, BookingView } from '@/types/booking';
-import { BOOKINGS, TRACKING_TIMELINE } from '../../../mocks/customerMockData';
+import { BOOKINGS } from '../../../mocks/customerMockData';
 import { statusBadgeClass } from '../../../utils/statusBadge';
 import { customerPath } from '@/routes/customerPath';
 
 function MockBookingDetails({ id }: { id: string | undefined }) {
   const booking = BOOKINGS.find((b) => b.id === id) ?? BOOKINGS[0];
-  const addon = 100;
-  const tax = Math.round((booking.price + addon) * 0.05);
-  const total = booking.price + addon + tax;
 
   return (
     <div className="space-y-6">
@@ -61,15 +58,20 @@ function MockBookingDetails({ id }: { id: string | undefined }) {
 }
 
 const STATUS_LABEL: Record<BookingStatus, string> = {
-  PENDING_PAYMENT: 'Awaiting payment',
-  CONFIRMED: 'Confirmed',
-  ASSIGNED: 'Partner Assigned',
-  ACCEPTED: 'Partner Assigned',
-  EN_ROUTE: 'En Route',
-  ARRIVED: 'Arrived',
-  IN_PROGRESS: 'In Progress',
-  COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled',
+  pending_payment: 'Awaiting payment',
+  confirmed: 'Confirmed',
+  created: 'Confirmed',
+  searching_for_partner: 'Finding a partner',
+  assigned: 'Partner Assigned',
+  en_route: 'En Route',
+  arrived: 'Arrived',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+  rated: 'Completed',
+  cancelled_by_customer: 'Cancelled',
+  cancelled_by_partner: 'Partner cancelled, reassigning',
+  no_show: 'No show',
+  disputed: 'Under review',
 };
 
 const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
@@ -118,7 +120,7 @@ function LiveBookingDetails({ id }: { id: string }) {
       </div>
 
       {/* Booking Confirmed Banner */}
-      {justBooked && booking.status === 'CONFIRMED' && (
+      {justBooked && booking.status === 'confirmed' && (
         <div role="status" className="flex items-start gap-3 rounded border border-green-200 bg-green-50 px-4 py-3 text-green-800">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
           <div>
@@ -180,7 +182,7 @@ function LiveBookingDetails({ id }: { id: string }) {
       <div className="bg-panel border border-line rounded p-6">
         <h3 className="font-semibold text-ink mb-4">Status timeline</h3>
         <ol className="space-y-3">
-          {booking.history.map((h, i) => (
+          {booking.statusHistory.map((h, i) => (
             <li key={i} className="flex items-center gap-3 text-sm">
               <span className="h-2.5 w-2.5 rounded-full shrink-0 bg-brand" />
               <span className="text-ink">{STATUS_LABEL[h.to as BookingStatus] ?? h.to}</span>

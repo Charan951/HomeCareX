@@ -1,13 +1,33 @@
-// export class PartnersController {}
+import type { NextFunction, Request, Response } from 'express';
+import { parseBody } from '../auth/auth.validation';
+import { partnersService } from './partners.service';
+import { createPartnerSchema } from './partners.validation';
 
-import { Request, Response } from 'express';
+const wrap =
+  (fn: (req: Request, res: Response) => Promise<unknown>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    fn(req, res).catch(next);
+  };
 
 export class PartnersController {
-  getPartners = async (_req: Request, res: Response) => {
-    return res.status(200).json({
-      data: [],
+  create = wrap(async (req, res) => {
+    const data = await partnersService.create(parseBody(createPartnerSchema, req.body));
+    res.status(201).json({
+      success: true,
+      data,
+      message: data.emailSent
+        ? 'Partner registered and credentials emailed.'
+        : 'Partner registered, but the email could not be sent.',
     });
-  };
+  });
+
+  getPartners = wrap(async (_req, res) => {
+    res.json({ success: true, data: await partnersService.list() });
+  });
+
+  getStats = wrap(async (_req, res) => {
+    res.json({ success: true, data: await partnersService.stats() });
+  });
 }
 
 export default PartnersController;

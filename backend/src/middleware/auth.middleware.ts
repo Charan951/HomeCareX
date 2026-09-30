@@ -53,3 +53,6 @@ export function getAuthUser(req: Request): AuthUser {
   }
   return req.user;
 }
+
+/** Alias kept for routes that import `authenticate` (partner, availability modules). */
+export const authenticate = authMiddleware;

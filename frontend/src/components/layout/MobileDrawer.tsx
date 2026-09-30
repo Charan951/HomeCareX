@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 interface MobileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
-  menuButtonRef: React.RefObject<HTMLButtonElement>;
+  menuButtonRef: React.RefObject<HTMLButtonElement | null>;
 }
 
 const MobileDrawer: React.FC<MobileDrawerProps> = ({
@@ -14,19 +14,25 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
 }) => {
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  // Escape key + body scroll lock
+  /*
+  |--------------------------------------------------------------------------
+  | Escape key + body scroll lock
+  |--------------------------------------------------------------------------
+  */
+
   useEffect(() => {
     if (!isOpen) {
       return;
     }
 
-    // Prevent background page scrolling
     const originalOverflow = document.body.style.overflow;
+
+    // Prevent background scrolling
     document.body.style.overflow = "hidden";
 
-    // Close drawer with Escape
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.preventDefault();
         onClose();
       }
     };
@@ -39,7 +45,12 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
     };
   }, [isOpen, onClose]);
 
-  // Focus first element when drawer opens
+  /*
+  |--------------------------------------------------------------------------
+  | Focus first element when drawer opens
+  |--------------------------------------------------------------------------
+  */
+
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -56,20 +67,49 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
       );
 
-    firstFocusableElement?.focus();
+    // Wait until drawer is rendered
+    requestAnimationFrame(() => {
+      firstFocusableElement?.focus();
+    });
   }, [isOpen]);
 
-  // Return focus to menu button after closing
+  /*
+  |--------------------------------------------------------------------------
+  | Return focus to menu button after drawer closes
+  |--------------------------------------------------------------------------
+  */
+
+  const wasOpenRef = useRef(false);
+
   useEffect(() => {
+    // Drawer has just opened
     if (isOpen) {
+      wasOpenRef.current = true;
       return;
     }
 
-    menuButtonRef.current?.focus();
+    // Drawer was already closed
+    if (!wasOpenRef.current) {
+      return;
+    }
+
+    // Drawer has just closed
+    wasOpenRef.current = false;
+
+    requestAnimationFrame(() => {
+      menuButtonRef.current?.focus();
+    });
   }, [isOpen, menuButtonRef]);
 
-  // Focus trap
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  /*
+  |--------------------------------------------------------------------------
+  | Focus trap
+  |--------------------------------------------------------------------------
+  */
+
+  const handleKeyDown = (
+    event: React.KeyboardEvent<HTMLDivElement>
+  ) => {
     if (event.key !== "Tab") {
       return;
     }
@@ -87,27 +127,60 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
     );
 
     if (focusableElements.length === 0) {
+      event.preventDefault();
       return;
     }
 
     const firstElement = focusableElements[0];
+
     const lastElement =
       focusableElements[focusableElements.length - 1];
 
-    if (event.shiftKey && document.activeElement === firstElement) {
+    /*
+    |----------------------------------------------------------------------
+    | Shift + Tab
+    |----------------------------------------------------------------------
+    */
+
+    if (
+      event.shiftKey &&
+      document.activeElement === firstElement
+    ) {
       event.preventDefault();
       lastElement.focus();
+      return;
     }
 
-    if (!event.shiftKey && document.activeElement === lastElement) {
+    /*
+    |----------------------------------------------------------------------
+    | Tab
+    |----------------------------------------------------------------------
+    */
+
+    if (
+      !event.shiftKey &&
+      document.activeElement === lastElement
+    ) {
       event.preventDefault();
       firstElement.focus();
     }
   };
 
+  /*
+  |--------------------------------------------------------------------------
+  | Don't render drawer when closed
+  |--------------------------------------------------------------------------
+  */
+
   if (!isOpen) {
     return null;
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Drawer
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <div
@@ -127,8 +200,8 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "text-[#ff8a3d] font-bold transition"
-              : "text-gray-700 hover:text-[#4338ca] transition"
+              ? "font-bold text-[#ff8a3d] transition"
+              : "text-gray-700 transition hover:text-[#4338ca]"
           }
         >
           Home
@@ -140,8 +213,8 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "text-[#ff8a3d] font-bold transition"
-              : "text-gray-700 hover:text-[#4338ca] transition"
+              ? "font-bold text-[#ff8a3d] transition"
+              : "text-gray-700 transition hover:text-[#4338ca]"
           }
         >
           Services
@@ -153,8 +226,8 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "text-[#ff8a3d] font-bold transition"
-              : "text-gray-700 hover:text-[#4338ca] transition"
+              ? "font-bold text-[#ff8a3d] transition"
+              : "text-gray-700 transition hover:text-[#4338ca]"
           }
         >
           About
@@ -166,8 +239,8 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "text-[#ff8a3d] font-bold transition"
-              : "text-gray-700 hover:text-[#4338ca] transition"
+              ? "font-bold text-[#ff8a3d] transition"
+              : "text-gray-700 transition hover:text-[#4338ca]"
           }
         >
           Contact
@@ -181,8 +254,8 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "text-[#ff8a3d] font-bold transition"
-              : "text-[#4338ca] font-medium hover:text-[#ff8a3d] transition"
+              ? "font-bold text-[#ff8a3d] transition"
+              : "font-medium text-[#4338ca] transition hover:text-[#ff8a3d]"
           }
         >
           Login

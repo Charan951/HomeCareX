@@ -1,0 +1,56 @@
+name: Close linked issues on merge
+
+# GitHub only auto-closes issues for "Closes #N" in the PR body. Members often write
+# "(#34)" in the title or an issue ID like "JS-D01" instead, so this closes those too.
+
+on:
+  pull_request_target:
+    types: [closed]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  close:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const text = `${pr.title}\n${pr.body || ''}\n${pr.head.ref}`;
+            const { owner, repo } = context.repo;
+
+            // 1. "#34" references anywhere in title / body.
+            const numbers = new Set([...text.matchAll(/#(\d+)\b/g)].map((m) => Number(m[1])));
+
+            // 2. Plan issue IDs like "JS-D01", "TR-D12" -> find the issue carrying that ID.
+            const ids = new Set([...text.matchAll(/\b(JS|NT|NA|TR|MU|DL|DV|VC)-D(\d{2})\b/gi)]
+              .map((m) => `${m[1].toUpperCase()}-D${m[2]}`));
+            if (ids.size) {
+              const open = await github.paginate(github.rest.issues.listForRepo, { owner, repo, state: 'open', per_page: 100 });
+              for (const i of open) {
+                if (i.pull_request) continue;
+                for (const id of ids) if ((i.body || '').includes(`\`${id}\``)) numbers.add(i.number);
+              }
+            }
+
+            const author = pr.user.login.toLowerCase();
+            for (const n of numbers) {
+              let issue;
+              try { issue = (await github.rest.issues.get({ owner, repo, issue_number: n })).data; }
+              catch { continue; }
+              if (issue.pull_request || issue.state !== 'open') continue;
+              // Safety: only close issues assigned to the PR author (or unassigned).
+              const assignees = issue.assignees.map((a) => a.login.toLowerCase());
+              if (assignees.length && !assignees.includes(author)) {
+                core.info(`#${n} not assigned to ${author}, leaving open`);
+                continue;
+              }
+              await github.rest.issues.createComment({ owner, repo, issue_number: n,
+                body: `Completed by #${pr.number} (merged into \`${pr.base.ref}\`). Closed automatically.` });
+              await github.rest.issues.update({ owner, repo, issue_number: n, state: 'closed', state_reason: 'completed' });
+              core.info(`closed #${n}`);
+            }

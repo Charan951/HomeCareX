@@ -1,23 +1,16 @@
-// import React from 'react';
-
-// export const AdminPartnersPage: React.FC = () => {
-//   return (
-//     <div className="admin-page-container p-6">
-//       <h1 className="text-2xl font-bold">Admin Partners</h1>
-//     </div>
-//   );
-// };
-
-// export default AdminPartnersPage;
-
 import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+
 import DataTable, {
   Column,
 } from "../../../components/tables/DataTable";
+
 import {
   PARTNERS,
   MockPartner,
 } from "../../../mocks/partners";
+
+import "./index.css";
 
 const AdminPartnersPage: React.FC = () => {
   const [search, setSearch] = useState("");
@@ -32,7 +25,11 @@ const AdminPartnersPage: React.FC = () => {
   const kycOptions = useMemo(
     () =>
       Array.from(
-        new Set(PARTNERS.map((partner) => partner.kycStatus))
+        new Set(
+          PARTNERS.map(
+            (partner) => partner.kycStatus
+          )
+        )
       ),
     []
   );
@@ -40,7 +37,11 @@ const AdminPartnersPage: React.FC = () => {
   const accountOptions = useMemo(
     () =>
       Array.from(
-        new Set(PARTNERS.map((partner) => partner.accountStatus))
+        new Set(
+          PARTNERS.map(
+            (partner) => partner.accountStatus
+          )
+        )
       ),
     []
   );
@@ -48,7 +49,11 @@ const AdminPartnersPage: React.FC = () => {
   const categoryOptions = useMemo(
     () =>
       Array.from(
-        new Set(PARTNERS.map((partner) => partner.category))
+        new Set(
+          PARTNERS.map(
+            (partner) => partner.category
+          )
+        )
       ),
     []
   );
@@ -56,7 +61,11 @@ const AdminPartnersPage: React.FC = () => {
   const cityOptions = useMemo(
     () =>
       Array.from(
-        new Set(PARTNERS.map((partner) => partner.city))
+        new Set(
+          PARTNERS.map(
+            (partner) => partner.city
+          )
+        )
       ),
     []
   );
@@ -67,10 +76,18 @@ const AdminPartnersPage: React.FC = () => {
     return PARTNERS.filter((partner) => {
       const matchesSearch =
         !searchValue ||
-        partner.name.toLowerCase().includes(searchValue) ||
-        partner.email.toLowerCase().includes(searchValue) ||
-        partner.phone.toLowerCase().includes(searchValue) ||
-        partner.city.toLowerCase().includes(searchValue);
+        partner.name
+          .toLowerCase()
+          .includes(searchValue) ||
+        partner.email
+          .toLowerCase()
+          .includes(searchValue) ||
+        partner.phone
+          .toLowerCase()
+          .includes(searchValue) ||
+        partner.city
+          .toLowerCase()
+          .includes(searchValue);
 
       const matchesKyc =
         !kycStatus ||
@@ -128,49 +145,51 @@ const AdminPartnersPage: React.FC = () => {
       header: "Partner",
       sortValue: (row) => row.name,
     },
+
     {
       key: "email",
       header: "Email",
       sortValue: (row) => row.email,
     },
+
     {
       key: "kycStatus",
       header: "KYC Status",
       sortValue: (row) => row.kycStatus,
       cell: (row) => (
         <span
-          className={`partner-status ${
-            row.kycStatus.toLowerCase()
-          }`}
+          className={`partner-status ${row.kycStatus.toLowerCase()}`}
         >
           {row.kycStatus}
         </span>
       ),
     },
+
     {
       key: "accountStatus",
       header: "Account Status",
       sortValue: (row) => row.accountStatus,
       cell: (row) => (
         <span
-          className={`partner-status ${
-            row.accountStatus.toLowerCase()
-          }`}
+          className={`partner-status ${row.accountStatus.toLowerCase()}`}
         >
           {row.accountStatus}
         </span>
       ),
     },
+
     {
       key: "category",
       header: "Category",
       sortValue: (row) => row.category,
     },
+
     {
       key: "city",
       header: "City",
       sortValue: (row) => row.city,
     },
+
     {
       key: "rating",
       header: "Rating",
@@ -181,17 +200,35 @@ const AdminPartnersPage: React.FC = () => {
         </span>
       ),
     },
+
     {
       key: "acceptance",
       header: "Acceptance",
       sortValue: (row) => row.acceptance,
       cell: (row) => `${row.acceptance}%`,
     },
+
     {
       key: "completion",
       header: "Completion",
       sortValue: (row) => row.completion,
       cell: (row) => `${row.completion}%`,
+    },
+
+    // --------------------------------------------------
+    // VIEW DETAILS
+    // --------------------------------------------------
+    {
+      key: "details",
+      header: "Details",
+      cell: (row) => (
+        <Link
+          to={`/admin/partners/${row.id}`}
+          className="partner-view-btn"
+        >
+          View
+        </Link>
+      ),
     },
   ];
 
@@ -206,15 +243,16 @@ const AdminPartnersPage: React.FC = () => {
     setCompletion("");
   };
 
-  const hasActiveFilters =
+  const hasActiveFilters = Boolean(
     search ||
-    kycStatus ||
-    accountStatus ||
-    category ||
-    city ||
-    rating ||
-    acceptance ||
-    completion;
+      kycStatus ||
+      accountStatus ||
+      category ||
+      city ||
+      rating ||
+      acceptance ||
+      completion
+  );
 
   return (
     <div className="admin-partners-container">
@@ -266,7 +304,10 @@ const AdminPartnersPage: React.FC = () => {
               <option value="">All</option>
 
               {kycOptions.map((option) => (
-                <option key={option} value={option}>
+                <option
+                  key={option}
+                  value={option}
+                >
                   {option}
                 </option>
               ))}
@@ -288,7 +329,10 @@ const AdminPartnersPage: React.FC = () => {
               <option value="">All</option>
 
               {accountOptions.map((option) => (
-                <option key={option} value={option}>
+                <option
+                  key={option}
+                  value={option}
+                >
                   {option}
                 </option>
               ))}
@@ -310,7 +354,10 @@ const AdminPartnersPage: React.FC = () => {
               <option value="">All</option>
 
               {categoryOptions.map((option) => (
-                <option key={option} value={option}>
+                <option
+                  key={option}
+                  value={option}
+                >
                   {option}
                 </option>
               ))}
@@ -332,7 +379,10 @@ const AdminPartnersPage: React.FC = () => {
               <option value="">All</option>
 
               {cityOptions.map((option) => (
-                <option key={option} value={option}>
+                <option
+                  key={option}
+                  value={option}
+                >
                   {option}
                 </option>
               ))}
@@ -351,7 +401,9 @@ const AdminPartnersPage: React.FC = () => {
                 setRating(event.target.value)
               }
             >
-              <option value="">Any rating</option>
+              <option value="">
+                Any rating
+              </option>
               <option value="1">1.0+</option>
               <option value="2">2.0+</option>
               <option value="3">3.0+</option>
