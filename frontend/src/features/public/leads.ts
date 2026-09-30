@@ -11,6 +11,7 @@ export type ContactLeadPayload = {
   city: string;
   message: string;
   source: 'contact';
+  recaptchaToken?: string;
 };
 
 export type PartnerLeadPayload = {
@@ -19,6 +20,7 @@ export type PartnerLeadPayload = {
   city: string;
   skills: string;
   source: 'partner';
+  recaptchaToken?: string;
 };
 
 export type PublicLeadPayload = ContactLeadPayload | PartnerLeadPayload;
@@ -32,6 +34,8 @@ export type PublicLeadResponse = {
 export function leadErrorMessage(error: unknown): string {
   const status = (error as { status?: number } | null)?.status;
   if (status === undefined) return 'Unable to connect. Please check your internet connection and try again.';
+  const code = (error as { code?: string }).code ?? '';
+  if (code.startsWith('CAPTCHA')) return (error as { message?: string }).message || 'Please complete the security check.';
   if (status === 400) return 'Please check the highlighted fields.';
   if (status === 429) return 'Too many submissions. Please wait a minute and try again.';
   if (status >= 500) return 'Something went wrong on our side. Please try again.';

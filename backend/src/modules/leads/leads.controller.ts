@@ -8,7 +8,7 @@ export class LeadsController {
 
   createLead = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const result = await this.leadsService.createLead(req.body);
+      const result = await this.leadsService.createLead(req.body, req.ip);
       res.status(201).json(result);
     } catch (error) {
       if (error instanceof HttpError) {
