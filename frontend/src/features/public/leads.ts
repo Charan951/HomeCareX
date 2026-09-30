@@ -1,6 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-
-import { apiClient } from '@/services/apiClient';
+import http from '@/lib/http'; // 👈 Fixed import
 
 export type LeadSource = 'contact' | 'partner';
 export type LeadStatus = 'new' | 'contacted' | 'closed';
@@ -32,7 +31,8 @@ export type PublicLeadResponse = {
 export const useCreateLead = () =>
   useMutation<PublicLeadResponse, Error, PublicLeadPayload>({
     mutationFn: async (payload) => {
-      const response = await apiClient.post<PublicLeadResponse>('/public/leads', payload);
+      // 👈 Fixed API call to use 'http' instead of 'apiClient'
+      const response = await http.post<PublicLeadResponse>('/public/leads', payload);
       return response.data;
     },
   });

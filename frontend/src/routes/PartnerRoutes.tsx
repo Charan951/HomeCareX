@@ -1,6 +1,10 @@
 import { Routes, Route } from "react-router-dom";
 import PartnerLayout from "../layouts/PartnerLayout";
 import PartnerDashboard from "../pages/partner/Dashboard";
+import PartnerAvailabilityPage from "../pages/partner/Availability";
+import PartnerWorkingHoursPage from "../pages/partner/WorkingHours";
+import PartnerBlackoutDatesPage from "../pages/partner/BlackoutDates";
+import PartnerSchedulePage from "../pages/partner/Schedule";
 
 // Placeholder for Devangam's pages – swap each `element` when the real page lands.
 const Placeholder = ({ title }: { title: string }) => (
@@ -10,8 +14,7 @@ const Placeholder = ({ title }: { title: string }) => (
   </div>
 );
 
-
-// 34 placeholder routes + the dashboard index = 35
+// Placeholder routes + the dashboard index = 35
 export const PARTNER_PAGES: { path: string; title: string }[] = [
   // Work (7)
   { path: "work", title: "Work" },
@@ -21,10 +24,7 @@ export const PARTNER_PAGES: { path: string; title: string }[] = [
   { path: "work/completed", title: "Completed jobs" },
   { path: "work/cancelled", title: "Cancelled jobs" },
   { path: "work/:jobId", title: "Job details" },
-  // Availability (3)
-  { path: "availability", title: "Availability" },
-  { path: "availability/hours", title: "Working hours" },
-  { path: "availability/blackout-dates", title: "Blackout dates" },
+  // Availability pages (availability, working hours, blackout dates, schedule) are real routes below.
   // Services (4)
   { path: "services", title: "Services" },
   { path: "services/categories", title: "My categories" },
@@ -64,6 +64,12 @@ export default function PartnerRoutes() {
     <Routes>
       <Route element={<PartnerLayout />}>
         <Route index element={<PartnerDashboard />} />
+        <Route path="availability" element={<PartnerAvailabilityPage />} />
+        <Route path="working-hours" element={<PartnerWorkingHoursPage />} />
+        <Route path="availability/hours" element={<PartnerWorkingHoursPage />} />
+        <Route path="blackout-dates" element={<PartnerBlackoutDatesPage />} />
+        <Route path="availability/blackout-dates" element={<PartnerBlackoutDatesPage />} />
+        <Route path="schedule" element={<PartnerSchedulePage />} />
         {PARTNER_PAGES.map(({ path, title }) => (
           <Route key={path} path={path} element={<Placeholder title={title} />} />
         ))}

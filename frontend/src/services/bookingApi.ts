@@ -1,41 +1,97 @@
-// API Service: bookingApi
-// Uses the shared authenticated client (lib/http): bearer token + automatic refresh on 401.
-import http, { type ApiError, type ApiResponse } from "@/lib/http";
-import type { CreateBookingRequest, CreateBookingResponse, SlotsResponse } from "@/types/booking";
+import axios from "axios";
+import type {
+  BookingView,
+  CreateBookingRequest,
+  CreateBookingResponse,
+  SlotsResponse,
+} from "@/types/booking";
 
 export interface NormalizedApiError {
-  status: number | null;
+  status: number;
   code: string;
   message: string;
   details?: unknown;
 }
 
-/** One predictable error shape so callers can switch on `code` (SLOT_CONFLICT, VALIDATION_ERROR, ...). */
-export function normalizeApiError(err: unknown): NormalizedApiError {
-  const e = err as Partial<ApiError> | undefined;
-  if (e && typeof e.message === "string") {
-    const code = e.code ?? (e.status ? "UNKNOWN_ERROR" : "NETWORK_ERROR");
-    return { status: e.status ?? null, code, message: e.message, details: e.details };
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "/api/v1",
+});
+
+api.interceptors.request.use((config) => {
+  const token =
+    localStorage.getItem("token") || localStorage.getItem("customer_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return { status: null, code: "UNKNOWN_ERROR", message: "Something went wrong. Please try again." };
+  return config;
+});
+
+/**
+ * Normalized API error helper function exported for addressApi.ts and other services
+ */
+export function normalizeApiError(err: unknown): NormalizedApiError {
+  if (axios.isAxiosError(err)) {
+    const data = err.response?.data;
+    return {
+      status: err.response?.status ?? 500,
+      code: data?.code ?? "UNKNOWN_ERROR",
+      message: data?.message ?? err.message ?? "An unexpected error occurred",
+      details: data?.details,
+    };
+  }
+  return {
+    status: 500,
+    code: "UNKNOWN_ERROR",
+    message: err instanceof Error ? err.message : "Unknown error",
+  };
 }
+
+// Alias for internal backwards compatibility
+export const normalizeError = normalizeApiError;
 
 export const bookingApi = {
   async getSlots(serviceId: string, date: string): Promise<SlotsResponse> {
     try {
-      const { data } = await http.get<ApiResponse<SlotsResponse>>(`/services/${serviceId}/slots`, { params: { date } });
-      return data.data;
+      const res = await api.get(`/services/${serviceId}/slots`, {
+        params: { date },
+      });
+      return res.data.data;
     } catch (err) {
       throw normalizeApiError(err);
     }
   },
 
-  async createBooking(payload: CreateBookingRequest, idempotencyKey: string): Promise<CreateBookingResponse> {
+  async createBooking(
+    input: CreateBookingRequest,
+    idempotencyKey: string
+  ): Promise<CreateBookingResponse> {
     try {
-      const { data } = await http.post<ApiResponse<CreateBookingResponse>>("/bookings", payload, {
+      const res = await api.post("/bookings", input, {
         headers: { "Idempotency-Key": idempotencyKey },
       });
-      return data.data;
+      return {
+        booking: res.data.data,
+        replayed: Boolean(res.data.replayed),
+      };
+    } catch (err) {
+      throw normalizeApiError(err);
+    }
+  },
+
+  async getBooking(id: string): Promise<BookingView> {
+    try {
+      const res = await api.get(`/bookings/${id}`);
+      return res.data.data;
+    } catch (err) {
+      throw normalizeApiError(err);
+    }
+  },
+
+  /** Fetches all live bookings for the logged-in customer */
+  async getBookings(): Promise<BookingView[]> {
+    try {
+      const res = await api.get("/bookings");
+      return res.data.data ?? [];
     } catch (err) {
       throw normalizeApiError(err);
     }

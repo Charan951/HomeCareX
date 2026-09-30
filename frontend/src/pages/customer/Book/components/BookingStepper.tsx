@@ -4,18 +4,24 @@ const STEP_TITLES = ["Service Details", "Address", "Date & Time", "Review & Pay"
 
 /** Progress bar + step heading. Moves focus to the heading on every step change so screen-reader
  *  and keyboard users land somewhere meaningful instead of at the top of a long page. */
-export default function BookingStepper({ currentStep }: { currentStep: number }) {
+interface BookingStepperProps {
+  currentStep: number;
+  /** Focus the heading on first render too (used when the step guard redirected the customer). */
+  focusOnMount?: boolean;
+}
+
+export default function BookingStepper({ currentStep, focusOnMount = false }: BookingStepperProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const isInitialMount = useRef(true);
 
   useEffect(() => {
-    // Skip focus on the initial page load/refresh
+    // On a plain page load/refresh don't steal focus; on step changes (and guard redirects) do.
     if (isInitialMount.current) {
       isInitialMount.current = false;
-    } else {
-      // Only focus when actually transitioning between steps
-      headingRef.current?.focus();
+      if (!focusOnMount) return;
     }
+    headingRef.current?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- focusOnMount only matters on the first run
   }, [currentStep]);
 
   return (
@@ -23,7 +29,6 @@ export default function BookingStepper({ currentStep }: { currentStep: number })
       <h2
         ref={headingRef}
         tabIndex={-1}
-        // Removed focus-visible:ring-2 to prevent the blue outline
         className="mb-3 rounded text-lg font-semibold text-ink outline-none focus:outline-none focus:ring-0"
       >
         Step {currentStep} of 4: {STEP_TITLES[currentStep - 1]}

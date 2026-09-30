@@ -1,3 +1,4 @@
+import { HttpError } from '../auth/auth.types';
 import { LeadModel } from './leads.model';
 import { publicLeadSchema } from './leads.validation';
 
@@ -24,9 +25,7 @@ export class LeadsService {
     });
 
     if (!parsed.success) {
-      const issue = parsed.error.issues[0];
-      const message = issue?.message ?? 'Invalid lead data';
-      throw new Error(message);
+      throw new HttpError(400, 'Please check the highlighted fields.', 'VALIDATION_ERROR');
     }
 
     const leadData = {
