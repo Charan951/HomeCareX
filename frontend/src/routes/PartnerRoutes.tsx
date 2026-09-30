@@ -8,9 +8,9 @@ import PartnerSchedulePage from "../pages/partner/Schedule";
 
 // Placeholder for Devangam's pages – swap each `element` when the real page lands.
 const Placeholder = ({ title }: { title: string }) => (
-  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-    <h2 className="text-lg font-semibold text-[#4338ca]">{title}</h2>
-    <p className="mt-1 text-sm text-slate-500">This page is coming soon.</p>
+  <div className="rounded border border-dashed border-line bg-panel p-8 text-center">
+    <h2 className="text-lg font-semibold text-brand">{title}</h2>
+    <p className="mt-1 text-sm text-muted">This page is coming soon.</p>
   </div>
 );
 

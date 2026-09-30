@@ -115,7 +115,7 @@ export class AdminBookingsController {
         },
 
         service: {
-          id: booking.categoryId.toString(),
+          id: booking.categoryId?.toString(),
           name: booking.serviceName,
           category: 'Home Services',
           durationMinutes: 60,
@@ -236,7 +236,7 @@ export class AdminBookingsController {
       },
 
       service: {
-        id: booking.categoryId.toString(),
+        id: booking.categoryId?.toString(),
         name: booking.serviceName,
         category: 'Home Services',
         durationMinutes: 60,
@@ -334,7 +334,6 @@ export class AdminBookingsController {
     }
 
     const partners = await PartnerModel.find({
-      status: 'active',
       'kyc.status': 'approved',
       trainingCompleted: true,
       categories: booking.categoryId,
@@ -409,14 +408,6 @@ export class AdminBookingsController {
       );
     }
 
-    if (partner.status !== 'active') {
-      throw new HttpError(
-        400,
-        'Partner is not active',
-        'PARTNER_NOT_ACTIVE',
-      );
-    }
-
     if (partner.kyc?.status !== 'approved') {
       throw new HttpError(
         400,
@@ -436,7 +427,7 @@ export class AdminBookingsController {
     const hasCategory = partner.categories.some(
       (categoryId) =>
         categoryId.toString() ===
-        booking.categoryId.toString(),
+        booking.categoryId?.toString(),
     );
 
     if (!hasCategory) {
@@ -484,7 +475,7 @@ export class AdminBookingsController {
       },
 
       service: {
-        id: booking.categoryId.toString(),
+        id: booking.categoryId?.toString(),
         name: booking.serviceName,
         category: 'Home Services',
         durationMinutes: 60,

@@ -2,7 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rootRouter from './routes';
+
+import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
+
 
 export const app = express();
 
@@ -18,7 +21,12 @@ app.get('/api/v1/health', (_req, res) => {
 });
 app.use('/api/v1', rootRouter);
 
+
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
+
 app.use(notFoundHandler);
 app.use(errorHandler);
+
 
 export default app;

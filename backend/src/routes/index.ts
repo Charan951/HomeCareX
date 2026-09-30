@@ -10,7 +10,10 @@ import { scheduleRoutes } from '../modules/availability/schedule.routes';
 import { partnerDashboardRoutes } from '../modules/partners/partner-dashboard.routes';
 
 import leadsRoutes from '../modules/leads/leads.routes';
+
 import { bookingsRoutes } from '../modules/bookings/bookings.routes';
+import { addressesRoutes } from '../modules/addresses/addresses.routes';
+import { reviewsRoutes } from '../modules/reviews/reviews.routes';
 
 export const rootRouter = Router();
 
@@ -35,5 +38,7 @@ rootRouter.use('/partner/schedule', scheduleRoutes); // GET /partner/schedule
 rootRouter.use(leadsRoutes); // POST /public/leads
 
 rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings, GET /bookings/:id
+rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, GET /addresses/serviceability
+rootRouter.use(reviewsRoutes); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
 
 export default rootRouter;

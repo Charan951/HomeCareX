@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ROLE_PERMISSIONS } from '../modules/auth/auth.constants';
 import type { UserRole } from '../models/User';
+import { Errors } from '../utils/errors';
 
 
 /** Use after `authenticate`. Requires every listed permission (e.g. 'partner:dashboard'); '*' grants all. */

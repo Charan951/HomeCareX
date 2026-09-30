@@ -1,38 +1,58 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { authService } from '../modules/auth/auth.service';
-import { HttpError } from '../modules/auth/auth.types';
+import { AppError } from '../utils/AppError';
 import type { UserRole } from '../models/User';
+
+export const USER_ROLES: readonly UserRole[] = ['customer', 'partner', 'admin'];
 
 export interface AuthUser {
   id: string;
   role: UserRole;
 }
 
+// Extend Express Request to include our custom user object
 declare module 'express-serve-static-core' {
   interface Request {
     user?: AuthUser;
   }
 }
 
-/** Requires `Authorization: Bearer <access token>` and puts `{ sub, role }` on res.locals.auth. */
-export const authenticate = (req: Request, res: Response, next: NextFunction) => {
+/**
+ * Requires `Authorization: Bearer <access token>`.
+ * Verifies the token using authService and sets `req.user` and `res.locals.auth`.
+ */
+export const authMiddleware: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
   const header = req.headers.authorization;
   const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
-  if (!token) return next(new HttpError(401, 'Authentication required', 'NO_ACCESS_TOKEN'));
+
+  if (!token) {
+    return next(new AppError(401, 'UNAUTHENTICATED', 'Authentication token is missing'));
+  }
+
   try {
     const payload = authService.verifyAccessToken(token);
+    
+    // Attach to both locals (for views/downstream) and req.user (for type-safe handlers)
     res.locals.auth = payload;
-    req.user = { id: payload.sub, role: payload.role };
-    next();
-  } catch (e) {
-    next(e);
+    req.user = { id: payload.sub, role: payload.role as UserRole };
+    
+    return next();
+  } catch (err) {
+    // Let the global error handler catch token expiration or invalid signature errors thrown by authService
+    return next(err);
   }
 };
 
-export const authMiddleware = authenticate;
-
-/** The signed-in user inside a handler behind `authenticate`; 401 if missing. */
+/** 
+ * Returns the authenticated user or throws 401.
+ * Use this inside controllers that sit behind `authMiddleware` to guarantee type safety. 
+ */
 export function getAuthUser(req: Request): AuthUser {
-  if (!req.user) throw new HttpError(401, 'Authentication required', 'NO_ACCESS_TOKEN');
+  if (!req.user) {
+    throw new AppError(401, 'UNAUTHENTICATED', 'Authentication is required');
+  }
   return req.user;
 }
+
+/** Alias kept for routes that import `authenticate` (partner, availability modules). */
+export const authenticate = authMiddleware;
