@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
+import RecaptchaNotice from '@/components/public/RecaptchaNotice';
 import { useCreateLead } from '@/features/public/leads';
+import { isRecaptchaConfigured } from '@/features/public/recaptcha';
 
 const inputClassName =
   'min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition-colors duration-150 placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus:ring-red-100';
@@ -40,6 +42,10 @@ export type ContactLeadFormValues = z.infer<typeof contactLeadSchema>;
 const ContactForm: React.FC = () => {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const mutation = useCreateLead();
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const handleCaptchaToken = useCallback((token: string | null) => setCaptchaToken(token), []);
+  const captchaMissing = isRecaptchaConfigured && !captchaToken;
 
   const defaultValues = useMemo<ContactLeadFormValues>(() => ({
     name: '',
@@ -68,6 +74,11 @@ const ContactForm: React.FC = () => {
 
     setFeedback(null);
 
+    if (captchaMissing) {
+      setFeedback({ type: 'error', text: 'Please complete the security check.' });
+      return;
+    }
+
     try {
       await mutation.mutateAsync({
         name: values.name,
@@ -76,6 +87,7 @@ const ContactForm: React.FC = () => {
         city: values.city,
         message: values.message,
         source: 'contact',
+        ...(captchaToken ? { recaptchaToken: captchaToken } : {}),
       });
 
       setFeedback({
@@ -83,7 +95,9 @@ const ContactForm: React.FC = () => {
         text: 'Thanks! Your message has been submitted successfully.',
       });
       reset(defaultValues);
+      setCaptchaResetKey((k) => k + 1);
     } catch (error) {
+      setCaptchaResetKey((k) => k + 1);
       const message =
         error instanceof Error && error.message
           ? error.message
@@ -229,9 +243,11 @@ const ContactForm: React.FC = () => {
           <input id="contact-honeypot" tabIndex={-1} autoComplete="off" {...register('honeypot')} />
         </div>
 
+        <RecaptchaNotice onTokenChange={handleCaptchaToken} resetKey={captchaResetKey} />
+
         <button
           type="submit"
-          disabled={isSubmitting || mutation.isPending}
+          disabled={isSubmitting || mutation.isPending || captchaMissing}
           className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
           {mutation.isPending || isSubmitting ? 'Sending...' : <>Send message <ArrowRight aria-hidden="true" size={17} /></>}
