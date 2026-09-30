@@ -25,6 +25,8 @@ import AdminAuditLogsPage from '@/pages/admin/AuditLogs';
 import AdminSettingsPage from '@/pages/admin/Settings';
 import AdminProfilePage from '@/pages/admin/Profile';
 import AdminNotificationsPage from '@/pages/admin/Notifications';
+import AdminPartnerDetailsPage from '@/pages/admin/PartnerDetails';
+
 
 interface AdminRoute {
   /** Relative to /admin. Empty string is the index route. */
@@ -42,6 +44,7 @@ export const adminRoutes: AdminRoute[] = [
   { path: 'customers', element: <AdminCustomersPage /> },
   { path: 'partners', element: <AdminPartnersPage /> },
   { path: 'manage-partners', element: <AdminManagePartnersPage /> },
+  { path: 'partners/:id', element: <AdminPartnerDetailsPage /> },
   { path: 'support', element: <AdminSupportPage /> },
   // Catalog
   { path: 'categories', element: <AdminCategoriesPage /> },

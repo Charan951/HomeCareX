@@ -1,6 +1,4 @@
-const API_URL: string = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api/v1';
-
-const TEMP_HEADERS = { 'x-partner-id': '650000000000000000000001' };
+import http, { type ApiResponse } from '@/lib/http';
 
 export interface WorkingHoursDay {
   day: string;
@@ -14,17 +12,15 @@ export interface Availability {
   workingHours: WorkingHoursDay[];
 }
 
-async function request(method: 'GET' | 'PATCH', body?: unknown): Promise<Availability> {
-  const res = await fetch(`${API_URL}/partner/availability`, {
-    method,
-    headers: { 'Content-Type': 'application/json', ...TEMP_HEADERS },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.message ?? `Request failed (${res.status})`);
-  return json.data as Availability;
-}
+export const getAvailability = () =>
+  http.get<ApiResponse<Availability>>('/partner/availability').then((r) => r.data.data);
 
-export const getAvailability = () => request('GET');
-export const setOnline = (isOnline: boolean) => request('PATCH', { isOnline });
-export const setWorkingHours = (workingHours: WorkingHoursDay[]) => request('PATCH', { workingHours });
+export const setOnline = (isOnline: boolean) =>
+  http
+    .patch<ApiResponse<Availability>>('/partner/availability', { isOnline })
+    .then((r) => r.data.data);
+
+export const setWorkingHours = (workingHours: WorkingHoursDay[]) =>
+  http
+    .patch<ApiResponse<Availability>>('/partner/availability', { workingHours })
+    .then((r) => r.data.data);

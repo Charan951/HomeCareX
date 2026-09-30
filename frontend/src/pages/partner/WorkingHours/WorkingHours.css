@@ -117,3 +117,14 @@
   }
   .wh-bar > * { max-width: none; }
 }
+
+@media (max-width: 480px) {
+  .wh-summary { padding: 16px; gap: 14px; }
+  .wh-big { font-size: 1.25rem; }
+  .wh-copy { padding: 9px 10px; font-size: .75rem; }
+  .wh-times { flex-direction: column; align-items: stretch; gap: 8px; }
+  .wh-to { display: none; }
+  .wh-badge { width: 40px; height: 40px; font-size: .68rem; }
+  .wh-bar { padding: 12px; }
+  .wh-bar > * { max-width: none; }
+}
