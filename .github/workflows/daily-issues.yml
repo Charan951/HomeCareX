@@ -1,0 +1,41 @@
+name: Daily member issues
+
+on:
+  schedule:
+    # 04:00 UTC = 09:30 IST, Monday-Friday
+    - cron: '0 4 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      day:
+        description: 'Plan day number to create (1-20). Empty = today (IST).'
+        required: false
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: daily-issues
+  cancel-in-progress: false
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Create today's issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Optional: a classic PAT with `project` scope to add issues to the "HomeCareX Development" board.
+          PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          PROJECT_OWNER: ${{ github.repository_owner }}
+          PROJECT_NUMBER: '4'
+        run: |
+          if [ -n "${{ inputs.day }}" ]; then
+            node .github/scripts/create-daily-issues.mjs --day "${{ inputs.day }}"
+          else
+            node .github/scripts/create-daily-issues.mjs
+          fi
