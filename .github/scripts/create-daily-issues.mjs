@@ -1,4 +1,4 @@
-// Creates today's per-member GitHub issues from docs/issues/issues.json
+// Creates today's per-member GitHub issues from .github/data/issues.json
 // (the same data the member_issues/*.pdf books are generated from).
 //
 // Usage:  node .github/scripts/create-daily-issues.mjs [--date YYYY-MM-DD] [--day N] [--dry-run]
@@ -17,7 +17,7 @@ const arg = (name) => {
 };
 const DRY = args.includes('--dry-run');
 
-const issues = JSON.parse(readFileSync(new URL('../../docs/issues/issues.json', import.meta.url), 'utf8'));
+const issues = JSON.parse(readFileSync(new URL('../data/issues.json', import.meta.url), 'utf8'));
 
 // ---- pick today's day --------------------------------------------------------
 function todayIST() {
