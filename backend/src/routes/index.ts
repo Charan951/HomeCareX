@@ -1,4 +1,5 @@
 import { Router } from 'express';
+
 import { authRoutes } from '../modules/auth/auth.routes';
 import { auditRoutes } from '../modules/audit/audit.routes';
 import { partnersRoutes } from '../modules/partners/partners.routes';
@@ -8,7 +9,9 @@ import { scheduleRoutes } from '../modules/availability/schedule.routes';
 import { partnerDashboardRoutes } from '../modules/partners/partner-dashboard.routes';
 
 import leadsRoutes from '../modules/leads/leads.routes';
+
 import { bookingsRoutes } from '../modules/bookings/bookings.routes';
+import { addressesRoutes } from '../modules/addresses/addresses.routes';
 
 export const rootRouter = Router();
 
@@ -22,5 +25,6 @@ rootRouter.use('/partner/blackout-dates', blackoutRoutes); // GET, POST, PATCH, 
 rootRouter.use('/partner/schedule', scheduleRoutes); // GET /partner/schedule
 rootRouter.use(leadsRoutes); // POST /public/leads
 rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings, GET /bookings/:id
+rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, GET /addresses/serviceability
 
 export default rootRouter;

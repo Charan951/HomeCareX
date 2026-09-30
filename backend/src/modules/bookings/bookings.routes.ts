@@ -13,27 +13,35 @@ import {
 
 export const bookingsRoutes = Router();
 
-// GET /services/:id/slots?date=YYYY-MM-DD — public: anyone browsing services can see availability.
+// GET /services/:id/slots?date=YYYY-MM-DD
 bookingsRoutes.get(
   '/services/:id/slots',
   validationMiddleware({ params: getSlotsParamsSchema, query: getSlotsQuerySchema }),
-  asyncHandler(async (req, res) => bookingsController.getSlots(req, res)),
+  asyncHandler(async (req, res) => bookingsController.getSlots(req, res))
 );
 
-// POST /bookings — customer only, requires Idempotency-Key.
+// POST /bookings
 bookingsRoutes.post(
   '/bookings',
   authMiddleware,
   roleMiddleware('customer'),
   validationMiddleware({ body: createBookingBodySchema }),
-  asyncHandler(async (req, res) => bookingsController.createBooking(req, res)),
+  asyncHandler(async (req, res) => bookingsController.createBooking(req, res))
 );
 
-// GET /bookings/:id — customer only, and only their own booking.
+// GET /bookings — List all customer bookings
+bookingsRoutes.get(
+  '/bookings',
+  authMiddleware,
+  roleMiddleware('customer'),
+  asyncHandler(async (req, res) => bookingsController.listBookings(req, res))
+);
+
+// GET /bookings/:id — Get details of a single booking
 bookingsRoutes.get(
   '/bookings/:id',
   authMiddleware,
   roleMiddleware('customer'),
   validationMiddleware({ params: getBookingParamsSchema }),
-  asyncHandler(async (req, res) => bookingsController.getBooking(req, res)),
+  asyncHandler(async (req, res) => bookingsController.getBooking(req, res))
 );

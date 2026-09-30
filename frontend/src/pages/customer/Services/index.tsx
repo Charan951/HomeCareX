@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ChevronRight, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { customerPath } from "@/routes/customerPath";
 import { FOCUS_RING } from "@/components/customer/focusRing";
+import BookLink from "@/components/customer/BookLink";
+import { EmptyState } from "@/components/customer";
 import { SERVICES, CATEGORIES } from "@/mocks/customerMockData";
 
 export default function Services() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const categoryId = searchParams.get("category");
+  const activeCategory = CATEGORIES.find((c) => c.id === categoryId);
 
   // Live, as-you-type filtering. Seeded from ?q= (e.g. arriving from the Dashboard
   // search bar), and kept in sync back to the URL (via replace, so typing doesn't
@@ -15,7 +19,10 @@ export default function Services() {
 
   useEffect(() => {
     const id = setTimeout(() => {
-      setSearchParams(query ? { q: query } : {}, { replace: true });
+      const next: Record<string, string> = {};
+      if (activeCategory) next.category = activeCategory.id;
+      if (query) next.q = query;
+      setSearchParams(next, { replace: true });
     }, 0);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only mirror `query` into the URL, not the other way
@@ -23,18 +30,27 @@ export default function Services() {
 
   const q = query.trim().toLowerCase();
   const services = useMemo(() => {
-    if (!q) return SERVICES;
-    return SERVICES.filter((s) => {
+    const inCategory = activeCategory ? SERVICES.filter((s) => s.categoryId === activeCategory.id) : SERVICES;
+    if (!q) return inCategory;
+    return inCategory.filter((s) => {
       const category = CATEGORIES.find((c) => c.id === s.categoryId);
       return s.name.toLowerCase().includes(q) || category?.name.toLowerCase().includes(q);
     });
-  }, [q]);
+  }, [q, activeCategory]);
 
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Services</h1>
+        <h1 className="text-xl font-semibold text-ink">{activeCategory ? activeCategory.name : "Services"}</h1>
         <p className="text-muted text-sm mt-1">Transparent pricing, duration, and ratings for every service.</p>
+        {activeCategory && (
+          <Link
+            to={customerPath("/services")}
+            className={`mt-2 inline-flex min-h-[44px] items-center text-sm font-medium text-brand hover:underline ${FOCUS_RING}`}
+          >
+            ← Show all services
+          </Link>
+        )}
       </div>
 
       <div className="relative">
@@ -59,35 +75,28 @@ export default function Services() {
       )}
 
       {services.length === 0 ? (
-        <p className="text-muted text-sm py-8 text-center">No services match "{query}".</p>
+        q ? (
+          <p className="text-muted text-sm py-8 text-center">No services match "{query}".</p>
+        ) : (
+          <EmptyState title="No services here yet" description="Check back soon or browse another category." />
+        )
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
           {services.map((s) => {
             const category = CATEGORIES.find((c) => c.id === s.categoryId);
             return (
-              // The whole card is the "Book now" affordance — /customer/book/:serviceSlug
-              // is the booking-flow route (owned by Ravi's N-booking module). This link
-              // already uses the agreed slug format, so it will work as soon as that
-              // route merges — until then it resolves to "Page not found".
-              <Link
-                key={s.id}
-                to={customerPath(`/book/${s.slug}`)}
-                className={`group bg-panel border border-line rounded p-4 flex items-start gap-3 hover:border-brand transition-colors ${FOCUS_RING}`}
-              >
-                <div className="text-2xl">{category?.icon}</div>
+              <div key={s.id} className="bg-panel border border-line rounded p-4 flex items-start gap-3">
+                <div className="text-2xl" aria-hidden="true">{category?.icon}</div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-ink truncate">{s.name}</div>
-                  <div className="text-xs text-muted mt-0.5 truncate">{category?.name} · {s.duration}</div>
+                  <div className="font-medium text-ink">{s.name}</div>
+                  <div className="text-xs text-muted mt-0.5">{category?.name} · {s.duration}</div>
                   <div className="flex items-center justify-between mt-3">
                     <span className="text-xs text-muted">⭐ {s.rating} ({s.reviewCount.toLocaleString()})</span>
                     <span className="font-semibold text-ink">₹{s.price}</span>
                   </div>
-                  <div className="flex items-center gap-0.5 mt-2 text-sm font-medium text-brand">
-                    Book now
-                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-                  </div>
+                  <BookLink slug={s.slug} serviceName={s.name} className="mt-3 w-full" />
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
