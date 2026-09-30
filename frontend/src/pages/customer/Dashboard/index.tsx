@@ -17,7 +17,7 @@ const ACTIVE_STATUSES = new Set(["Confirmed", "Partner Assigned", "En Route", "A
 export default function Dashboard() {
   // Dev-only toggle so the new-customer empty state can be reviewed/screenshotted
   // without editing mock data. Remove once a real "no bookings yet" account exists.
-  const [previewNewCustomer, setPreviewNewCustomer] = useState(false);
+  const [previewNewCustomer] = useState(false);
 
   const bookings = previewNewCustomer ? [] : BOOKINGS;
   const { data, loading } = useMockAsync({ bookings, categories: CATEGORIES, services: SERVICES, offers: OFFERS });

@@ -7,6 +7,7 @@ import AdminDashboardPage from '@/pages/admin/Dashboard';
 import AdminBookingsPage from '@/pages/admin/Bookings';
 import AdminCustomersPage from '@/pages/admin/Customers';
 import AdminPartnersPage from '@/pages/admin/Partners';
+import AdminManagePartnersPage from '@/pages/admin/ManagePartners';
 import AdminSupportPage from '@/pages/admin/Support';
 import AdminCategoriesPage from '@/pages/admin/Categories';
 import AdminServicesPage from '@/pages/admin/Services';
@@ -24,6 +25,8 @@ import AdminAuditLogsPage from '@/pages/admin/AuditLogs';
 import AdminSettingsPage from '@/pages/admin/Settings';
 import AdminProfilePage from '@/pages/admin/Profile';
 import AdminNotificationsPage from '@/pages/admin/Notifications';
+import AdminPartnerDetailsPage from '@/pages/admin/PartnerDetails';
+
 
 interface AdminRoute {
   /** Relative to /admin. Empty string is the index route. */
@@ -40,6 +43,8 @@ export const adminRoutes: AdminRoute[] = [
   { path: 'bookings', element: <AdminBookingsPage /> },
   { path: 'customers', element: <AdminCustomersPage /> },
   { path: 'partners', element: <AdminPartnersPage /> },
+  { path: 'manage-partners', element: <AdminManagePartnersPage /> },
+  { path: 'partners/:id', element: <AdminPartnerDetailsPage /> },
   { path: 'support', element: <AdminSupportPage /> },
   // Catalog
   { path: 'categories', element: <AdminCategoriesPage /> },

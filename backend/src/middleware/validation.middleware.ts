@@ -1,20 +1,21 @@
 import type { NextFunction, Request, Response } from 'express';
-import { z } from 'zod';
+import type { ZodTypeAny } from 'zod';
+import { Errors } from '../utils/errors';
 
-export const validationMiddleware = (schema: z.ZodTypeAny) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const result = schema.safeParse(req.body);
+type Source = 'body' | 'query' | 'params';
 
+/** Validates req[source] with a zod schema; replaces it with the parsed value or responds 400 VALIDATION_ERROR. */
+export const validate =
+  (schema: ZodTypeAny, source: Source = 'body') =>
+  (req: Request, _res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req[source]);
     if (!result.success) {
-      const firstIssue = result.error.issues[0];
-      res.status(400).json({
-        success: false,
-        message: firstIssue?.message ?? 'Please check the highlighted fields.',
-      });
-      return;
+      return next(
+        Errors.validation(result.error.issues.map((i) => ({ field: i.path.join('.') || source, message: i.message }))),
+      );
     }
-
-    req.body = result.data;
+    req[source] = result.data;
     next();
   };
-};
+
+export const validationMiddleware = validate;
