@@ -5,6 +5,8 @@ import app from './app';
 import { initSockets } from './sockets';
 import { seedDefaultSettings } from './modules/settings/settings.service';
 import { seedDefaultDesignations } from './modules/designations/designations.service';
+import { seedDefaultCategories } from './modules/categories/categories.service';
+import { seedDefaultServices } from './modules/services/services.service';
 
 const server = http.createServer(app);
 initSockets(server);
@@ -18,6 +20,8 @@ const connectDB = async () => {
     const added = await seedDefaultSettings();
     if (added) console.log(`Seeded ${added} default setting(s)`);
     await seedDefaultDesignations();
+    await seedDefaultCategories(); // categories before services (services reference them)
+    await seedDefaultServices();
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
     process.exit(1);

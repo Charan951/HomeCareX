@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ListChecks, Pencil, Plus, Trash2 } from 'lucide-react';
 import { PageHeader } from '@/components/admin/PageHeader';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
+import { useUIStore } from '@/store/useUIStore';
 import { adminApi, type Designation, type PartnerMember } from '../Services/adminApi'
 import type { ApiError } from '@/lib/http';
 import { PartnerFormModal } from './PartnerFormModal';
@@ -17,6 +18,15 @@ const NOTICE_CLASS = {
 
 export const AdminManagePartnersPage: React.FC = () => {
   const [partners, setPartners] = useState<PartnerMember[]>([]);
+  // Search text comes from the search bar below the header
+  const search = useUIStore((state) => state.pageSearch);
+  const visiblePartners = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    if (!needle) return partners;
+    return partners.filter((p) =>
+      [p.name, p.designation, p.email, p.phone].some((v) => (v ?? '').toLowerCase().includes(needle)),
+    );
+  }, [partners, search]);
   const [designations, setDesignations] = useState<Designation[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
@@ -115,10 +125,16 @@ export const AdminManagePartnersPage: React.FC = () => {
             <tbody>
               {loading ? (
                 <tr><td colSpan={6}>Loading…</td></tr>
-              ) : partners.length === 0 ? (
-                <tr><td colSpan={6}>No partners yet. Click “Add Partner” to register one.</td></tr>
+              ) : visiblePartners.length === 0 ? (
+                <tr>
+                  <td colSpan={6}>
+                    {partners.length === 0
+                      ? 'No partners yet. Click “Add Partner” to register one.'
+                      : 'No partners match your search.'}
+                  </td>
+                </tr>
               ) : (
-                partners.map((s) => (
+                visiblePartners.map((s) => (
                   <tr key={s.id}>
                     <td>{s.name}</td>
                     <td>{s.designation ?? '—'}</td>
