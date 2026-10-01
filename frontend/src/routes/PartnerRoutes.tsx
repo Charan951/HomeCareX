@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import PartnerLayout from "../layouts/PartnerLayout";
 import PartnerDashboard from "../pages/partner/Dashboard";
+import ProfileMenu from "../components/partner/ProfileMenu";
 import PartnerAvailabilityPage from "../pages/partner/Availability";
 import PartnerWorkingHoursPage from "../pages/partner/WorkingHours";
 import PartnerBlackoutDatesPage from "../pages/partner/BlackoutDates";
@@ -75,7 +76,11 @@ export default function PartnerRoutes() {
         <Route path="schedule" element={<PartnerSchedulePage />} />
          <Route path="earnings" element={<PartnerEarningsPage />} />
         {PARTNER_PAGES.map(({ path, title }) => (
-          <Route key={path} path={path} element={<Placeholder title={title} />} />
+          <Route
+            key={path}
+            path={path}
+            element={path === "profile" ? <ProfileMenu /> : <Placeholder title={title} />}
+          />
         ))}
         <Route path="*" element={<Placeholder title="Page not found" />} />
         
