@@ -1,247 +1,150 @@
-import React from "react";
+import React, { useEffect } from 'react';
+import {
+  ArrowRight,
+  Clock3,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+} from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
-const contactData = [
+import ContactForm from '@/components/public/ContactForm';
+import MapEmbed from '@/components/public/MapEmbed';
+import PartnerInterestForm from '@/components/public/PartnerInterestForm';
+import './Contact.css';
+
+const contactItems = [
   {
-    title: "Email",
-    value: "support@homecarex.com",
-    description: "Send us your questions anytime.",
-    icon: "✉",
-    color: "bg-[#4338ca]",
+    label: 'Call',
+    title: 'Talk to our team',
+    detail: '+91 93902 12572',
+    href: 'tel:+919390212572',
+    note: 'Monday–Saturday, 9:00 AM–6:00 PM',
+    icon: Phone,
   },
   {
-    title: "Phone",
-    value: "+91 9390212572",
-    description: "Call us for home service assistance.",
-    icon: "☎",
-    color: "bg-[#ff8a3d]",
+    label: 'Email',
+    title: 'Write us a note',
+    detail: 'support@homecarex.com',
+    href: 'mailto:support@homecarex.com',
+    note: 'We’ll get back to you as soon as we can.',
+    icon: Mail,
   },
   {
-    title: "Address",
-    value: "HomeCareX Office",
-    description: "Main Road, Hyderabad, Telangana, India",
-    icon: "⌂",
-    color: "bg-[#4338ca]",
+    label: 'Office',
+    title: 'Find our office',
+    detail: 'Hyderabad, Telangana',
+    href: '#office',
+    note: 'Get in touch before visiting.',
+    icon: MapPin,
   },
   {
-    title: "Working Hours",
-    value: "9:00 AM - 6:00 PM",
-    description: "Monday to Saturday",
-    icon: "◷",
-    color: "bg-[#ff8a3d]",
+    label: 'Support hours',
+    title: 'We’re here to help',
+    detail: 'Monday–Saturday',
+    href: '#contact-form',
+    note: '9:00 AM–6:00 PM',
+    icon: Clock3,
   },
-];
+] as const;
 
 const Contact: React.FC = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (!location.hash) return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [location.hash]);
+
   return (
-    <div className="bg-gray-50 min-h-screen">
-
-      {/* HERO */}
-
-      <section className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-orange-50">
-
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#ff8a3d]/10 rounded-full blur-3xl" />
-
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-[#4338ca]/10 rounded-full blur-3xl" />
-
-        <div className="relative max-w-7xl mx-auto px-6 py-20 text-center">
-
-          <span className="text-[#ff8a3d] font-bold text-sm uppercase tracking-widest">
-            Contact Us
-          </span>
-
-          <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold text-[#4338ca]">
-            We Are Here To Help
-          </h1>
-
-          <p className="mt-5 max-w-2xl mx-auto text-gray-600 leading-7">
-            Have a question or need help with a home service?
-            Get in touch with the HomeCareX team.
-          </p>
-
-        </div>
-
-      </section>
-
-
-      {/* CONTACT INFORMATION */}
-
-      <section className="py-20">
-
-        <div className="max-w-7xl mx-auto px-6">
-
-          {/* SECTION HEADING */}
-
-          <div className="text-center max-w-2xl mx-auto">
-
-            <span className="text-[#ff8a3d] font-bold text-sm uppercase tracking-widest">
-              Get In Touch
-            </span>
-
-            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-[#4338ca]">
-              Contact HomeCareX
-            </h2>
-
-            <p className="mt-4 text-gray-600 leading-7">
-              Our team is here to help you with your questions,
-              service requirements and general assistance.
-            </p>
-
+    <div className="contact-page">
+      <section id="contact-methods" className="contact-ways" aria-labelledby="contact-ways-title">
+        <div className="contact-shell">
+          <div className="contact-section-heading">
+            <div>
+              <p className="contact-eyebrow"><span />Choose your way in</p>
+              <h1 id="contact-ways-title">Reach us directly.</h1>
+            </div>
+            <p>Whether it’s a quick question or a bigger conversation, we’re listening.</p>
           </div>
-
-
-          {/* CONTACT CARDS */}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
-
-            {contactData.map((contact) => (
-
-              <div
-                key={contact.title}
-                className="
-                  bg-white
-                  rounded-2xl
-                  p-7
-                  border
-                  border-gray-100
-                  shadow-sm
-                  hover:shadow-xl
-                  hover:-translate-y-1
-                  transition-all
-                  duration-300
-                "
-              >
-
-                {/* ICON */}
-
-                <div
-                  className={`
-                    w-14
-                    h-14
-                    rounded-xl
-                    ${contact.color}
-                    text-white
-                    flex
-                    items-center
-                    justify-center
-                    text-2xl
-                  `}
-                >
-                  {contact.icon}
-                </div>
-
-
-                {/* TITLE */}
-
-                <h3 className="mt-6 text-xl font-bold text-[#4338ca]">
-                  {contact.title}
-                </h3>
-
-
-                {/* VALUE */}
-
-                <p className="mt-3 font-semibold text-gray-800">
-                  {contact.value}
-                </p>
-
-
-                {/* DESCRIPTION */}
-
-                <p className="mt-2 text-sm text-gray-500 leading-6">
-                  {contact.description}
-                </p>
-
-              </div>
-
+          <div className="contact-ways__grid">
+            {contactItems.map(({ label, title, detail, href, note, icon: Icon }) => (
+              <a key={label} href={href} className="contact-way">
+                <span className="contact-way__top"><Icon aria-hidden="true" size={17} /><span>{label}</span><ArrowRight aria-hidden="true" size={15} /></span>
+                <span className="contact-way__title">{title}</span>
+                <span className="contact-way__action">{detail}</span>
+                <span className="contact-way__note">{note}</span>
+              </a>
             ))}
-
           </div>
-
         </div>
-
       </section>
 
-
-      {/* SUPPORT SECTION */}
-
-      <section className="pb-20">
-
-        <div className="max-w-5xl mx-auto px-6">
-
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-lg p-8 sm:p-12 text-center">
-
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-[#4338ca] text-white flex items-center justify-center text-3xl">
-              ?
-            </div>
-
-            <h2 className="mt-6 text-3xl font-bold text-[#4338ca]">
-              Need Assistance?
-            </h2>
-
-            <p className="mt-4 max-w-2xl mx-auto text-gray-600 leading-7">
-              Our HomeCareX support team is available to help you
-              with service-related questions and other assistance.
-            </p>
-
-            <div className="mt-7 flex flex-col sm:flex-row justify-center gap-4">
-
-              <div className="px-6 py-3 rounded-lg bg-indigo-50 text-[#4338ca] font-semibold">
-                📧 support@homecarex.com
-              </div>
-
-              <div className="px-6 py-3 rounded-lg bg-orange-50 text-[#ff8a3d] font-semibold">
-                ☎ +91 9390212572
-              </div>
-
-            </div>
-
+      <section className="contact-faq" aria-labelledby="contact-faq-title">
+        <div className="contact-shell contact-faq__inner">
+          <span className="contact-faq__icon"><MessageCircle aria-hidden="true" size={20} /></span>
+          <div className="contact-faq__copy">
+            <p className="contact-eyebrow"><span />Frequently asked questions</p>
+            <h2 id="contact-faq-title">Still have questions?</h2>
+            <p>Find answers about HomeCareX services and getting started.</p>
+            <Link to="/#faqs" className="contact-faq__link">View FAQs <ArrowRight aria-hidden="true" size={16} /></Link>
           </div>
-
         </div>
-
       </section>
 
-
-      {/* BOTTOM CTA */}
-
-      <section className="bg-[#4338ca] py-16">
-
-        <div className="max-w-4xl mx-auto px-6 text-center">
-
-          <h2 className="text-3xl sm:text-4xl font-bold text-white">
-            HomeCareX Is Here For You
-          </h2>
-
-          <p className="mt-4 text-indigo-100 leading-7">
-            Get reliable home services with a simple and convenient
-            experience.
-          </p>
-
-          <a
-            href="tel:+919390212572"
-            className="
-              inline-flex
-              items-center
-              mt-8
-              px-8
-              py-3.5
-              rounded-lg
-              bg-[#ff8a3d]
-              text-white
-              font-bold
-              hover:bg-white
-              hover:text-[#4338ca]
-              transition-all
-              duration-300
-            "
-          >
-            Call HomeCareX
-            <span className="ml-2">→</span>
-          </a>
-
+      <section className="contact-conversation" aria-labelledby="contact-form-heading">
+        <div className="contact-shell contact-conversation__layout">
+          <aside className="contact-conversation__aside">
+            <p className="contact-eyebrow"><span />Start a conversation</p>
+            <h2 id="contact-form-heading">Tell us what’s on your mind.</h2>
+            <p>Send a few details and the HomeCareX team will take it from there. Your enquiry is shared with our team, not posted publicly.</p>
+            <a className="contact-conversation__direct" href="tel:+919390212572">
+              <span className="contact-conversation__direct-icon"><Phone aria-hidden="true" size={17} /></span>
+              <span><small>Prefer to call?</small><b>+91 93902 12572</b></span>
+              <ArrowRight aria-hidden="true" size={16} />
+            </a>
+            <div className="contact-conversation__hours"><Clock3 aria-hidden="true" size={16} /><span>Monday–Saturday<small>9:00 AM–6:00 PM</small></span></div>
+          </aside>
+          <ContactForm />
         </div>
-
       </section>
 
+      <section className="contact-office-band" aria-labelledby="contact-office-title">
+        <div id="office" className="contact-office contact-shell">
+          <div className="contact-office__copy">
+            <p className="contact-eyebrow"><span />A local point of contact</p>
+            <h2 id="contact-office-title">Rooted in Hyderabad.<br /><span>Here for your home.</span></h2>
+            <p>HomeCareX is based in Hyderabad, Telangana. Reach out before visiting so we can make sure someone is available to meet you.</p>
+            <div className="contact-office__address"><span><MapPin aria-hidden="true" size={18} /></span><div><b>HomeCareX Office</b><small>Hyderabad, Telangana, India</small></div></div>
+            <a className="contact-office__link" href="https://www.openstreetmap.org/?mlat=17.385&mlon=78.4867#map=12/17.385/78.4867" target="_blank" rel="noreferrer">Open in OpenStreetMap <ArrowRight aria-hidden="true" size={15} /></a>
+          </div>
+          <div className="contact-office__map"><MapEmbed /><span className="contact-office__map-label"><MapPin aria-hidden="true" size={14} /> HYDERABAD, TELANGANA</span></div>
+        </div>
+      </section>
+
+      <section className="partner-band" aria-labelledby="partner-band-title">
+        <div className="contact-shell partner-band__layout">
+          <div className="partner-band__copy">
+            <p className="contact-eyebrow contact-eyebrow--light"><span />For home-service professionals</p>
+            <h2 id="partner-band-title">Bring your craft.<br /><span>Build what’s next.</span></h2>
+            <p>Join the HomeCareX network and let customers discover the services you provide. Tell us about your experience and location — our team will follow up personally.</p>
+            <Link to="#partner-interest" className="partner-band__cta">Become a Partner <ArrowRight aria-hidden="true" size={17} /></Link>
+            <div className="partner-band__note"><ShieldCheck aria-hidden="true" size={16} /><span><b>A conversation, not a commitment.</b><small>This enquiry does not create an account or sign you up for anything.</small></span></div>
+          </div>
+          <div className="partner-band__form">
+            <div className="partner-band__form-head"><span>PARTNER ENQUIRY</span><span>01 <i /> 02 <i /> 03</span></div>
+            <PartnerInterestForm />
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

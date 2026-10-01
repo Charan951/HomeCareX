@@ -7,6 +7,9 @@ import type { ActorRole, BookingStatus } from './bookings.constants';
  * Mirrors the TRD lifecycle. A missing entry means the transition is illegal.
  */
 export const TRANSITIONS: Record<BookingStatus, Partial<Record<BookingStatus, ActorRole[]>>> = {
+  // Customer checkout (R01/R03): payment hold -> confirmed -> matching.
+  pending_payment: { confirmed: ['system'], cancelled_by_customer: ['customer', 'admin', 'system'] },
+  confirmed: { searching_for_partner: ['system'], cancelled_by_customer: ['customer', 'admin'] },
   created: { searching_for_partner: ['system'], cancelled_by_customer: ['customer', 'admin'] },
   searching_for_partner: { assigned: ['partner', 'admin'], cancelled_by_customer: ['customer', 'admin'] },
   assigned: {

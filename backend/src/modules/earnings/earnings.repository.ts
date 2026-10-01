@@ -1,7 +1,7 @@
 import { Types } from 'mongoose';
 import EarningModel from './Earning';
 import PartnerModel from '../../models/Partner';
-import { SettingsModel } from '../Settings/Settings';
+import SettingModel from '../../models/Settings';
 import type { EarningStatus } from './earnings.constants';
 
 export interface NewEarning {
@@ -36,8 +36,10 @@ export const earningsRepository = {
   },
 
   getCommissionRate: async (): Promise<number | null> => {
-    const settings = await SettingsModel.findOne({ key: 'platform' }).select('commissionRate').lean();
-    return settings ? settings.commissionRate : null;
+    // Admin setting `commission.percent` (e.g. 20) -> fraction (0.2)
+    const setting = await SettingModel.findOne({ key: 'commission.percent' }).select('value').lean();
+    const percent = Number(setting?.value);
+    return setting && Number.isFinite(percent) ? percent / 100 : null;
   },
 
   /** Plain insert. The unique index on bookingId rejects a duplicate with Mongo error 11000. */
