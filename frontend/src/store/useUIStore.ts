@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 
 interface UIState {
+  pageSearch: string;
+  setPageSearch: (value: string) => void;
+
   // Desktop: true = full sidebar with labels, false = icon-only strip
   isSidebarCollapsed: boolean;
   // Mobile: true = the sidebar drawer is slid open over the page
@@ -13,6 +16,8 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set) => ({
+  pageSearch: '',
+  setPageSearch: (value) => set({ pageSearch: value }),
   isSidebarCollapsed: false,
   isMobileMenuOpen: false,
   theme: 'light',

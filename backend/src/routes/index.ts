@@ -8,6 +8,10 @@ import { availabilityRoutes } from '../modules/availability/availability.routes'
 import { blackoutRoutes } from '../modules/availability/blackout.routes';
 import { scheduleRoutes } from '../modules/availability/schedule.routes';
 import { partnerDashboardRoutes } from '../modules/partners/partner-dashboard.routes';
+import { adminDashboardRoutes } from '../modules/admin-dashboard/admin-dashboard.routes';
+import { settingsRoutes } from '../modules/settings/settings.routes';
+import { designationsRoutes } from '../modules/designations/designations.routes';
+import { notificationsRoutes } from '../modules/notifications/notifications.routes';
 
 import leadsRoutes from '../modules/leads/leads.routes';
 
@@ -20,7 +24,10 @@ export const rootRouter = Router();
 // Routes are registered under /api/v1. Add new modules here; don't replace the list.
 
 rootRouter.use('/auth', authRoutes);
-
+rootRouter.use('/admin/dashboard', adminDashboardRoutes); // GET /admin/dashboard/summary, /trends
+rootRouter.use('/admin/settings', settingsRoutes); // GET /admin/settings, PUT /admin/settings/:key
+rootRouter.use('/admin/designations', designationsRoutes); // GET, POST, PATCH /:id, DELETE /:id
+rootRouter.use('/notifications', notificationsRoutes); // GET /notifications, PATCH /:id/read, PATCH /read-all
 rootRouter.use('/admin', auditRoutes); // GET /admin/audit-logs
 
 rootRouter.use('/admin', adminRoutes); // GET /admin/bookings
