@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import RecaptchaNotice from '@/components/public/RecaptchaNotice';
+import { isRecaptchaConfigured } from '@/features/public/recaptcha';
 import { useCreateLead } from '@/features/public/leads';
 import { isRecaptchaConfigured } from '@/features/public/recaptcha';
 
@@ -45,7 +46,7 @@ const ContactForm: React.FC = () => {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [captchaResetKey, setCaptchaResetKey] = useState(0);
   const handleCaptchaToken = useCallback((token: string | null) => setCaptchaToken(token), []);
-  const captchaMissing = isRecaptchaConfigured && !captchaToken;
+  const captchaMissing = !isRecaptchaConfigured || !captchaToken;
 
   const defaultValues = useMemo<ContactLeadFormValues>(() => ({
     name: '',
@@ -59,11 +60,13 @@ const ContactForm: React.FC = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
     reset,
   } = useForm<ContactLeadFormValues>({
     resolver: zodResolver(contactLeadSchema),
     defaultValues,
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
   const onSubmit = async (values: ContactLeadFormValues) => {
@@ -74,8 +77,16 @@ const ContactForm: React.FC = () => {
 
     setFeedback(null);
 
-    if (captchaMissing) {
-      setFeedback({ type: 'error', text: 'Please complete the security check.' });
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setFeedback({
+        type: 'error',
+        text: "You're offline. Please check your internet connection and try again.",
+      });
+      return;
+    }
+
+    if (!isRecaptchaConfigured || !captchaToken) {
+      setFeedback({ type: 'error', text: 'Please complete the security check before submitting.' });
       return;
     }
 
@@ -87,7 +98,7 @@ const ContactForm: React.FC = () => {
         city: values.city,
         message: values.message,
         source: 'contact',
-        ...(captchaToken ? { recaptchaToken: captchaToken } : {}),
+        recaptchaToken: captchaToken,
       });
 
       setFeedback({
@@ -95,13 +106,15 @@ const ContactForm: React.FC = () => {
         text: 'Thanks! Your message has been submitted successfully.',
       });
       reset(defaultValues);
-      setCaptchaResetKey((k) => k + 1);
+      setCaptchaResetKey((key) => key + 1);
     } catch (error) {
-      setCaptchaResetKey((k) => k + 1);
-      const message =
-        error instanceof Error && error.message
-          ? error.message
-          : 'Please check the highlighted fields.';
+      setCaptchaResetKey((key) => key + 1);
+      const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+      const message = isOffline
+        ? "You're offline. Please check your internet connection and try again."
+        : error instanceof Error && error.message
+        ? error.message
+        : 'Please check the highlighted fields.';
 
       setFeedback({
         type: 'error',
@@ -111,8 +124,8 @@ const ContactForm: React.FC = () => {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-7 lg:p-8">
-      <div className="mb-6 border-b border-slate-200 pb-5">
+    <div id="contact-form" className="rounded-xl border border-slate-200 bg-white p-5 sm:p-7 lg:p-8">
+      <header className="mb-6 border-b border-slate-200 pb-5">
         <p className="text-xs font-bold uppercase tracking-[0.17em] text-blue-700">Contact our team</p>
         <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 sm:text-[1.75rem]">
           Send us a message
@@ -123,7 +136,7 @@ const ContactForm: React.FC = () => {
         <p className="mt-3 text-xs text-slate-500">
           <span aria-hidden="true" className="font-semibold text-blue-700">*</span> Required fields
         </p>
-      </div>
+      </header>
 
       {feedback && (
         <div
@@ -247,7 +260,7 @@ const ContactForm: React.FC = () => {
 
         <button
           type="submit"
-          disabled={isSubmitting || mutation.isPending || captchaMissing}
+          disabled={isSubmitting || mutation.isPending || !isValid || captchaMissing}
           className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
           {mutation.isPending || isSubmitting ? 'Sending...' : <>Send message <ArrowRight aria-hidden="true" size={17} /></>}

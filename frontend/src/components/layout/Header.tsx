@@ -210,64 +210,12 @@ const contact = {
 const navItems = [
   { to: "/", label: "Home", end: true },
   { to: "/services", label: "Services", end: false },
-  { to: "/about", label: "About", end: false },
-  { to: "/contact", label: "Contact", end: false },
+  { to: "/about", label: "About", end: true },
+  { to: "/contact", label: "Contact", end: true },
 ];
 
-const linkClass = ({ isActive }: { isActive: boolean }): string =>
-  `hd-link ${isActive ? "is-active" : ""}`;
-
-const PhoneIcon: React.FC = () => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden
-  >
-    <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" />
-  </svg>
-);
-
-const MailIcon: React.FC = () => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden
-  >
-    <rect x="3" y="5" width="18" height="14" rx="2" />
-    <path d="m3 7 9 6 9-6" />
-  </svg>
-);
-
-const ClockIcon: React.FC = () => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden
-  >
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 7v5l3 2" />
-  </svg>
-);
-
 const Header: React.FC = () => {
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -277,6 +225,22 @@ const Header: React.FC = () => {
 
   // Reference to the header itself
   const headerRef = useRef<HTMLElement>(null);
+
+  const getLinkClass = (itemTo: string, end?: boolean) => {
+    const currentPath = location.pathname;
+
+    // Strict check: About is only active when on /about, never on /faq
+    if (itemTo === "/about") {
+      return `hd-link ${currentPath === "/about" ? "is-active" : ""}`;
+    }
+
+    if (itemTo === "/" || end) {
+      return `hd-link ${currentPath === itemTo ? "is-active" : ""}`;
+    }
+
+    const isActive = currentPath === itemTo || currentPath.startsWith(`${itemTo}/`);
+    return `hd-link ${isActive ? "is-active" : ""}`;
+  };
 
   // Reference to the mobile menu button
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -395,34 +359,28 @@ const Header: React.FC = () => {
           scrolled ? "is-collapsed" : ""
         }`}
       >
-        <div>
-          <div className="relative bg-gradient-to-r from-[#1e1b6e] via-[#2d2a9c] to-[#1e1b6e] text-sm">
+        {/* Logo */}
+        <NavLink to="/" onClick={closeMenu} aria-label="HomeCareX Home" className="flex-shrink-0">
+          <img
+            src="/logo.png"
+            alt="HomeCareX"
+            className={`w-auto transition-all duration-300 hover:scale-105 ${scrolled ? "h-12" : "h-16"}`}
+          />
+        </NavLink>
 
-            {/* Thin orange accent along the very top */}
-            <div
-              className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-[#4338ca] via-[#ff8a3d] to-[#4338ca]"
-              aria-hidden
-            />
-
-            <div className="mx-auto flex h-11 max-w-7xl items-center justify-between px-6 pt-[3px]">
-
-              <div className="flex items-center gap-7">
-
-                <a
-                  href={contact.phoneHref}
-                  className="hd-top-link"
-                >
-                  <PhoneIcon />
-                  {contact.phone}
-                </a>
-
-                <a
-                  href={`mailto:${contact.email}`}
-                  className="hd-top-link"
-                >
-                  <MailIcon />
-                  {contact.email}
-                </a>
+        {/* Desktop Navigation */}
+        <nav className="hidden items-center gap-9 md:flex" aria-label="Main navigation">
+          {navItems.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={() => getLinkClass(item.to, item.end)}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
 
                 <span className="hidden items-center gap-2 text-[#dfe1ff] lg:inline-flex">
                   <ClockIcon />

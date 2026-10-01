@@ -30,12 +30,11 @@ export class LeadsService {
       throw new HttpError(400, 'Please check the highlighted fields.', 'VALIDATION_ERROR');
     }
 
-    // Only after cheap checks (honeypot, validation) so bots and typos don't cost a Google call.
     await verifyLeadCaptcha(parsed.data.recaptchaToken, remoteIp);
 
     const leadData = {
       name: parsed.data.name,
-      email: parsed.data.source === 'contact' ? parsed.data.email : undefined,
+      email: parsed.data.email,
       phone: parsed.data.phone.replace(/[\s()-]/g, ''),
       city: parsed.data.city,
       message: parsed.data.source === 'contact' ? parsed.data.message : undefined,
