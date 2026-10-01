@@ -1,5 +1,6 @@
 import { HttpError } from '../auth/auth.types';
 import { LeadModel } from './leads.model';
+import { verifyLeadCaptcha } from './recaptcha.service';
 import { publicLeadSchema } from './leads.validation';
 
 export type PublicLeadInput = {
@@ -11,10 +12,11 @@ export type PublicLeadInput = {
   skills?: string;
   source: 'contact' | 'partner';
   honeypot?: string;
+  recaptchaToken?: string;
 };
 
 export class LeadsService {
-  async createLead(input: PublicLeadInput) {
+  async createLead(input: PublicLeadInput, remoteIp?: string) {
     if (input.honeypot && input.honeypot.trim().length > 0) {
       return { success: true, message: 'Lead submitted successfully' };
     }
@@ -28,9 +30,11 @@ export class LeadsService {
       throw new HttpError(400, 'Please check the highlighted fields.', 'VALIDATION_ERROR');
     }
 
+    await verifyLeadCaptcha(parsed.data.recaptchaToken, remoteIp);
+
     const leadData = {
       name: parsed.data.name,
-      email: parsed.data.source === 'contact' ? parsed.data.email : undefined,
+      email: parsed.data.email,
       phone: parsed.data.phone.replace(/[\s()-]/g, ''),
       city: parsed.data.city,
       message: parsed.data.source === 'contact' ? parsed.data.message : undefined,

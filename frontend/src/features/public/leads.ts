@@ -10,14 +10,17 @@ export type ContactLeadPayload = {
   phone: string;
   city: string;
   message: string;
+  recaptchaToken: string;
   source: 'contact';
 };
 
 export type PartnerLeadPayload = {
   name: string;
+  email: string;
   phone: string;
   city: string;
   skills: string;
+  recaptchaToken: string;
   source: 'partner';
 };
 

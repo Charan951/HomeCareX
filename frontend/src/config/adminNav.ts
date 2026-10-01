@@ -10,6 +10,7 @@ import {
   FileClock,
   HardHat,
   Headset,
+  Inbox,
   UserCog,
   UserPlus,
   LayoutDashboard,
@@ -51,6 +52,7 @@ export const adminNavGroups: AdminNavGroup[] = [
   {
     groupName: 'Operations',
     items: [
+      { label: 'Inbox', path: '/admin/leads', icon: Inbox },
       { label: 'Bookings', path: '/admin/bookings', icon: CalendarCheck },
       { label: 'Customers', path: '/admin/customers', icon: Users },
       { label: 'Manage Partners', path: '/admin/manage-partners', icon: UserPlus },

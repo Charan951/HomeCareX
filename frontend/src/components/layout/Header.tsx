@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import MobileDrawer from "./MobileDrawer";
 
 /* =========================================================
@@ -43,16 +43,30 @@ const styles = `
 const navItems = [
   { to: "/", label: "Home", end: true },
   { to: "/services", label: "Services", end: false },
-  { to: "/about", label: "About", end: false },
-  { to: "/contact", label: "Contact", end: false },
+  { to: "/about", label: "About", end: true },
+  { to: "/contact", label: "Contact", end: true },
 ];
 
-const linkClass = ({ isActive }: { isActive: boolean }): string =>
-  `hd-link ${isActive ? "is-active" : ""}`;
-
 const Header: React.FC = () => {
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  const getLinkClass = (itemTo: string, end?: boolean) => {
+    const currentPath = location.pathname;
+
+    // Strict check: About is only active when on /about, never on /faq
+    if (itemTo === "/about") {
+      return `hd-link ${currentPath === "/about" ? "is-active" : ""}`;
+    }
+
+    if (itemTo === "/" || end) {
+      return `hd-link ${currentPath === itemTo ? "is-active" : ""}`;
+    }
+
+    const isActive = currentPath === itemTo || currentPath.startsWith(`${itemTo}/`);
+    return `hd-link ${isActive ? "is-active" : ""}`;
+  };
 
   // Reference to the mobile menu button
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -97,7 +111,12 @@ const Header: React.FC = () => {
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-9 md:flex" aria-label="Main navigation">
           {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={() => getLinkClass(item.to, item.end)}
+            >
               {item.label}
             </NavLink>
           ))}

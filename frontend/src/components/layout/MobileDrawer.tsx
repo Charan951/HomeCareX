@@ -223,6 +223,7 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
         {/* About */}
         <NavLink
           to="/about"
+          end
           onClick={onClose}
           className={({ isActive }) =>
             isActive
