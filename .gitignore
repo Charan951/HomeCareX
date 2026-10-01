@@ -38,3 +38,6 @@ docs/
 MEMORY.md
 
 package.json
+
+.postman/
+postman/

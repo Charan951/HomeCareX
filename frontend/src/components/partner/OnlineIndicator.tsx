@@ -12,7 +12,7 @@ export default function OnlineIndicator({ online, onChange }: Props) {
       <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${online ? "bg-accent" : "bg-muted/50"}`} />
     </span>
   );
-  const cls = `flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium ${
+  const cls = `flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm ${
     online ? "border-accent bg-accent-soft text-[#b45309]" : "border-line bg-panel text-muted"
   }`;
   const label = online ? "Online" : "Offline";

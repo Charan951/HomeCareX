@@ -8,6 +8,7 @@ import { availabilityRoutes } from '../modules/availability/availability.routes'
 import { blackoutRoutes } from '../modules/availability/blackout.routes';
 import { scheduleRoutes } from '../modules/availability/schedule.routes';
 import { partnerDashboardRoutes } from '../modules/partners/partner-dashboard.routes';
+import { earningsRoutes } from '../modules/earnings/earnings.routes';
 import { adminDashboardRoutes } from '../modules/admin-dashboard/admin-dashboard.routes';
 import { settingsRoutes } from '../modules/settings/settings.routes';
 import { designationsRoutes } from '../modules/designations/designations.routes';
@@ -45,6 +46,7 @@ rootRouter.use('/partner/schedule', scheduleRoutes); // GET /partner/schedule
 rootRouter.use(leadsRoutes); // POST /public/leads
 
 rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings, GET /bookings/:id
+rootRouter.use('/partner/earnings', earningsRoutes); // GET /partner/earnings/summary
 rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, GET /addresses/serviceability
 rootRouter.use(reviewsRoutes); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
 

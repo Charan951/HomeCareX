@@ -1,0 +1,445 @@
+/* ==========================================================================
+   mobile-plain.css — load LAST (after calm-overrides.css)
+   Mobile only (<1024px):
+   1) No horizontal scroll, no pinch zoom
+   2) Plain UI: no card/block boxes, just simple sections with thin dividers
+   ========================================================================== */
+
+@media (max-width: 1023px) {
+
+  /* ---------- 1. No horizontal scroll / no zoom ---------- */
+  html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden; overflow-x: clip;
+    overscroll-behavior-x: none;
+    touch-action: pan-y;               /* vertical scroll only, blocks pinch zoom */
+    -webkit-text-size-adjust: 100%;
+    background: #fff;
+  }
+  body:has(.pa-page) { background: #fff; }
+
+  .av-page, .av-page * { box-sizing: border-box; }
+  .av-page {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden; overflow-x: clip;
+    padding: 0 16px 24px;
+  }
+  .av-page > * + * { margin-top: 0; }
+  .av-page img, .av-page svg { max-width: 100%; }
+  .av-page p, .av-page h1, .av-page h2, .av-page h3 { overflow-wrap: anywhere; }
+
+  /* ---------- 2. Plain UI: remove blocks ---------- */
+  .av-hero, .av-card, .av-link, .av-stat, .av-chip, .av-hero-on {
+    background: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    animation: none !important;
+  }
+  .av-hero::after { display: none; }
+
+  /* Hero: simple row */
+  .av-hero, .av-hero.av-hero-on {
+    padding: 18px 0;
+    border-bottom: 1px solid #eceef5 !important;
+    color: var(--ink, #1e1b4b);
+  }
+  .av-hero-on .av-hero-sub { color: var(--muted, #64648a); }
+  .av-hero-title { font-size: 1.25rem; }
+  .av-hero-today,
+  .av-hero-on .av-hero-today {
+    background: none; border: 0; padding: 0;
+    color: var(--indigo, #4338ca);
+  }
+  .av-hero-today.av-hero-today-blackout { background: none; color: #b5470a; }
+
+  /* Sections */
+  .av-grid { display: block; }
+  .av-card {
+    padding: 18px 0;
+    border-bottom: 1px solid #eceef5 !important;
+  }
+  .av-card-title { margin-bottom: 12px; }
+
+  /* Week days: plain text, no boxes */
+  .av-chips { gap: 0; }
+  .av-chip {
+    padding: 8px 0;
+    font-size: .75rem;
+    color: var(--ink, #1e1b4b);
+  }
+  .av-chip-off { color: #b5470a; text-decoration: line-through; }
+  .av-chip-today { color: var(--indigo, #4338ca); text-decoration: underline; text-underline-offset: 4px; }
+
+  /* Stats: simple columns */
+  .av-stats { gap: 0; }
+  .av-stat { padding: 4px 8px 4px 0; }
+  .av-stat-num { font-size: 1.4rem; }
+
+  /* Links: list rows with dividers */
+  .av-links { display: block; }
+  .av-link {
+    padding: 16px 0;
+    border-bottom: 1px solid #eceef5 !important;
+  }
+  .av-link:last-child { border-bottom: 0 !important; }
+  .av-link-icon, .av-link-icon-orange {
+    width: auto; height: auto;
+    background: none !important;
+    border-radius: 0;
+  }
+  .av-link:hover .av-link-icon { transform: none; }
+
+  /* Loading skeleton: no big blocks */
+  .av-skel { border-radius: 8px; height: 60px; }
+  .av-skel-hero { height: 70px; }
+}
+
+/* ==========================================================================
+   Availability page on mobile: Online/Offline + toggle, then This week, Next 30 days, links
+   (header shows only Back + "Availability" — see PartnerLayout.tsx)
+   ========================================================================== */
+@media (max-width: 1023px) {
+  .av-lead,
+  .av-hero-sub,
+  .av-hero-today { display: none !important; }
+
+  .av-page { padding-top: 8px; }
+  .av-hero, .av-hero.av-hero-on {
+    padding: 20px 0;
+    border-bottom: 1px solid #eceef5 !important;
+    align-items: center;
+  }
+  .av-hero-main { align-items: center; }
+  .av-hero-title { font-size: 1.15rem; font-weight: 600; }
+
+  /* orange dot when online (same as partner dashboard's Online indicator) */
+  .av-dot { background: #94a3b8; box-shadow: none; }
+  .av-hero-on .av-dot { background: #ff8a3d; box-shadow: none; animation: none; }
+}
+
+/* ==========================================================================
+   WORKING HOURS page on mobile — plain list, no blocks
+   ========================================================================== */
+@media (max-width: 1023px) {
+  .pa-page.wh-page {
+    max-width: 100%; overflow-x: hidden; overflow-x: clip;
+    padding: 0 16px 8px;
+  }
+  .wh-header, .wh-page .bd-page-sub { display: none !important; }
+  .wh-layout { display: block; }
+
+  /* Summary: plain, no gradient block */
+  .wh-summary {
+    padding: 16px 0 !important;
+    border: 0 !important; border-bottom: 1px solid #eceef5 !important;
+    border-radius: 0 !important; background: none !important; box-shadow: none !important;
+    animation: none !important;
+  }
+  .wh-bars-well { border-radius: 4px; }
+  .wh-bars-fill { border-radius: 4px 4px 0 0; }
+  .wh-copy { border-radius: 8px; }
+
+  /* Day rows: plain list with dividers */
+  .wh-list { display: block; }
+  .wh-card, .wh-card-off {
+    padding: 14px 0 !important;
+    border: 0 !important; border-bottom: 1px solid #eceef5 !important;
+    border-radius: 0 !important; background: none !important; box-shadow: none !important;
+    transform: none !important; animation: none !important;
+  }
+  .wh-card::before { display: none; }
+  .wh-card.wh-card-bad { border-bottom: 2px solid var(--danger, #b91c1c) !important; }
+  .wh-card:hover { transform: none !important; box-shadow: none !important; }
+  .wh-badge, .wh-card-off .wh-badge {
+    width: 44px; height: auto; border-radius: 0;
+    background: none !important; transform: none !important;
+    color: var(--indigo, #4338ca);
+  }
+  .wh-card-off .wh-badge { color: #b5470a; }
+  .wh-times { border-top: 0; }
+
+  /* Save bar: ONE save button at the TOP (sticky under the header), always visible */
+  .pa-page.wh-page { display: flex; flex-direction: column; }
+  .wh-bar, .wh-bar.wh-bar-idle {
+    order: -1;
+    position: sticky; top: 56px; bottom: auto !important; z-index: 10;
+    margin: 0 -16px; padding: 8px 16px;
+    border: 0; border-bottom: 1px solid #eceef5; border-radius: 0;
+    background: #fff; box-shadow: none; backdrop-filter: none; animation: none;
+    transform: none; opacity: 1; visibility: visible; pointer-events: auto;
+  }
+  .wh-dirty { font-size: .8rem; }
+  .wh-save {
+    min-width: 0; min-height: 38px; padding: 8px 16px; border-radius: 10px;
+    font-size: .85rem; font-weight: 600;
+  }
+  .pa-btn.wh-save:disabled { background: #eef0f8; color: #9a9cbc; }
+  .pa-btn.wh-saved:disabled { background: #16a34a; color: #fff; box-shadow: none; }
+
+  /* Calmer colour: soft tones instead of solid indigo everywhere */
+  .pa-page.wh-page .wh-switch.pa-on { background: #818cf8; box-shadow: none; }
+  .wh-bars-well { background: #f1f2f9; }
+  .wh-bars-fill { background: #a5b4fc; }
+  .wh-track { background: #f1f2f9; }
+  .wh-track span { background: #a5b4fc; }
+  .wh-copy, .wh-copy:hover:not(:disabled) {
+    background: #fff; color: var(--indigo, #4338ca);
+    border: 1px solid #dcdfee; font-weight: 600; box-shadow: none; filter: none; transform: none;
+  }
+  .wh-copy:disabled { background: #f6f7fb; color: #a3a6c2; border-color: #eceef5; }
+  .wh-badge { color: var(--muted, #64648a) !important; font-weight: 600; }
+  .wh-card-off .wh-badge { color: var(--muted, #64648a) !important; }
+  .wh-skel { border-radius: 8px; }
+}
+
+/* ==========================================================================
+   BLACKOUT DATES page on mobile — plain form + simple list
+   ========================================================================== */
+@media (max-width: 1023px) {
+  .pa-page.bd-page {
+    max-width: 100%; overflow-x: hidden; overflow-x: clip;
+    padding: 0 16px 32px;
+  }
+  .bd-header { display: none !important; }
+  .bd-layout { display: block; }
+  .bd-right { gap: 0; }
+
+  /* Add form: plain section */
+  .bd-form {
+    padding: 16px 0 20px !important;
+    border: 0 !important; border-bottom: 1px solid #eceef5 !important;
+    border-radius: 0 !important; background: none !important; box-shadow: none !important;
+    animation: none !important;
+  }
+  .bd-form::before, .bd-form-badge { display: none !important; }
+  .bd-form-title { font-size: 1.05rem; font-weight: 600; color: var(--ink, #1e1b4b); }
+  .bd-field input {
+    background: #fff !important; border: 1px solid #dcdfee; border-radius: 10px;
+    font-size: 16px; /* stops iOS auto-zoom on focus */
+  }
+  .bd-field input:focus { transform: none; box-shadow: none; border-color: var(--indigo, #4338ca); }
+  .bd-submit { width: 100%; border-radius: 10px; }
+
+  /* Count + next: one quiet line instead of pills */
+  .bd-count-row { padding: 14px 0 6px; gap: 4px 12px; animation: none; }
+  .bd-count-label, .bd-next {
+    background: none !important; border: 0 !important; padding: 0 !important; box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .bd-count-label { color: var(--ink, #1e1b4b); }
+  .bd-next-dot { animation: none; }
+
+  /* Date rows: plain list with dividers */
+  .bd-list { display: block; }
+  .bd-card, .bd-card-danger {
+    padding: 14px 0 !important;
+    border: 0 !important; border-bottom: 1px solid #eceef5 !important;
+    border-radius: 0 !important; background: none !important; box-shadow: none !important;
+    transform: none !important; animation: none !important;
+  }
+  .bd-card::before { display: none; }
+  .bd-card:hover { transform: none !important; box-shadow: none !important; }
+
+  .bd-datechip, .bd-datechip-today {
+    width: 44px; height: auto; border-radius: 0;
+    background: none !important; box-shadow: none !important; animation: none;
+    color: var(--indigo, #4338ca);
+  }
+  .bd-datechip-today { color: var(--orange, #ff8a3d); }
+  .bd-datechip::after { display: none; }
+  .bd-datechip-mon { opacity: 1; }
+
+  .bd-when, .bd-when-now, .bd-when-past {
+    background: none !important; padding: 0 !important; border-radius: 0 !important; animation: none;
+    color: var(--muted, #64648a);
+  }
+  .bd-when-now { color: var(--orange, #ff8a3d); }
+
+  /* Edit / Remove: quiet text buttons */
+  .bd-actions { margin-top: 6px; padding-top: 0; border-top: 0 !important; justify-content: flex-end; gap: 4px; }
+  .bd-btn-outline, .bd-btn-danger-outline {
+    background: none !important; border: 0 !important; box-shadow: none !important; padding: 8px 10px;
+  }
+  .bd-btn-outline { color: var(--indigo, #4338ca); }
+  .bd-btn-danger-outline { color: var(--danger, #b91c1c); }
+
+  /* Empty state */
+  .bd-empty { border: 0 !important; background: none !important; padding: 40px 0; }
+  .bd-empty-icon { animation: none; }
+  .bd-skel { border-radius: 8px; }
+}
+
+/* ==========================================================================
+   SCHEDULE page on mobile — plain stats, flat calendar, simple day details
+   ========================================================================== */
+@media (max-width: 1023px) {
+  .sc-root { max-width: 100%; overflow-x: hidden; overflow-x: clip; gap: 0; }
+  .sc-top { display: none !important; }   /* duplicate back button, title, Online pill */
+  .sc-layout { display: block; }
+
+  /* Stats: three numbers in a row, no boxes */
+  .sc-stats { gap: 0; padding: 4px 0 16px; border-bottom: 1px solid #eceef5; }
+  .sc-stat, .sc-stat-working, .sc-stat-off, .sc-stat-blackout {
+    flex-direction: column; align-items: flex-start; gap: 4px; padding: 0 !important;
+    background: none !important; border: 0 !important; border-radius: 0 !important;
+    box-shadow: none !important; transform: none !important; animation: none !important;
+  }
+  .sc-stat-num { font-size: 1.5rem; font-weight: 600; }
+  .sc-stat-label { font-weight: 500; }
+
+  /* Calendar: flat */
+  .sc-cal {
+    padding: 16px 0 !important;
+    border: 0 !important; border-bottom: 1px solid #eceef5 !important;
+    border-radius: 0 !important; background: none !important; box-shadow: none !important;
+    animation: none !important;
+  }
+  .sc-cal-head {
+    padding: 0 !important; margin-bottom: 10px; border-radius: 0 !important;
+    background: none !important; color: var(--ink, #1e1b4b) !important;
+    box-shadow: none !important; animation: none !important;
+  }
+  .sc-cal-head::after { display: none; }
+  .sc-month { color: var(--ink, #1e1b4b) !important; font-weight: 600; font-size: 1.05rem; }
+  .sc-nav {
+    background: none !important; border: 0 !important; color: var(--indigo, #4338ca) !important;
+    width: 40px; height: 40px;
+  }
+  .sc-today {
+    background: none !important; box-shadow: none !important; color: var(--indigo, #4338ca) !important;
+    font-weight: 600; padding: 0 8px;
+  }
+  .sc-weekdays, .sc-grid { gap: 0; }
+  .sc-weekdays span { color: var(--muted, #64648a); font-weight: 600; }
+
+  /* Day cells: just numbers */
+  .sc-cell, .sc-working, .sc-off, .sc-blackout {
+    min-height: 46px; padding: 4px 0 !important;
+    align-items: center; justify-content: center; gap: 2px;
+    background: none !important; border: 0 !important; border-radius: 0 !important;
+    box-shadow: none !important; transform: none !important; animation: none !important;
+  }
+  .sc-cell:not(.sc-cell-blank):hover, .sc-cell:not(.sc-cell-blank):active {
+    transform: none !important; box-shadow: none !important;
+  }
+  .sc-cell::after { display: none !important; }
+  .sc-blackout::before { display: none; }
+  .sc-tag, .sc-sel { display: none !important; }
+  .sc-num { width: 32px; height: 32px; font-weight: 500; }
+  .sc-off .sc-num { color: #a3a6c2; }
+  .sc-blackout .sc-num { color: #b5470a; text-decoration: line-through; }
+
+  /* Today: ring. Selected: filled circle. */
+  .sc-is-today .sc-num {
+    background: none; color: var(--indigo, #4338ca); font-weight: 700; animation: none;
+    box-shadow: inset 0 0 0 1.5px var(--indigo, #4338ca);
+  }
+  .sc-is-selected .sc-num, .sc-is-selected.sc-is-today .sc-num {
+    background: var(--indigo, #4338ca); color: #fff; box-shadow: none; text-decoration: none;
+  }
+  .sc-is-selected { transform: none !important; box-shadow: none !important; }
+
+  /* Jobs: small dot under the number */
+  .sc-jobs-dot, .sc-jobs-dot:not(:empty) {
+    position: static; min-width: 6px; height: 6px; padding: 0; font-size: 0;
+    background: var(--orange, #ff8a3d); border-radius: 50%;
+  }
+
+  .sc-legend { gap: 6px 14px; }
+  .sc-key, .sc-key-working, .sc-key-off, .sc-key-blackout, .sc-key-jobs {
+    width: 8px; height: 8px; border: 0; border-radius: 50%;
+  }
+  .sc-key-working { background: var(--indigo, #4338ca); }
+  .sc-key-off { background: #c7c9e6; }
+  .sc-key-blackout { background: #f97316; }
+  .sc-key-jobs { background: var(--orange, #ff8a3d); }
+
+  /* Day details: plain section */
+  .sc-panel {
+    position: static; margin-top: 0; border: 0 !important; border-radius: 0 !important;
+    background: none !important; box-shadow: none !important; animation: none !important;
+  }
+  .sc-panel-head, .sc-panel-working .sc-panel-head, .sc-panel-off .sc-panel-head, .sc-panel-blackout .sc-panel-head {
+    padding: 16px 0 4px; background: none !important; color: var(--ink, #1e1b4b);
+  }
+  .sc-panel-weekday { color: var(--muted, #64648a); opacity: 1; }
+  .sc-panel-date { font-weight: 600; margin-bottom: 6px; }
+  .sc-badge {
+    padding: 0; border: 0; background: none !important; animation: none;
+    font-weight: 600; color: var(--indigo, #4338ca);
+  }
+  .sc-panel-off .sc-badge { color: var(--muted, #64648a); }
+  .sc-panel-blackout .sc-badge { color: #b5470a; }
+  .sc-panel-body { padding: 8px 0 24px; }
+  .sc-track, .sc-track-work, .sc-track-job { border-radius: 4px; }
+  .sc-track-work { background: var(--indigo, #4338ca); }
+
+  .sc-job, .sc-job:hover {
+    padding: 10px 0; border: 0; border-bottom: 1px solid #eceef5; border-radius: 0;
+    background: none; transform: none; animation: none;
+  }
+  .sc-skel { border-radius: 8px; }
+}
+
+/* ==========================================================================
+   EARNINGS page on mobile — plain sections, simple list
+   ========================================================================== */
+@media (max-width: 1023px) {
+  .earn-page { max-width: 100%; overflow-x: hidden; overflow-x: clip; gap: 0; }
+  .earn-subtitle { display: none !important; }
+  .earn-stack { gap: 0; }
+
+  /* Total earned + Pending payout: side by side, compact */
+  .earn-hero {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0;
+    border: 0 !important; border-bottom: 1px solid #eceef5 !important;
+    border-radius: 0 !important; background: none !important;
+    box-shadow: none !important; animation: none !important;
+  }
+  .earn-hero-main, .earn-hero-side {
+    min-width: 0; padding: 12px 0 14px !important;
+    background: none !important; border: 0 !important; border-radius: 0 !important;
+  }
+  .earn-hero-main { padding-right: 12px !important; border-right: 1px solid #eceef5 !important; }
+  .earn-hero-side { padding-left: 14px !important; }
+  .earn-eyebrow { font-size: .72rem; font-weight: 600; gap: 4px; }
+  .earn-hero-value, .earn-side-value { font-size: 1.35rem; font-weight: 600; margin: 4px 0 6px; }
+  .earn-side-text { font-size: .7rem; margin: 6px 0 0; }
+
+  /* "All time, after commission": plain text instead of an orange pill */
+  .earn-pill {
+    padding: 0; background: none !important; border-radius: 0;
+    color: var(--earn-muted); font-weight: 500; font-size: .7rem;
+  }
+  .earn-progress { background: #eceef5; height: 4px; margin-top: 6px; }
+  .earn-progress-fill { animation: none; }
+
+  /* By period: simple list */
+  .earn-section { margin: 20px 0 4px; font-weight: 600; }
+  .earn-periods { display: block; }
+  .earn-period {
+    padding: 14px 0 !important;
+    background: none !important; border: 0 !important; border-bottom: 1px solid #eceef5 !important;
+    border-radius: 0 !important; box-shadow: none !important;
+    transform: none !important; animation: none !important;
+  }
+  .earn-period:hover, .earn-period:active { transform: none !important; box-shadow: none !important; }
+  .earn-chip, .earn-period:hover .earn-chip {
+    width: auto; height: auto; background: none !important; border-radius: 0;
+    color: var(--earn-primary);
+  }
+  .earn-period-value { font-weight: 600; }
+  .earn-meter { height: 4px; background: #eceef5; }
+  .earn-meter-fill { animation: none; }
+
+  .earn-empty { border: 0; background: none; padding: 16px 0; animation: none; }
+  .earn-page .earn-skel { border-radius: 8px; }
+}
+
+@media (max-width: 1023px) and (min-width: 640px) {
+  .wh-bar, .wh-bar.wh-bar-idle { top: 64px; } /* taller header on larger phones/tablets */
+}
