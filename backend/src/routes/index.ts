@@ -1,5 +1,5 @@
 import { Router } from 'express';
-
+import paymentRoutes from '../modules/payments/payments.routes';
 import { authRoutes } from '../modules/auth/auth.routes';
 import { auditRoutes } from '../modules/audit/audit.routes';
 import { partnersRoutes } from '../modules/partners/partners.routes';
@@ -18,7 +18,7 @@ rootRouter.use('/admin', auditRoutes); // GET /admin/audit-logs
 rootRouter.use('/admin/partners', partnersRoutes);
 rootRouter.use('/partner/availability', availabilityRoutes);
 rootRouter.use(leadsRoutes); // POST /public/leads
-rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings, GET /bookings/:id
+rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings/check-slot, POST /bookings, GET /bookings/:id
 rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, GET /addresses/serviceability
-
+rootRouter.use('/payments', paymentRoutes);
 export default rootRouter;

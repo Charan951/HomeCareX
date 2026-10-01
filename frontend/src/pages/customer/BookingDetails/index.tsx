@@ -1,239 +1,304 @@
-import { useEffect } from 'react';
-import { useParams, useLocation, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
-import { bookingApi, type NormalizedApiError } from '@/services/bookingApi';
-import { useBookingDraftStore } from '@/features/booking';
-import { ErrorState, LoadingState } from '@/components/customer';
-import { formatSlotLabel } from '../Book/components/SlotPicker';
-import type { BookingStatus, BookingView } from '@/types/booking';
-import { BOOKINGS, TRACKING_TIMELINE } from '../../../mocks/customerMockData';
-import { statusBadgeClass } from '../../../utils/statusBadge';
-import { customerPath } from '@/routes/customerPath';
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { bookingApi, type NormalizedApiError } from "@/services/bookingApi";
+import { EmptyState, ErrorState, LoadingState } from "@/components/customer";
+import { FOCUS_RING } from "@/components/customer/focusRing";
+import { customerPath } from "@/routes/customerPath";
+import type { BookingView } from "@/types/booking";
 
-function MockBookingDetails({ id }: { id: string | undefined }) {
-  const booking = BOOKINGS.find((b) => b.id === id) ?? BOOKINGS[0];
-  const addon = 100;
-  const tax = Math.round((booking.price + addon) * 0.05);
-  const total = booking.price + addon + tax;
+type TabType = "upcoming" | "live" | "completed" | "cancelled";
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <Link to={customerPath('/bookings')} className="text-sm text-brand font-medium">← Back to bookings</Link>
-      </div>
+const TABS: { id: TabType; label: string }[] = [
+  { id: "upcoming", label: "Upcoming" },
+  { id: "live", label: "Live" },
+  { id: "completed", label: "Completed" },
+  { id: "cancelled", label: "Cancelled" },
+];
 
-      <div className="bg-panel border border-line rounded p-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-ink">{booking.service}</h1>
-            <p className="text-muted text-sm mt-1">{booking.id} · {booking.category}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusBadgeClass(booking.status)}`}>{booking.status}</span>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-300">
-              Payment Pending
-            </span>
-          </div>
-        </div>
+export default function MyBookingsPage() {
+  const [activeTab, setActiveTab] = useState<TabType>("upcoming");
 
-        <div className="grid sm:grid-cols-2 gap-4 mt-6 text-sm">
-          <div>
-            <div className="text-muted text-xs">Scheduled</div>
-            <div className="text-ink mt-0.5">{booking.scheduledAt}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Address</div>
-            <div className="text-ink mt-0.5">{booking.address}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Partner</div>
-            <div className="text-ink mt-0.5">{booking.partner ? `${booking.partner.name} · ⭐ ${booking.partner.rating}` : 'Not yet assigned'}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Payment status</div>
-            <div className="text-amber-700 font-medium mt-0.5">Pending</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const STATUS_LABEL: Record<BookingStatus, string> = {
-  PENDING_PAYMENT: 'Awaiting payment',
-  CONFIRMED: 'Confirmed',
-  ASSIGNED: 'Partner Assigned',
-  ACCEPTED: 'Partner Assigned',
-  EN_ROUTE: 'En Route',
-  ARRIVED: 'Arrived',
-  IN_PROGRESS: 'In Progress',
-  COMPLETED: 'Completed',
-  CANCELLED: 'Cancelled',
-};
-
-const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
-const rupees = (n: number) => `₹${n.toLocaleString('en-IN')}`;
-
-function formatDate(iso: string): string {
-  if (!iso) return '';
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function LiveBookingDetails({ id }: { id: string }) {
-  const location = useLocation();
-  const justBooked = Boolean((location.state as { justBooked?: boolean } | null)?.justBooked);
-
-  useEffect(() => {
-    if (justBooked) useBookingDraftStore.getState().clearDraft();
-  }, [justBooked]);
-
-  const { data: booking, isError, error, refetch } = useQuery<BookingView, NormalizedApiError>({
-    queryKey: ['booking', id],
-    queryFn: () => bookingApi.getBooking(id),
+  // Fetch real customer bookings from MongoDB via API
+  const {
+    data: rawBookings = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery<any, NormalizedApiError>({
+    queryKey: ["customer-bookings"],
+    queryFn: () => bookingApi.getBookings(),
   });
 
-  if (isError) {
-    return (
-      <ErrorState
-        title="Couldn't load this booking"
-        message={error?.message ?? 'Something went wrong. Please try again.'}
-        onRetry={() => void refetch()}
-      />
-    );
-  }
-  if (!booking) return <LoadingState label="Loading your booking…" />;
+  // Safely extract booking array regardless of backend payload wrapper ({ success, data } vs direct array)
+  const bookings: any[] = useMemo(() => {
+    if (Array.isArray(rawBookings)) return rawBookings;
+    if (Array.isArray((rawBookings as any)?.data)) return (rawBookings as any).data;
+    if (Array.isArray((rawBookings as any)?.bookings)) return (rawBookings as any).bookings;
+    return [];
+  }, [rawBookings]);
 
-  const base = booking.priceSnapshot.lines.find((l) => l.kind === 'BASE');
-  const addOns = booking.priceSnapshot.lines.filter((l) => l.kind === 'ADDON');
-  const a = booking.addressSnapshot;
-  const label = STATUS_LABEL[booking.status] ?? booking.status;
-  const isPaymentPending = (booking.paymentStatus ?? 'PENDING') === 'PENDING';
+  // Helper to extract normalized payment status
+  const resolvePaymentStatus = (booking: any): "PAID" | "FAILED" | "UNPAID" => {
+    const rawStatus = String(
+      booking.paymentStatus ||
+      booking.payment_status ||
+      booking.paymentDetails?.status ||
+      booking.payment?.status ||
+      ""
+    ).trim().toUpperCase();
+
+    const bookingStatus = String(booking.status || "").trim().toUpperCase();
+    const hasPaymentId = Boolean(
+      booking.paymentDetails?.paymentId ||
+      booking.paymentId ||
+      booking.razorpayPaymentId
+    );
+
+    if (rawStatus === "FAILED" || bookingStatus === "PAYMENT_FAILED" || rawStatus === "CANCELLED") {
+      return "FAILED";
+    }
+
+    if (rawStatus === "PAID" || booking.isPaid === true || hasPaymentId) {
+      return "PAID";
+    }
+
+    // If backend marked booking as CONFIRMED and there is no active failure, mark as PAID
+    if (bookingStatus === "CONFIRMED" && rawStatus !== "UNPAID") {
+      return "PAID";
+    }
+
+    return "UNPAID";
+  };
+
+  // Filter bookings strictly by tab status
+  const filteredBookings = useMemo(() => {
+    return bookings.filter((b: any) => {
+      const status = String(b.status || "").trim().toUpperCase();
+      const paymentStatus = resolvePaymentStatus(b);
+
+      const isFailedOrCancelled =
+        status === "CANCELLED" ||
+        status === "CANCELED" ||
+        status === "PAYMENT_FAILED" ||
+        paymentStatus === "FAILED";
+
+      switch (activeTab) {
+        case "live":
+          return (
+            (status === "IN_PROGRESS" ||
+              status === "IN-PROGRESS" ||
+              status === "STARTED" ||
+              status === "EN_ROUTE") &&
+            !isFailedOrCancelled
+          );
+        case "upcoming":
+          return (
+            (status === "CONFIRMED" || status === "PENDING" || status === "ASSIGNED") &&
+            !isFailedOrCancelled
+          );
+        case "completed":
+          return status === "COMPLETED" && !isFailedOrCancelled;
+        case "cancelled":
+          return isFailedOrCancelled;
+        default:
+          return false;
+      }
+    });
+  }, [bookings, activeTab]);
+
+  const getServiceName = (b: any): string => {
+    const baseLine = b.priceSnapshot?.lines?.find((l: any) => l.kind === "BASE");
+    return baseLine?.name || b.serviceName || "Home Service";
+  };
+
+  const getBookingCode = (b: any): string => {
+    if (b.bookingNumber) return b.bookingNumber;
+    const rawId = String(b._id || b.id || "");
+    return `BK-${rawId.slice(-5).toUpperCase()}`;
+  };
+
+  const formatSlotTime = (dateStr: string, slotStr: string): string => {
+    if (!dateStr) return slotStr || "Scheduled";
+    const today = new Date().toISOString().slice(0, 10);
+    const prefix = dateStr === today ? "Today" : dateStr;
+    return `${prefix}, ${slotStr}`;
+  };
+
+  const getStatusBadge = (booking: any) => {
+    const status = String(booking.status || "").trim().toUpperCase();
+    const paymentStatus = resolvePaymentStatus(booking);
+
+    if (
+      status === "CANCELLED" ||
+      status === "CANCELED" ||
+      status === "PAYMENT_FAILED" ||
+      paymentStatus === "FAILED"
+    ) {
+      return (
+        <span className="rounded-full bg-red-100 px-3 py-0.5 text-xs font-semibold text-red-700">
+          {paymentStatus === "FAILED" || status === "PAYMENT_FAILED" ? "Payment Failed" : "Cancelled"}
+        </span>
+      );
+    }
+    if (status.includes("PROGRESS") || status === "STARTED" || status === "EN_ROUTE") {
+      return (
+        <span className="rounded-full bg-orange-100 px-3 py-0.5 text-xs font-semibold text-orange-700">
+          In Progress
+        </span>
+      );
+    }
+    if (status === "CONFIRMED" || status === "ASSIGNED") {
+      return (
+        <span className="rounded-full bg-blue-100 px-3 py-0.5 text-xs font-semibold text-blue-700">
+          Confirmed
+        </span>
+      );
+    }
+    if (status === "COMPLETED") {
+      return (
+        <span className="rounded-full bg-green-100 px-3 py-0.5 text-xs font-semibold text-green-700">
+          Completed
+        </span>
+      );
+    }
+    return (
+      <span className="rounded-full bg-gray-100 px-3 py-0.5 text-xs font-semibold text-gray-700">
+        {status}
+      </span>
+    );
+  };
+
+  const getPaymentBadge = (booking: any) => {
+    const pStatus = resolvePaymentStatus(booking);
+
+    if (pStatus === "FAILED") {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-600">
+          <span className="h-1.5 w-1.5 rounded-full bg-rose-500"></span>
+          Failed
+        </span>
+      );
+    }
+
+    if (pStatus === "PAID") {
+      return (
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+          Paid
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+        Unpaid
+      </span>
+    );
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <div>
-        <Link to={customerPath('/bookings')} className="text-sm text-brand font-medium">← Back to bookings</Link>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Bookings</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Track, manage, and revisit your service bookings.
+        </p>
       </div>
 
-      {/* Booking Confirmed Banner */}
-      {justBooked && booking.status === 'CONFIRMED' && (
-        <div role="status" className="flex items-start gap-3 rounded border border-green-200 bg-green-50 px-4 py-3 text-green-800">
-          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-          <div>
-            <p className="font-semibold">Booking confirmed!</p>
-            <p className="text-sm">
-              {base?.name ?? 'Your service'} is booked for {formatDate(booking.date)}, {formatSlotLabel(booking.slot)}.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Main Details Card */}
-      <div className="bg-panel border border-line rounded p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-ink">{base?.name ?? 'Booking'}</h1>
-            <p className="text-muted text-sm mt-1">Booking ID · {booking._id}</p>
-          </div>
-          
-          {/* Dual Status Badges */}
-          <div className="flex items-center gap-2">
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${statusBadgeClass(label)}`}>
-              {label}
-            </span>
-            <span
-              className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap flex items-center gap-1.5 ${
-                isPaymentPending
-                  ? 'bg-amber-50 text-amber-700 border border-amber-300'
-                  : 'bg-emerald-50 text-emerald-700 border border-emerald-300'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${isPaymentPending ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-              Payment {booking.paymentStatus ?? 'PENDING'}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-4 mt-6 text-sm">
-          <div>
-            <div className="text-muted text-xs">Scheduled</div>
-            <div className="text-ink mt-0.5">{formatDate(booking.date)} · {formatSlotLabel(booking.slot)}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Address</div>
-            <div className="text-ink mt-0.5">{a.line1}, {a.city}, {a.state} — {a.pincode}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Partner</div>
-            <div className="text-ink mt-0.5">{booking.partnerId ? 'Assigned' : 'Not yet assigned'}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Quantity</div>
-            <div className="text-ink mt-0.5">{booking.quantity}</div>
-          </div>
-        </div>
+      <div className="mt-6 border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${
+                  isActive
+                    ? "border-indigo-600 text-indigo-600"
+                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                } ${FOCUS_RING}`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Status Timeline */}
-      <div className="bg-panel border border-line rounded p-6">
-        <h3 className="font-semibold text-ink mb-4">Status timeline</h3>
-        <ol className="space-y-3">
-          {booking.history.map((h, i) => (
-            <li key={i} className="flex items-center gap-3 text-sm">
-              <span className="h-2.5 w-2.5 rounded-full shrink-0 bg-brand" />
-              <span className="text-ink">{STATUS_LABEL[h.to as BookingStatus] ?? h.to}</span>
-              <span className="text-xs text-muted ml-auto">
-                {new Date(h.at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
-              </span>
-            </li>
-          ))}
-        </ol>
-      </div>
+      <div className="mt-6">
+        {isLoading && <LoadingState label="Loading your bookings from database…" />}
 
-      {/* Price Breakdown with Payment Alert */}
-      <div className="bg-panel border border-line rounded p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-ink">Price breakdown</h3>
-          <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-            Payment Status: {booking.paymentStatus ?? 'PENDING'}
-          </span>
-        </div>
-        <div className="space-y-2 text-sm">
-          {base && (
-            <div className="flex justify-between">
-              <span className="text-muted">Base price × {base.quantity}</span>
-              <span className="text-ink">{rupees(base.amount)}</span>
-            </div>
-          )}
-          {addOns.map((l) => (
-            <div key={String(l.refId)} className="flex justify-between">
-              <span className="text-muted">{l.name}</span>
-              <span className="text-ink">+{rupees(l.amount)}</span>
-            </div>
-          ))}
-          {booking.priceSnapshot.discount > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted">Discount</span>
-              <span className="text-ink">−{rupees(booking.priceSnapshot.discount)}</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span className="text-muted">Convenience fee</span>
-            <span className="text-ink">{rupees(booking.priceSnapshot.convenienceFee)}</span>
+        {isError && (
+          <ErrorState
+            title="Couldn't load bookings"
+            message={error?.message || "Failed to fetch bookings from server"}
+            onRetry={() => void refetch()}
+          />
+        )}
+
+        {!isLoading && !isError && filteredBookings.length === 0 && (
+          <EmptyState
+            title={`No ${activeTab} bookings`}
+            description={`You don't have any ${activeTab} service bookings right now.`}
+          />
+        )}
+
+        {!isLoading && !isError && filteredBookings.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+            {filteredBookings.map((booking: any) => {
+              const serviceName = getServiceName(booking);
+              const bookingCode = getBookingCode(booking);
+              const totalAmount = booking.priceSnapshot?.total ?? booking.expectedTotal ?? 0;
+              const slotDisplay = formatSlotTime(booking.date, booking.slot);
+              const partner = booking.partnerId || booking.partner;
+              const bookingId = booking._id || booking.id;
+
+              return (
+                <Link
+                  key={bookingId}
+                  to={customerPath(`/bookings/${bookingId}`)}
+                  className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-indigo-300 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{serviceName}</h3>
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        {booking.categoryName || "Home Service"} · {bookingCode}
+                      </p>
+                    </div>
+                    <div>{getStatusBadge(booking)}</div>
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between text-sm">
+                    <span className="text-gray-600">{slotDisplay}</span>
+                    <div className="flex items-center gap-2">
+                      {getPaymentBadge(booking)}
+                      <span className="font-semibold text-gray-900">₹{totalAmount}</span>
+                    </div>
+                  </div>
+
+                  {partner && (
+                    <div className="mt-3 border-t border-gray-100 pt-3 text-xs text-gray-500">
+                      Partner:{" "}
+                      <span className="font-medium text-gray-800">
+                        {partner.name || "Assigned Partner"}
+                      </span>
+                      {partner.rating && (
+                        <span className="ml-1 text-amber-500">★ {partner.rating}</span>
+                      )}
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
           </div>
-          <div className="flex justify-between font-semibold pt-2 border-t border-line">
-            <span className="text-ink">Total</span>
-            <span className="text-ink">{rupees(booking.priceSnapshot.total)}</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
-}
-
-export default function BookingDetails() {
-  const { id } = useParams();
-  return id && OBJECT_ID.test(id) ? <LiveBookingDetails id={id} /> : <MockBookingDetails id={id} />;
 }

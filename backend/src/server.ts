@@ -1,8 +1,10 @@
+import dotenv from 'dotenv';
+dotenv.config(); // Must be at the very top!
+
 import http from 'http';
 import app from './app';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-dotenv.config();
+
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 

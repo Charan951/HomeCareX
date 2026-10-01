@@ -1,4 +1,16 @@
-import { Schema, model, type Document, Types } from 'mongoose';
+import { Schema, model, models, type Document, type Model, Types } from 'mongoose';
+
+export const BOOKING_STATUS = {
+  PENDING: 'PENDING',
+  PENDING_PAYMENT: 'PENDING_PAYMENT',
+  CONFIRMED: 'CONFIRMED',
+  ASSIGNED: 'ASSIGNED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+  PAYMENT_FAILED: 'PAYMENT_FAILED',
+} as const;
+export type BookingStatus = (typeof BOOKING_STATUS)[keyof typeof BOOKING_STATUS];
 
 export const BOOKING_PAYMENT_STATUS = {
   PENDING: 'PENDING',
@@ -40,8 +52,16 @@ export interface IBooking extends Document {
     total: number;
     computedAt: Date;
   };
-  status: string;
+  status: BookingStatus;
   paymentStatus: BookingPaymentStatus;
+  paymentDetails?: {
+    orderId?: string;
+    paymentId?: string;
+    signature?: string;
+    status?: string;
+    paidAt?: Date;
+  };
+  cancellationReason?: string;
   history: Array<{
     from: string | null;
     to: string;
@@ -74,13 +94,27 @@ const bookingSchema = new Schema<IBooking>(
     date: { type: String, required: true, index: true },
     slot: { type: String, required: true, index: true },
     priceSnapshot: { type: Schema.Types.Mixed, required: true },
-    status: { type: String, required: true, index: true },
+    status: {
+      type: String,
+      enum: Object.values(BOOKING_STATUS),
+      default: BOOKING_STATUS.PENDING_PAYMENT,
+      required: true,
+      index: true,
+    },
     paymentStatus: {
       type: String,
       enum: Object.values(BOOKING_PAYMENT_STATUS),
       default: BOOKING_PAYMENT_STATUS.PENDING,
       index: true,
     },
+    paymentDetails: {
+      orderId: { type: String, trim: true },
+      paymentId: { type: String, trim: true },
+      signature: { type: String, trim: true },
+      status: { type: String, trim: true },
+      paidAt: { type: Date },
+    },
+    cancellationReason: { type: String, trim: true },
     history: [
       {
         from: { type: String, default: null },
@@ -100,7 +134,26 @@ const bookingSchema = new Schema<IBooking>(
   { timestamps: true }
 );
 
-bookingSchema.index({ customerId: 1, idempotencyKey: 1 }, { unique: true, sparse: true, name: 'uniq_customer_idem_key' });
-bookingSchema.index({ serviceId: 1, date: 1, slot: 1, slotSeat: 1 }, { unique: true, name: 'uniq_active_slot_seat' });
+bookingSchema.index(
+  { customerId: 1, idempotencyKey: 1 },
+  { unique: true, sparse: true, name: 'uniq_customer_idem_key' }
+);
 
-export const BookingModel = model<IBooking>('Booking', bookingSchema);
+// Only lock the slot seat if the booking has not been cancelled or failed
+bookingSchema.index(
+  { serviceId: 1, date: 1, slot: 1, slotSeat: 1 },
+  {
+    unique: true,
+    name: 'uniq_active_slot_seat',
+    partialFilterExpression: {
+      status: { $nin: [BOOKING_STATUS.CANCELLED, BOOKING_STATUS.PAYMENT_FAILED] },
+    },
+  }
+);
+
+// Export both `Booking` and `BookingModel` to prevent undefined import errors across all modules
+export const Booking: Model<IBooking> =
+  (models.Booking as Model<IBooking>) ||
+  model<IBooking>('Booking', bookingSchema);
+export const BookingModel = Booking;
+export default Booking;

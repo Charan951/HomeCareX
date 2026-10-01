@@ -19,7 +19,8 @@ import Wallet from "../pages/customer/Wallet";
 
 import Tickets from "@/pages/customer/Tickets";
 import BookServiceShell from "../pages/customer/Book";
-
+import BookingSuccess from "../pages/customer/BookingSuccess";
+import BookingFailed from "../pages/customer/BookingFailed";
 /**
  * CustomerRoutes — every route the Customer Dashboard serves,
  * nested inside CustomerLayout.
@@ -44,6 +45,8 @@ export default function CustomerRoutes() {
         <Route path="/support/tickets" element={<Tickets />} />
         <Route path="/tracking" element={<Tracking />} />
         <Route path="/wallet" element={<Wallet />} />
+          <Route path="/booking/success/:bookingId" element={<BookingSuccess />} />
+  <Route path="/booking/failed/:bookingId" element={<BookingFailed />} />
       </Route>
     </Routes>
   );
