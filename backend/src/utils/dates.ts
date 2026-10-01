@@ -24,3 +24,28 @@ export function monthStart(now: Date, offsetMinutes = businessTzOffsetMinutes())
   const local = new Date(now.getTime() + offsetMinutes * 60_000);
   return new Date(Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1) - offsetMinutes * 60_000);
 }
+
+/** Start (UTC instant) of a "YYYY-MM-DD" calendar day in business time. */
+export function parseLocalDate(ymd: string, offsetMinutes = businessTzOffsetMinutes()): Date {
+  const [y, m, d] = ymd.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d) - offsetMinutes * 60_000);
+}
+
+/** True for a real calendar date ("2026-02-30" is false). */
+export function isRealDate(ymd: string): boolean {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+}
+
+/** "YYYY-MM-DD" of an instant in business time. */
+export function toLocalDateString(date: Date, offsetMinutes = businessTzOffsetMinutes()): string {
+  return new Date(date.getTime() + offsetMinutes * 60_000).toISOString().slice(0, 10);
+}
+
+/** Offset as "+05:30", the format MongoDB's $dateToString timezone option accepts. */
+export function formatOffset(offsetMinutes = businessTzOffsetMinutes()): string {
+  const sign = offsetMinutes < 0 ? '-' : '+';
+  const abs = Math.abs(offsetMinutes);
+  return `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+}
