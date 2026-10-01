@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import type { ErrorCode } from '../constants/errorcodes';
+import type { ErrorCode } from '../constants/ErrorCodes';
 
 /** Every successful response: { success: true, data, message?, meta? } */
 export interface SuccessEnvelope<T> {

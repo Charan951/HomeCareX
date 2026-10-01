@@ -1,12 +1,11 @@
 import type { RefObject } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Menu } from "lucide-react";
 import clsx from "clsx";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { customerPath } from "@/routes/customerPath";
-import { getPageTitle } from "@/utils/pageTitle";
+import LocationPicker from "./LocationPicker";
 import NotificationBell from "./NotificationBell";
-import ProfileMenu from "./ProfileMenu";
 import { MOBILE_DRAWER_ID } from "./MobileDrawer";
 import { CUSTOMER_SIDEBAR_ID } from "./Sidebar";
 import { FOCUS_RING } from "./focusRing";
@@ -21,23 +20,20 @@ interface TopBarProps {
   onToggleSidebar: () => void;
 }
 
-const HAMBURGER = "-ml-2 flex h-11 w-11 items-center justify-center rounded text-ink hover:bg-canvas";
+const HAMBURGER = "-ml-2 flex h-11 w-11 items-center justify-center rounded-lg text-ink hover:bg-canvas";
 
 /**
- * One responsive top bar with a hamburger at every width:
- *  - mobile: ☰ opens the slide-in menu, next to the brand link
- *  - md+   : ☰ collapses / expands the sidebar, then the page title
- *            (the brand link appears here while the sidebar is collapsed)
- * Bell is on the right at every width; the profile menu (avatar) is desktop-only — on mobile, Log out lives in the drawer.
+ * Top bar.
+ *  - mobile: ☰ (opens the slide-in menu) + brand … bell
+ *  - md+   : ☰ (collapses the sidebar) | delivery-location picker (Zomato-style) … bell
+ * The account avatar/menu now lives at the bottom of the sidebar (SidebarAccount) and in the mobile drawer.
  */
 export default function TopBar({ menuOpen, onMenuClick, menuButtonRef, sidebarOpen, onToggleSidebar }: TopBarProps) {
-  const { pathname } = useLocation();
   const unread = useUnreadNotifications();
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-line bg-panel px-4 md:h-16 md:px-8">
-      <div className="flex min-w-0 items-center gap-1">
-        {/* mobile hamburger -> slide-in drawer */}
+    <header className="customer-topbar sticky top-0 z-30 flex h-[62px] items-center justify-between gap-2 border-b border-white/80 bg-white/90 px-3 shadow-[0_6px_22px_rgba(30,27,46,.06)] backdrop-blur-xl md:h-16 md:px-8">
+      <div className="flex min-w-0 flex-1 items-center gap-1">
         <button
           ref={menuButtonRef}
           type="button"
@@ -50,7 +46,6 @@ export default function TopBar({ menuOpen, onMenuClick, menuButtonRef, sidebarOp
           <Menu className="h-6 w-6" aria-hidden="true" />
         </button>
 
-        {/* desktop hamburger -> collapse / expand sidebar */}
         <button
           type="button"
           onClick={onToggleSidebar}
@@ -62,22 +57,18 @@ export default function TopBar({ menuOpen, onMenuClick, menuButtonRef, sidebarOp
           <Menu className="h-6 w-6" aria-hidden="true" />
         </button>
 
-        <Link
-          to={customerPath()}
-          className={clsx("rounded text-base font-semibold text-brand", !sidebarOpen ? "md:mr-3" : "md:hidden", FOCUS_RING)}
-        >
+        <Link to={customerPath()} className={clsx("rounded text-base font-semibold text-brand", !sidebarOpen ? "md:mr-1" : "md:hidden", "hidden md:inline-flex", FOCUS_RING)}>
           HomeCareX
         </Link>
 
-        <p className="hidden truncate text-lg font-semibold text-ink md:ml-1 md:block">{getPageTitle(pathname)}</p>
-      </div>
-
-      <div className="flex items-center gap-1 md:gap-3">
-        <NotificationBell count={unread} />
-        <div className="hidden md:block">
-          <ProfileMenu />
+        <span aria-hidden="true" className="mx-3 hidden h-8 w-px bg-line md:block" />
+        {/* One picker at every width (a single instance keeps DOM ids unique). */}
+        <div className="min-w-0 flex-1 md:flex-none">
+          <LocationPicker />
         </div>
       </div>
+
+      <div className="shrink-0 rounded-full bg-canvas/80 p-0.5"><NotificationBell count={unread} /></div>
     </header>
   );
 }

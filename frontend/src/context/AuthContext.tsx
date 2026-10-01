@@ -1,4 +1,5 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { AuthContextValue, AuthStatus, AuthUser, LoginInput } from "../types/auth";
 import { authApi } from "@/services/authApi";
 import { SESSION_EXPIRED_EVENT, tokenStore } from "@/lib/tokenStore";
@@ -14,13 +15,25 @@ function syncStore(user: AuthUser | null) {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [user, setUser] = useState<AuthUser | null>(null);
+  const queryClient = useQueryClient();
+  const currentUserId = useRef<string | null>(null);
 
-  const applySession = useCallback((next: AuthUser | null, token: string | null, nextStatus: AuthStatus) => {
-    tokenStore.set(token);
-    setUser(next);
-    setStatus(nextStatus);
-    syncStore(next);
-  }, []);
+  const applySession = useCallback(
+    (next: AuthUser | null, token: string | null, nextStatus: AuthStatus) => {
+      // Whenever the signed-in person changes (login as someone else, logout, session expiry),
+      // drop every cached API response so the next user never sees the previous user's data.
+      const nextId = next?.id ?? null;
+      if (currentUserId.current !== nextId) {
+        queryClient.clear();
+        currentUserId.current = nextId;
+      }
+      tokenStore.set(token);
+      setUser(next);
+      setStatus(nextStatus);
+      syncStore(next);
+    },
+    [queryClient],
+  );
 
   // On page load, restore the session from the httpOnly refresh cookie.
   useEffect(() => {

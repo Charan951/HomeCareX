@@ -1,4 +1,4 @@
-import { ERROR_CODES } from '../../constants/errorcodes';
+import { ERROR_CODES } from '../../constants/ErrorCodes';
 import { httpError } from '../../utils/errors';
 import type { ActorRole, BookingStatus } from './bookings.constants';
 
