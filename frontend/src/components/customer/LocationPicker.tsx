@@ -47,7 +47,7 @@ export default function LocationPicker() {
 
   const list = data ?? [];
   const current = list.find((a) => a.isDefault) ?? list[0];
-  const line = current ? [current.line1, current.area, current.city].filter(Boolean).join(", ") : "";
+  const line = current ? [current.line1, current.line2, current.city].filter(Boolean).join(", ") : "";
 
   function choose(id: string, isDefault: boolean) {
     if (isDefault) return setOpen(false);
@@ -115,7 +115,7 @@ export default function LocationPicker() {
                       <Icon className={clsx("mt-0.5 h-5 w-5 shrink-0", active ? "text-brand" : "text-muted")} aria-hidden="true" />
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-semibold text-ink">{a.label}</span>
-                        <span className="line-clamp-2 block text-xs leading-snug text-muted">{[a.line1, a.area, a.city, a.pincode].filter(Boolean).join(", ")}</span>
+                        <span className="line-clamp-2 block text-xs leading-snug text-muted">{[a.line1, a.line2, a.city, a.pincode].filter(Boolean).join(", ")}</span>
                       </span>
                       {active && <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" aria-hidden="true" />}
                     </button>

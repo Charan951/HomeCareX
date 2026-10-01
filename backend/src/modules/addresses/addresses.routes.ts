@@ -1,19 +1,42 @@
 import { Router } from 'express';
-import { authenticate } from '../../middleware/auth.middleware';
-import { requireRole } from '../../middleware/role.middleware';
-import { validate } from '../../middleware/validation.middleware';
-import { createAddress, deleteAddress, listAddresses, setDefaultAddress, updateAddress } from './addresses.controller';
-import { addressIdParamsSchema, createAddressBodySchema, updateAddressBodySchema } from './addresses.validation';
+import { asyncHandler } from '../../utils/asyncHandler';
+import { authMiddleware } from '../../middleware/auth.middleware';
+import { roleMiddleware } from '../../middleware/role.middleware';
+import { validationMiddleware } from '../../middleware/validation.middleware';
+import { addressesController } from './addresses.controller';
+import { addressParamsSchema, createAddressBodySchema, serviceabilityQuerySchema } from './addresses.validation';
 
 export const addressesRoutes = Router();
 
-// /api/v1/customer/addresses  (role: customer; every query is scoped to the token's user)
-addressesRoutes.use(authenticate, requireRole('customer'));
+addressesRoutes.use(authMiddleware, roleMiddleware('customer'));
 
-addressesRoutes.get('/', listAddresses);
-addressesRoutes.post('/', validate(createAddressBodySchema, 'body'), createAddress);
-addressesRoutes.patch('/:id', validate(addressIdParamsSchema, 'params'), validate(updateAddressBodySchema, 'body'), updateAddress);
-addressesRoutes.put('/:id/default', validate(addressIdParamsSchema, 'params'), setDefaultAddress);
-addressesRoutes.delete('/:id', validate(addressIdParamsSchema, 'params'), deleteAddress);
+// GET /addresses/serviceability?pincode=500072
+addressesRoutes.get(
+  '/serviceability',
+  validationMiddleware({ query: serviceabilityQuerySchema }),
+  asyncHandler(async (req, res) => addressesController.serviceability(req, res)),
+);
 
-export default addressesRoutes;
+// GET /addresses
+addressesRoutes.get('/', asyncHandler(async (req, res) => addressesController.list(req, res)));
+
+// POST /addresses
+addressesRoutes.post(
+  '/',
+  validationMiddleware({ body: createAddressBodySchema }),
+  asyncHandler(async (req, res) => addressesController.create(req, res)),
+);
+
+// PUT /addresses/:id (Edit)
+addressesRoutes.put(
+  '/:id',
+  validationMiddleware({ params: addressParamsSchema, body: createAddressBodySchema.partial() }),
+  asyncHandler(async (req, res) => addressesController.update(req, res)),
+);
+
+// DELETE /addresses/:id (Delete)
+addressesRoutes.delete(
+  '/:id',
+  validationMiddleware({ params: addressParamsSchema }),
+  asyncHandler(async (req, res) => addressesController.remove(req, res)),
+);

@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { ZodError } from 'zod';
-import { ERROR_CODES } from '../constants/ErrorCodes';
+import { ERROR_CODES } from '../constants/errorCodes';
 import { HttpError } from '../modules/auth/auth.types';
 import type { ErrorEnvelope } from '../utils/response';
 
@@ -40,6 +40,14 @@ export const errorHandler = (err: unknown, _req: Request, res: Response, _next: 
   if (typeof e?.statusCode === 'number' && e.statusCode >= 400 && e.statusCode < 600 && typeof e.code === 'string') {
     return res.status(e.statusCode).json({ success: false, message: String(e.message ?? 'Request failed'), code: e.code, details: e.details });
   }
+  // express.json() failures (malformed JSON, payload too large) -> 4xx instead of a 500.
+  const type = (err as { type?: string })?.type;
+  if (type === 'entity.parse.failed') {
+    return res.status(400).json({ success: false, message: 'Request body is not valid JSON', code: 'INVALID_JSON' });
+  }
+  if (type === 'entity.too.large') {
+    return res.status(413).json({ success: false, message: 'Request body is too large', code: 'PAYLOAD_TOO_LARGE' });
+  }
   console.error(err);
   res.status(500).json({
     success: false,
@@ -50,3 +58,4 @@ export const errorHandler = (err: unknown, _req: Request, res: Response, _next: 
 };
 
 export const errorMiddleware = errorHandler;
+export const notFoundMiddleware = notFoundHandler;

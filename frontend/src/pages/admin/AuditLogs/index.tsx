@@ -3,7 +3,7 @@ import DataTable, {
   Column,
 } from "../../../components/tables/DataTable";
 import './index.css';
-
+import { useUIStore } from "@/store/useUIStore";
 interface AuditLog {
   id: string;
   timestamp: string;
@@ -43,7 +43,8 @@ interface AuditLogsResponse {
 }
 
 const AdminAuditLogsPage: React.FC = () => {
-  const [search, setSearch] = useState("");
+   // Search text comes from the navbar search bar
+  const search = useUIStore((state) => state.pageSearch);
   const [selectedLog, setSelectedLog] =
     useState<AuditLog | null>(null);
 
@@ -227,24 +228,7 @@ const AdminAuditLogsPage: React.FC = () => {
         </h1>
       </div>
 
-      <div className="auditlogs-search">
-        <label
-          htmlFor="audit-log-search"
-          className="auditlogs-search-label"
-        >
-          Search audit logs
-        </label>
-
-        <input
-          id="audit-log-search"
-          type="text"
-          placeholder="Search Actor, Action, Entity, Entity ID or IP"
-          value={search}
-          onChange={(event) =>
-            setSearch(event.target.value)
-          }
-        />
-      </div>
+      
 
       {loading && (
         <div className="auditlogs-count">

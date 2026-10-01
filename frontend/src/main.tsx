@@ -7,7 +7,13 @@ import { AuthProvider } from './context/AuthContext';
 
 import './index.css';
 
-const queryClient = new QueryClient();
+// One retry (not the default 3) so a failed request shows its error state within a couple of
+// seconds instead of spinning for ~7s; no refetch every time the tab regains focus.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 1, refetchOnWindowFocus: false },
+  },
+});
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

@@ -1,4 +1,5 @@
 import React from "react";
+import OfflineState from "./OfflineState";
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -35,6 +36,23 @@ class ErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
+      const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+
+      if (isOffline) {
+        return (
+          <div className="flex min-h-[50vh] items-center justify-center px-6 py-12">
+            <OfflineState
+              title="You're offline"
+              message="Please check your internet connection and try again."
+              onRetry={() => {
+                this.handleRetry();
+                window.location.reload();
+              }}
+            />
+          </div>
+        );
+      }
+
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
           <div className="text-center">

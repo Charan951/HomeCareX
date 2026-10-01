@@ -1,240 +1,294 @@
-import crypto from 'crypto';
+import { createHash } from 'crypto';
 import { Types } from 'mongoose';
 import { AppError } from '../../utils/AppError';
-import { getRedisClient } from '../../config/redis';
-import type { IBooking } from '../../models/Booking';
+import { addressesService, type ResolvedAddress } from '../addresses/addresses.service';
 import { bookingsRepository } from './bookings.repository';
+import { bookingSettings } from './bookings.settings';
+import { withSlotLock } from './bookings.lock';
 import {
   BOOKING_HOLD_MS,
   BOOKING_STATUS,
+  BOOKING_WINDOW_DAYS,
   BOOKINGS_SERVICE_CATALOG,
   CONVENIENCE_FEE,
+  PRICE_CHANGED_TOLERANCE,
   SERVICE_SLOTS,
-  SLOT_CAPACITY,
 } from './bookings.constants';
-import type { CreateBookingInput } from './bookings.types';
+import type { CreateBookingInput, PriceLine, PriceSnapshot } from './bookings.types';
+import { addDays, isRealDate, nowInBookingTz, slotStartMinutes } from './bookings.time';
+import { BOOKING_PAYMENT_STATUS } from '../../models/Booking';
 
-/** How far the server-computed total may drift from the client's last-seen estimate before we
- *  ask the client to refresh instead of silently charging a different amount. */
-const PRICE_DRIFT_TOLERANCE = 0;
+export interface SlotAvailability {
+  slot: string;
+  available: boolean;
+  remaining: number;
+}
 
-export interface SlotAvailability { slot: string; available: boolean }
+export interface SlotsResponse {
+  serviceId: string;
+  date: string;
+  slots: SlotAvailability[];
+}
 
-class BookingsService {
-  async getSlotsForDate(serviceId: string, date: string): Promise<SlotAvailability[]> {
-    this.assertServiceExists(serviceId);
-    this.assertNotPastDate(date);
-
-    const counts = await Promise.all(
-      SERVICE_SLOTS.map((slot) => bookingsRepository.countActiveForSlot(serviceId, date, slot)),
-    );
-    return SERVICE_SLOTS.map((slot, i) => ({ slot, available: counts[i] < SLOT_CAPACITY }));
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`;
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    return `{${Object.keys(obj)
+      .filter((k) => obj[k] !== undefined)
+      .sort()
+      .map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`)
+      .join(',')}}`;
   }
+  return JSON.stringify(value);
+}
 
-  async createBooking(
-    customerId: string,
-    idempotencyKey: string,
-    input: CreateBookingInput,
-  ): Promise<{ booking: IBooking; replayed: boolean }> {
-    const catalogService = this.assertServiceExists(input.serviceId);
-    this.assertNotPastDate(input.date);
+function assertBookableDate(date: string): void {
+  const now = nowInBookingTz();
+  const lastBookable = addDays(now.date, BOOKING_WINDOW_DAYS - 1);
+  if (!isRealDate(date) || date < now.date || date > lastBookable) {
+    throw new AppError(400, 'INVALID_DATE', `Pick a date between ${now.date} and ${lastBookable}`);
+  }
+}
 
-    const requestHash = this.hashRequest(customerId, input);
+function hasSlotStarted(date: string, slot: string): boolean {
+  const now = nowInBookingTz();
+  return date === now.date && slotStartMinutes(slot) <= now.minutes;
+}
 
-    // Idempotency: same customer + key -> return the original result instead of creating twice.
-    const existing = await bookingsRepository.findByCustomerAndIdempotencyKey(customerId, idempotencyKey);
-    if (existing) {
+function toView(doc: { toObject?: () => Record<string, unknown> } | Record<string, unknown>): Record<string, unknown> {
+  const obj =
+    typeof (doc as { toObject?: unknown }).toObject === 'function'
+      ? (doc as { toObject: () => Record<string, unknown> }).toObject()
+      : { ...(doc as Record<string, unknown>) };
+  const { requestHash: _h, idempotencyKey: _k, slotSeat: _s, __v: _v, otp: _o, ...rest } = obj;
+  return rest;
+}
+
+/** "2026-10-01" + "10:00-12:00" -> the slot start instant in Asia/Kolkata. */
+function slotStartDate(date: string, slot: string): Date {
+  return new Date(`${date}T${slot.slice(0, 5)}:00+05:30`);
+}
+
+function isDuplicateKey(err: unknown, indexName: string): boolean {
+  const e = err as { code?: number; message?: string };
+  return e?.code === 11000 && String(e.message ?? '').includes(indexName);
+}
+
+export const BookingService = {
+  async getAvailableSlots(serviceId: string, date: string): Promise<SlotsResponse> {
+    assertBookableDate(date);
+    const capacity = await bookingSettings.getSlotCapacity(serviceId);
+
+    const slots = await Promise.all(
+      SERVICE_SLOTS.map(async (slot): Promise<SlotAvailability> => {
+        if (hasSlotStarted(date, slot)) {
+          return { slot, available: false, remaining: 0 };
+        }
+        const taken = await bookingsRepository.countActiveForSlot(serviceId, date, slot);
+        const remaining = Math.max(capacity - taken, 0);
+        return { slot, available: remaining > 0, remaining };
+      })
+    );
+
+    return { serviceId, date, slots };
+  },
+
+  /**
+   * Fast real-time slot pre-check before advancing steps or paying
+   */
+  async checkSlotAvailability(serviceId: string, date: string, slot: string): Promise<SlotAvailability> {
+    assertBookableDate(date);
+    if (hasSlotStarted(date, slot)) {
+      throw new AppError(409, 'SLOT_UNAVAILABLE', 'Selected slot is no longer available');
+    }
+    const capacity = await bookingSettings.getSlotCapacity(serviceId);
+    const taken = await bookingsRepository.countActiveForSlot(serviceId, date, slot);
+    const remaining = Math.max(capacity - taken, 0);
+
+    if (remaining <= 0) {
+      throw new AppError(409, 'SLOT_UNAVAILABLE', 'Selected slot is no longer available');
+    }
+
+    return { slot, available: true, remaining };
+  },
+
+  async createBooking(customerId: string, input: CreateBookingInput, idempotencyKey: string | undefined) {
+    if (!idempotencyKey || idempotencyKey.length > 200) {
+      throw new AppError(400, 'IDEMPOTENCY_KEY_REQUIRED', 'An Idempotency-Key header is required to create a booking');
+    }
+    const requestHash = createHash('sha256').update(stableStringify(input)).digest('hex');
+
+    const replay = async () => {
+      const existing = await bookingsRepository.findByCustomerAndIdempotencyKey(customerId, idempotencyKey);
+      if (!existing) return null;
       if (existing.requestHash !== requestHash) {
         throw new AppError(409, 'IDEMPOTENCY_KEY_REUSED', 'This Idempotency-Key was already used with a different request');
       }
-      return { booking: existing, replayed: true };
+      return { booking: toView(existing as never), replayed: true };
+    };
+
+    const replayed = await replay();
+    if (replayed) return replayed;
+
+    const service = BOOKINGS_SERVICE_CATALOG.getById(input.serviceId);
+    if (!service) throw new AppError(404, 'SERVICE_NOT_FOUND', 'That service was not found');
+
+    const addOnLines: PriceLine[] = input.addOns.map((a) => {
+      const addOn = service.addOns.find((x) => x.id === a.addOnId);
+      if (!addOn) {
+        throw new AppError(422, 'ADDON_NOT_FOUND', 'One of the selected add-ons is not available for this service', {
+          addOnId: a.addOnId,
+        });
+      }
+      return {
+        kind: 'ADDON',
+        refId: new Types.ObjectId(addOn.id),
+        name: addOn.name,
+        unitPrice: addOn.price,
+        quantity: a.quantity,
+        amount: addOn.price * a.quantity,
+      };
+    });
+
+    if (new Set(input.addOns.map((a) => a.addOnId)).size !== input.addOns.length) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Each add-on can only be listed once');
     }
 
-    const addressSnapshot = this.resolveAddressSnapshot(input);
-    const priceSnapshot = this.computePriceSnapshot(catalogService, input);
+    assertBookableDate(input.date);
+    if (hasSlotStarted(input.date, input.slot)) {
+      throw new AppError(409, 'SLOT_UNAVAILABLE', 'Selected slot is no longer available');
+    }
 
-    if (input.expectedTotal !== undefined && Math.abs(input.expectedTotal - priceSnapshot.total) > PRICE_DRIFT_TOLERANCE) {
-      throw new AppError(409, 'PRICE_CHANGED', 'The price has changed since your last estimate. Please review and try again.', {
+    let addressSnapshot: ResolvedAddress;
+    if (input.addressId) {
+      addressSnapshot = await addressesService.resolveForBooking(customerId, input.addressId);
+    } else if (input.newAddress) {
+      addressesService.assertServiceable(input.newAddress.pincode);
+      addressSnapshot = { ...input.newAddress };
+    } else {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Provide exactly one of addressId or newAddress');
+    }
+
+    if (input.couponCode) {
+      throw new AppError(422, 'COUPON_INVALID', 'Coupons are not available yet. Remove the code to continue.');
+    }
+
+    const lines: PriceLine[] = [
+      {
+        kind: 'BASE',
+        refId: new Types.ObjectId(service.id),
+        name: service.name,
+        unitPrice: service.basePrice,
+        quantity: input.quantity,
+        amount: service.basePrice * input.quantity,
+      },
+      ...addOnLines,
+    ];
+    const subtotal = lines.reduce((sum, l) => sum + l.amount, 0);
+    const priceSnapshot: PriceSnapshot = {
+      currency: 'INR',
+      lines,
+      subtotal,
+      discount: 0,
+      convenienceFee: CONVENIENCE_FEE,
+      total: subtotal + CONVENIENCE_FEE,
+      computedAt: new Date(),
+    };
+
+    if (input.expectedTotal !== undefined && Math.abs(input.expectedTotal - priceSnapshot.total) > PRICE_CHANGED_TOLERANCE) {
+      throw new AppError(409, 'PRICE_CHANGED', `The price changed to ₹${priceSnapshot.total}. Please review and confirm again.`, {
         expectedTotal: input.expectedTotal,
-        currentTotal: priceSnapshot.total,
+        total: priceSnapshot.total,
       });
     }
 
-    const booking = await this.withSlotLock(input.serviceId, input.date, input.slot, async () => {
-      const seat = await bookingsRepository.findFreeSeat(input.serviceId, input.date, input.slot, SLOT_CAPACITY);
-      if (seat === null) {
-        throw new AppError(409, 'SLOT_UNAVAILABLE', 'That slot just filled up. Please pick another.');
-      }
+    const requirePayment = await bookingSettings.isPaymentRequired();
+    const capacity = await bookingSettings.getSlotCapacity(input.serviceId);
+    const initialStatus = requirePayment ? BOOKING_STATUS.PENDING_PAYMENT : BOOKING_STATUS.CONFIRMED;
+    const initialPaymentStatus = BOOKING_PAYMENT_STATUS.PENDING;
+    const now = new Date();
 
-      const now = new Date();
-      const history = [
-        {
-          from: null,
-          to: BOOKING_STATUS.PENDING_PAYMENT,
-          at: now,
-          actorId: new Types.ObjectId(customerId),
-          actorRole: 'customer' as const,
-        },
-      ];
-
-      try {
-        return await bookingsRepository.create({
+    try {
+      const created = await withSlotLock(`booking:${input.serviceId}:${input.date}:${input.slot}`, async () => {
+        await bookingsRepository.releaseStaleHolds(input.serviceId, input.date, input.slot, now);
+        const seat = await bookingsRepository.findFreeSeat(input.serviceId, input.date, input.slot, capacity);
+        if (seat === null) {
+          throw new AppError(409, 'SLOT_UNAVAILABLE', 'Selected slot is no longer available');
+        }
+        return bookingsRepository.create({
           customerId: new Types.ObjectId(customerId),
           serviceId: new Types.ObjectId(input.serviceId),
           quantity: input.quantity,
           addOns: input.addOns.map((a) => ({ addOnId: new Types.ObjectId(a.addOnId), quantity: a.quantity })),
-          addressSnapshot,
+          addressSnapshot: {
+            ...addressSnapshot,
+            sourceAddressId: addressSnapshot.sourceAddressId ? new Types.ObjectId(addressSnapshot.sourceAddressId) : undefined,
+          },
+          // Fields read by the partner jobs/dashboard side (P02-P05).
+          serviceName: service.name,
+          address: {
+            line1: addressSnapshot.line1,
+            area: addressSnapshot.line2,
+            city: addressSnapshot.city,
+            pincode: addressSnapshot.pincode,
+            ...(addressSnapshot.location
+              ? { location: { type: 'Point', coordinates: [addressSnapshot.location.lng, addressSnapshot.location.lat] } }
+              : {}),
+          },
+          scheduledAt: slotStartDate(input.date, input.slot),
+          priceBreakdown: {
+            base: lines[0].amount,
+            addOns: addOnLines.reduce((sum, l) => sum + l.amount, 0),
+            discount: priceSnapshot.discount,
+            convenienceFee: priceSnapshot.convenienceFee,
+            tax: 0,
+            total: priceSnapshot.total,
+          },
           date: input.date,
           slot: input.slot,
-          priceSnapshot: {
-            ...priceSnapshot,
-            lines: priceSnapshot.lines.map((l) => ({ ...l, refId: new Types.ObjectId(String(l.refId)) })),
-          },
-          status: BOOKING_STATUS.PENDING_PAYMENT,
-          history,
+          priceSnapshot,
+          status: initialStatus,
+          paymentStatus: initialPaymentStatus,
+          statusHistory: [
+            {
+              from: null,
+              to: initialStatus,
+              at: now,
+              actorId: customerId,
+              actorRole: 'customer',
+              reason: requirePayment ? 'Booking created, awaiting payment' : 'Booking confirmed',
+            },
+          ],
           slotSeat: seat,
           idempotencyKey,
           requestHash,
-          holdExpiresAt: new Date(now.getTime() + BOOKING_HOLD_MS),
-        });
-      } catch (err) {
-        // Unique-index race: another request took this (service,date,slot,seat) or this
-        // (customer,idempotencyKey) between our read and write. Both are conflicts, not bugs.
-        if (this.isDuplicateKeyError(err)) {
-          const replay = await bookingsRepository.findByCustomerAndIdempotencyKey(customerId, idempotencyKey);
-          if (replay) return replay;
-          throw new AppError(409, 'SLOT_UNAVAILABLE', 'That slot just filled up. Please pick another.');
-        }
-        throw err;
-      }
-    });
-
-    return { booking, replayed: false };
-  }
-
-  async getBookingForCustomer(bookingId: string, customerId: string): Promise<IBooking> {
-    const booking = await bookingsRepository.findByIdForCustomer(bookingId, customerId);
-    if (!booking) throw new AppError(404, 'BOOKING_NOT_FOUND', 'Booking not found');
-    return booking;
-  }
-
-  // ---- internals ----
-
-  private assertServiceExists(serviceId: string) {
-    const service = BOOKINGS_SERVICE_CATALOG.getById(serviceId);
-    if (!service) throw new AppError(404, 'SERVICE_NOT_FOUND', 'This service is not available');
-    return service;
-  }
-
-  private assertNotPastDate(date: string) {
-    const today = new Date().toISOString().slice(0, 10);
-    if (date < today) throw new AppError(400, 'INVALID_DATE', 'Date must be today or later');
-  }
-
-  private resolveAddressSnapshot(input: CreateBookingInput) {
-    if (input.newAddress) return input.newAddress;
-    // No Addresses module/collection exists yet (separate issue). Once it does, look up
-    // input.addressId here and return its snapshot instead of this 501.
-    throw new AppError(
-      501,
-      'ADDRESS_LOOKUP_UNAVAILABLE',
-      'Booking by saved addressId is not available yet — pass "newAddress" with the full address until the Addresses API ships.',
-    );
-  }
-
-  private computePriceSnapshot(catalogService: ReturnType<typeof BOOKINGS_SERVICE_CATALOG.getById>, input: CreateBookingInput) {
-    if (!catalogService) throw new AppError(404, 'SERVICE_NOT_FOUND', 'This service is not available');
-
-    const lines: Array<{
-      kind: 'BASE' | 'ADDON';
-      refId: string;
-      name: string;
-      unitPrice: number;
-      quantity: number;
-      amount: number;
-    }> = [
-      {
-        kind: 'BASE',
-        refId: catalogService.id,
-        name: catalogService.name,
-        unitPrice: catalogService.basePrice,
-        quantity: input.quantity,
-        amount: catalogService.basePrice * input.quantity,
-      },
-    ];
-
-    for (const requested of input.addOns) {
-      const addOn = catalogService.addOns.find((a) => a.id === requested.addOnId);
-      if (!addOn) throw new AppError(400, 'VALIDATION_ERROR', `Unknown add-on for this service: ${requested.addOnId}`);
-      lines.push({
-        kind: 'ADDON',
-        refId: addOn.id,
-        name: addOn.name,
-        unitPrice: addOn.price,
-        quantity: requested.quantity,
-        amount: addOn.price * requested.quantity,
+          holdExpiresAt: requirePayment ? new Date(now.getTime() + BOOKING_HOLD_MS) : undefined,
+        } as never);
       });
+      return { booking: toView(created as never), replayed: false };
+    } catch (err) {
+      if (isDuplicateKey(err, 'uniq_customer_idem_key')) {
+        const raced = await replay();
+        if (raced) return raced;
+      }
+      if (isDuplicateKey(err, 'uniq_active_slot_seat')) {
+        throw new AppError(409, 'SLOT_UNAVAILABLE', 'Selected slot is no longer available');
+      }
+      throw err;
     }
+  },
 
-    const subtotal = lines.reduce((sum, l) => sum + l.amount, 0);
-    // Coupons live in a separate module; treat any code as "not recognized" for now rather than
-    // silently discounting or pretending success.
-    const discount = 0;
-    const total = Math.max(0, subtotal - discount) + CONVENIENCE_FEE;
-
-    return {
-      currency: 'INR' as const,
-      lines,
-      subtotal,
-      discount,
-      couponCode: input.couponCode,
-      convenienceFee: CONVENIENCE_FEE,
-      total,
-      computedAt: new Date(),
-    };
-  }
-
-  private hashRequest(customerId: string, input: CreateBookingInput): string {
-    const stable = JSON.stringify({
-      customerId,
-      serviceId: input.serviceId,
-      quantity: input.quantity,
-      addOns: [...input.addOns].sort((a, b) => a.addOnId.localeCompare(b.addOnId)),
-      addressId: input.addressId,
-      newAddress: input.newAddress,
-      date: input.date,
-      slot: input.slot,
-      couponCode: input.couponCode,
-    });
-    return crypto.createHash('sha256').update(stable).digest('hex');
-  }
-
-  private isDuplicateKeyError(err: unknown): boolean {
-    return typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000;
-  }
-
-  /** Redis-backed lock on (service,date,slot) so two concurrent requests don't both read "seat
-   *  free" before either writes. Falls back to running unlocked (relying solely on the Mongo
-   *  unique index) if Redis is unavailable — correctness holds either way, this only removes the
-   *  extra fast-fail-fast retry-avoidance layer. */
-  private async withSlotLock<T>(serviceId: string, date: string, slot: string, fn: () => Promise<T>): Promise<T> {
-    const redis = await getRedisClient();
-    if (!redis) return fn();
-
-    const lockKey = `lock:slot:${serviceId}:${date}:${slot}`;
-    const token = crypto.randomUUID();
-    const acquired = await redis.set(lockKey, token, { NX: true, PX: 5000 });
-    if (!acquired) {
-      throw new AppError(409, 'SLOT_UNAVAILABLE', 'That slot is being booked by someone else right now. Please try again.');
+  async getBooking(customerId: string, bookingId: string) {
+    const booking = await bookingsRepository.findByIdForCustomer(bookingId, customerId);
+    if (!booking) {
+      throw new AppError(404, 'BOOKING_NOT_FOUND', 'Booking not found');
     }
-    try {
-      return await fn();
-    } finally {
-      // Only release if we still own the lock (best-effort; a short PX bounds the blast radius).
-      const current = await redis.get(lockKey).catch(() => null);
-      if (current === token) await redis.del(lockKey).catch(() => undefined);
-    }
-  }
-}
+    return toView(booking as never);
+  },
 
-export const bookingsService = new BookingsService();
+  async listBookings(customerId: string) {
+    const bookings = await bookingsRepository.listForCustomer(customerId);
+    return bookings.map((b) => toView(b as never));
+  },
+};

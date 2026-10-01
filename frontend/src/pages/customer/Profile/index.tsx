@@ -86,7 +86,7 @@ export default function Profile() {
             <dd className="mt-0.5 text-ink">
               {defaultAddress ? (
                 <>
-                  {defaultAddress.label} · {[defaultAddress.line1, defaultAddress.area, defaultAddress.city].filter(Boolean).join(", ")}
+                  {defaultAddress.label} · {[defaultAddress.line1, defaultAddress.line2, defaultAddress.city].filter(Boolean).join(", ")}
                 </>
               ) : addresses.isPending ? (
                 "Loading…"

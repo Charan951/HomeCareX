@@ -15,7 +15,7 @@ function addressIcon(label: string): LucideIcon {
 /** The customer's default service address. Tapping it opens Addresses to change it or add a new one. */
 export default function LocationDisplay({ address }: { address: AddressDto | null }) {
   const Icon = address ? addressIcon(address.label) : MapPin;
-  const line = address ? [address.line1, address.area].filter(Boolean).join(", ") : "";
+  const line = address ? [address.line1, address.line2].filter(Boolean).join(", ") : "";
   const cityLine = address ? [address.city, address.pincode].filter(Boolean).join(" ") : "";
 
   return (

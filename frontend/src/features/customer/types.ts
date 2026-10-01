@@ -1,3 +1,5 @@
+import type { AddressView, CreateAddressRequest } from "@/types/address";
+
 /**
  * Response contract for GET /api/v1/customer/dashboard.
  * Mirrors backend/src/modules/customer-dashboard/customer-dashboard.types.ts —
@@ -18,29 +20,14 @@ export type BookingStatusDto =
   | "no_show"
   | "disputed";
 
-export interface AddressDto {
-  id: string;
-  label: string;
-  line1: string;
-  area: string | null;
-  city: string;
-  pincode: string | null;
-  isDefault: boolean;
-}
+/** A saved address — same contract as /addresses (see types/address.ts). */
+export type AddressDto = AddressView;
 
-/** Body of POST /customer/addresses. */
-export interface AddressInput {
-  label: string;
-  line1: string;
-  area?: string | null;
-  city: string;
-  pincode?: string | null;
-  /** Make it the address shown on the dashboard. */
-  isDefault?: boolean;
-}
+/** Body of POST /addresses. */
+export type AddressInput = CreateAddressRequest;
 
-/** Body of PATCH /customer/addresses/:id (any subset; null clears area / pincode). */
-export type AddressPatch = Partial<Omit<AddressInput, "isDefault">> & { isDefault?: true };
+/** Body of PUT /addresses/:id (any subset). */
+export type AddressPatch = Partial<CreateAddressRequest>;
 
 export interface DashboardBookingDto {
   id: string;

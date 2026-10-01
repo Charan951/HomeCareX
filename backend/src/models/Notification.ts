@@ -1,18 +1,19 @@
 import { Schema, model, type InferSchemaType } from 'mongoose';
 
-/** An in-app notification for one user. Unread = readAt is null/missing. */
+/** In-app notification for one user. Created by notify(); delivered live over Socket.IO when the user is online. */
 const NotificationSchema = new Schema(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    type: { type: String, required: true, trim: true },
-    title: { type: String, required: true, trim: true },
-    body: { type: String, trim: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    /** Machine-readable kind, e.g. 'booking.assigned'. See NOTIFICATION_TYPES. */
+    type: { type: String, required: true, index: true },
+    /** Free-form data the client needs to render / deep-link the notification. */
+    payload: { type: Schema.Types.Mixed, default: {} },
     readAt: { type: Date, default: null },
   },
   { timestamps: true },
 );
 
-NotificationSchema.index({ userId: 1, readAt: 1 });
+NotificationSchema.index({ userId: 1, readAt: 1, createdAt: -1 });
 
 export type Notification = InferSchemaType<typeof NotificationSchema>;
 export const NotificationModel = model('Notification', NotificationSchema);

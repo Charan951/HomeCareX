@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { ERROR_CODES } from '../../constants/ErrorCodes';
+import { ERROR_CODES } from '../../constants/errorCodes';
 import { dayBounds } from '../../utils/dates';
 import { Errors } from '../../utils/errors';
 import type { ActiveJobDto, PartnerDashboardDto } from './partner-dashboard.types';

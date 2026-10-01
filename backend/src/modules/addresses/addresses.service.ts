@@ -1,70 +1,146 @@
-import { Types } from 'mongoose';
-import { ERROR_CODES } from '../../constants/ErrorCodes';
-import { Errors } from '../../utils/errors';
-import { MAX_ADDRESSES_PER_USER } from './addresses.constants';
-import { addressesRepository as repo } from './addresses.repository';
-import type { AddressDto, AddressRow, CreateAddressInput, UpdateAddressInput } from './addresses.types';
+import { AppError } from '../../utils/AppError';
+import type { IAddress } from '../../models/Address';
+import { addressesRepository } from './addresses.repository';
+import { MAX_SAVED_ADDRESSES, SERVICEABLE_AREAS } from './addresses.constants';
+import type { AddressView, CreateAddressInput, ServiceabilityResult } from './addresses.types';
 
-export const toAddressDto = (row: AddressRow): AddressDto => ({
-  id: row._id.toString(),
-  label: row.label,
-  line1: row.line1,
-  area: row.area ?? null,
-  city: row.city,
-  pincode: row.pincode ?? null,
-  isDefault: row.isDefault === true,
-});
-
-/** Token ids are strings; an invalid one means a bad token → 401 (never trust it as a filter). */
-function userObjectId(userId: string): Types.ObjectId {
-  if (!Types.ObjectId.isValid(userId)) throw Errors.unauthorized('Invalid session');
-  return new Types.ObjectId(userId);
+export interface ResolvedAddress {
+  label?: string;
+  contactName?: string;
+  contactPhone?: string;
+  line1: string;
+  line2?: string;
+  landmark?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  location: { lat: number; lng: number };
+  sourceAddressId?: string;
 }
 
-const notFound = () => Errors.notFound(ERROR_CODES.NOT_FOUND, 'Address not found');
+class AddressesService {
+  checkServiceability(pincode: string): ServiceabilityResult {
+    const prefix = pincode.slice(0, 3);
+    const area = SERVICEABLE_AREAS.find((a) => a.pincodePrefixes.includes(prefix));
+    return area
+      ? { serviceable: true, pincode, city: area.city, state: area.state }
+      : { serviceable: false, pincode };
+  }
 
-export const addressesService = {
-  async list(userId: string): Promise<AddressDto[]> {
-    const rows = await repo.list(userObjectId(userId));
-    return rows.map(toAddressDto);
-  },
-
-  async create(userId: string, input: CreateAddressInput): Promise<AddressDto> {
-    const uid = userObjectId(userId);
-    const existing = await repo.count(uid);
-    if (existing >= MAX_ADDRESSES_PER_USER) {
-      throw Errors.conflict(ERROR_CODES.CONFLICT, `You can save up to ${MAX_ADDRESSES_PER_USER} addresses. Delete one to add another.`);
+  /** Throws 422 ADDRESS_NOT_SERVICEABLE; returns the matched area's centre for location fallback. */
+  assertServiceable(pincode: string): { lat: number; lng: number } {
+    const prefix = pincode.slice(0, 3);
+    const area = SERVICEABLE_AREAS.find((a) => a.pincodePrefixes.includes(prefix));
+    if (!area) {
+      throw new AppError(422, 'ADDRESS_NOT_SERVICEABLE', "Sorry, we don't service that area yet. Please choose a different address.", {
+        pincode,
+      });
     }
-    // The first address is always the default so the dashboard has something to show.
-    const isDefault = existing === 0 || input.isDefault === true;
-    const row = await repo.create(uid, { ...input, isDefault });
-    if (isDefault) await repo.clearDefaultExcept(uid, new Types.ObjectId(row._id.toString()));
-    return toAddressDto(row);
-  },
+    return area.center;
+  }
 
-  async update(userId: string, addressId: string, patch: UpdateAddressInput): Promise<AddressDto> {
-    const uid = userObjectId(userId);
-    const id = new Types.ObjectId(addressId);
-    const row = await repo.update(uid, id, patch);
-    if (!row) throw notFound(); // also what a stranger's id gets — existence is not revealed
-    if (patch.isDefault) await repo.clearDefaultExcept(uid, id);
-    return toAddressDto(row);
-  },
+  async list(customerId: string): Promise<AddressView[]> {
+    const rows = await addressesRepository.listByCustomer(customerId);
+    return rows.map((r) => this.toView(r));
+  }
 
-  /** "Deliver here": make this the default, which is the address the dashboard shows. */
-  async setDefault(userId: string, addressId: string): Promise<AddressDto> {
-    const row = await repo.makeDefault(userObjectId(userId), new Types.ObjectId(addressId));
-    if (!row) throw notFound();
-    return toAddressDto(row);
-  },
+  /** The customer's default address, else their newest one (null when they have none). */
+  async getDefault(customerId: string): Promise<AddressView | null> {
+    const [first] = await addressesRepository.listByCustomer(customerId);
+    return first ? this.toView(first) : null;
+  }
 
-  async remove(userId: string, addressId: string): Promise<{ id: string }> {
-    const uid = userObjectId(userId);
-    const id = new Types.ObjectId(addressId);
-    const existing = await repo.findOwned(uid, id);
-    if (!existing) throw notFound();
-    await repo.delete(uid, id);
-    if (existing.isDefault) await repo.promoteNewest(uid); // never leave the customer with addresses but no default
-    return { id: addressId };
-  },
-};
+  async create(customerId: string, input: CreateAddressInput): Promise<AddressView> {
+    if ((await addressesRepository.countByCustomer(customerId)) >= MAX_SAVED_ADDRESSES) {
+      throw new AppError(409, 'ADDRESS_LIMIT_REACHED', `You can save up to ${MAX_SAVED_ADDRESSES} addresses.`);
+    }
+    const serviceable = this.checkServiceability(input.pincode).serviceable;
+    const isFirst = (await addressesRepository.countByCustomer(customerId)) === 0;
+    const makeDefault = Boolean(input.isDefault) || isFirst;
+    if (makeDefault) await addressesRepository.clearDefault(customerId);
+
+    const created = await addressesRepository.create({
+      ...input,
+      customerId,
+      isDefault: makeDefault,
+      // Only serviceable pincodes get a fallback location; others simply have none.
+      location: input.location ?? (serviceable ? this.assertServiceable(input.pincode) : undefined),
+    });
+    return this.toView(created);
+  }
+
+  async update(customerId: string, addressId: string, input: Partial<CreateAddressInput>): Promise<AddressView> {
+    const existing = await addressesRepository.findOwned(addressId, customerId);
+    if (!existing) {
+      throw new AppError(404, 'ADDRESS_NOT_FOUND', 'That address was not found');
+    }
+
+    if (input.isDefault) {
+      await addressesRepository.clearDefault(customerId);
+    }
+
+    const serviceable = input.pincode ? this.checkServiceability(input.pincode).serviceable : true;
+
+    const updated = await addressesRepository.update(addressId, customerId, {
+      ...input,
+      location: input.pincode
+        ? (input.location ?? (serviceable ? this.assertServiceable(input.pincode) : undefined))
+        : existing.location,
+    });
+
+    if (!updated) {
+      throw new AppError(404, 'ADDRESS_NOT_FOUND', 'That address was not found');
+    }
+
+    return this.toView(updated);
+  }
+
+  async remove(customerId: string, addressId: string): Promise<void> {
+    const success = await addressesRepository.delete(addressId, customerId);
+    if (!success) {
+      throw new AppError(404, 'ADDRESS_NOT_FOUND', 'That address was not found');
+    }
+  }
+
+  /** Resolves a saved address for a booking: must belong to the customer and be serviceable. */
+  async resolveForBooking(customerId: string, addressId: string): Promise<ResolvedAddress> {
+    const address = await addressesRepository.findOwned(addressId, customerId);
+    if (!address) throw new AppError(404, 'ADDRESS_NOT_FOUND', 'That address was not found');
+    const center = this.assertServiceable(address.pincode);
+    return {
+      label: address.label ?? undefined,
+      contactName: address.contactName ?? undefined,
+      contactPhone: address.contactPhone ?? undefined,
+      line1: address.line1,
+      line2: address.line2 ?? undefined,
+      landmark: address.landmark ?? undefined,
+      city: address.city,
+      state: address.state,
+      pincode: address.pincode,
+      location: address.location?.lat != null && address.location?.lng != null
+        ? { lat: address.location.lat, lng: address.location.lng }
+        : center,
+      sourceAddressId: String(address._id),
+    };
+  }
+
+  private toView(a: IAddress): AddressView {
+    return {
+      id: String(a._id),
+      label: a.label ?? 'Home',
+      contactName: a.contactName ?? undefined,
+      contactPhone: a.contactPhone ?? undefined,
+      line1: a.line1,
+      line2: a.line2 ?? undefined,
+      landmark: a.landmark ?? undefined,
+      city: a.city,
+      state: a.state,
+      pincode: a.pincode,
+      location: a.location?.lat != null && a.location?.lng != null ? { lat: a.location.lat, lng: a.location.lng } : undefined,
+      isDefault: Boolean(a.isDefault),
+      serviceable: this.checkServiceability(a.pincode).serviceable,
+    };
+  }
+}
+
+export const addressesService = new AddressesService();

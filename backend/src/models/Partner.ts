@@ -3,7 +3,6 @@ import {
   KYC_DOCUMENT_STATUSES,
   KYC_DOCUMENT_TYPES,
   KYC_STATUSES,
-  PARTNER_STATUSES,
 } from '../modules/partners/partner-dashboard.constants';
 
 const KycDocumentSchema = new Schema(
@@ -22,7 +21,6 @@ const KycDocumentSchema = new Schema(
 const PartnerSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-    status: { type: String, enum: PARTNER_STATUSES, default: 'pending', index: true },
     categories: [{ type: Schema.Types.ObjectId, ref: 'Category' }],
     skills: [{ type: String, trim: true }],
     serviceRadiusKm: { type: Number, default: 10, min: 1, max: 100 },
@@ -36,12 +34,13 @@ const PartnerSchema = new Schema(
       jobsCompleted: { type: Number, default: 0, min: 0 },
     },
     kyc: {
-      status: { type: String, enum: KYC_STATUSES, default: 'not_submitted' },
+      status: { type: String, enum: KYC_STATUSES, default: 'not_started', index: true },
       documents: { type: [KycDocumentSchema], default: [] },
       submittedAt: { type: Date },
       reviewedAt: { type: Date },
       reviewedBy: { type: Schema.Types.ObjectId, ref: 'User' },
       rejectionReason: { type: String },
+      suspensionReason: { type: String },
     },
     trainingCompleted: { type: Boolean, default: false },
     /** Never store the full account number here; keep it with the payout provider. */
