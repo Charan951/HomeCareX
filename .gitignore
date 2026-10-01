@@ -40,3 +40,7 @@ MEMORY.md
 
 .postman/
 postman/
+
+# Package files
+package.json
+

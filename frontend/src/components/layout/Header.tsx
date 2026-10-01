@@ -359,49 +359,14 @@ const Header: React.FC = () => {
           scrolled ? "is-collapsed" : ""
         }`}
       >
-        {/* Logo */}
-        <NavLink to="/" onClick={closeMenu} aria-label="HomeCareX Home" className="flex-shrink-0">
-          <img
-            src="/logo.png"
-            alt="HomeCareX"
-            className={`w-auto transition-all duration-300 hover:scale-105 ${scrolled ? "h-12" : "h-16"}`}
-          />
-        </NavLink>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden items-center gap-9 md:flex" aria-label="Main navigation">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={() => getLinkClass(item.to, item.end)}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-                <span className="hidden items-center gap-2 text-[#dfe1ff] lg:inline-flex">
-                  <ClockIcon />
-                  {contact.hours}
-                </span>
-
-              </div>
-
-              <NavLink
-                to="/register"
-                className="hd-top-link font-medium"
-              >
-                Are you a service professional?
-
-                <span className="font-bold text-[#ff8a3d]">
-                  Join us
-                </span>
-              </NavLink>
-
-            </div>
-          </div>
+        <div className="flex min-h-10 items-center justify-between bg-[#242064] px-6 text-xs">
+          <span className="hidden items-center gap-2 text-[#dfe1ff] lg:inline-flex">
+            {contact.hours}
+          </span>
+          <NavLink to="/register" className="hd-top-link font-medium">
+            Are you a service professional?
+            <span className="font-bold text-[#ff8a3d]">Join us</span>
+          </NavLink>
         </div>
       </div>
 
@@ -475,7 +440,7 @@ const Header: React.FC = () => {
                 key={item.to}
                 to={item.to}
                 end={item.end}
-                className={linkClass}
+                className={() => getLinkClass(item.to, item.end)}
               >
                 {item.label}
               </NavLink>

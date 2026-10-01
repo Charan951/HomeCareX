@@ -32,6 +32,14 @@ const Contact = lazy(
   () => import("../pages/public/Contact/Contact")
 );
 
+const Terms = lazy(
+  () => import("../pages/public/Terms")
+);
+
+const Privacy = lazy(
+  () => import("../pages/public/Privacy")
+);
+
 const NotFound = lazy(
   () => import("../pages/public/NotFound")
 );
@@ -52,6 +60,8 @@ const PublicRoutes: React.FC = () => {
           <Route path={ROUTES.ABOUT} element={<About />} />
           <Route path={ROUTES.FAQ} element={<FAQ />} />
           <Route path={ROUTES.CONTACT} element={<Contact />} />
+          <Route path={ROUTES.TERMS} element={<Terms />} />
+          <Route path={ROUTES.PRIVACY} element={<Privacy />} />
 
           {/* 404 - Any unknown URL */}
           <Route path="*" element={<NotFound />} />

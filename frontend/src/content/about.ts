@@ -8,7 +8,7 @@ import { ROUTES } from "../constants/routes";
 export interface AboutHeroHighlight {
   icon: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
 }
 
 export interface AboutHeroContent {
@@ -33,7 +33,8 @@ export interface AboutHeroContent {
 
 export interface AboutStoryChallenge {
   title: string;
-  description: string;
+  description?: string;
+  icon?: string;
 }
 
 export interface AboutStoryContent {
@@ -69,7 +70,7 @@ export interface AboutWhatWeDoContent {
 
 export interface AboutMissionPillar {
   title: string;
-  description: string;
+  description?: string;
   icon: string;
 }
 
@@ -83,7 +84,8 @@ export interface AboutMissionContent {
 
 export interface AboutVisionCommitment {
   title: string;
-  description: string;
+  description?: string;
+  icon?: string;
 }
 
 export interface AboutVisionContent {
@@ -96,7 +98,7 @@ export interface AboutVisionContent {
 
 export interface AboutTrustPractice {
   title: string;
-  description: string;
+  description?: string;
   tag: string;
   icon: string;
 }
@@ -118,7 +120,8 @@ export interface AboutTrustContent {
 export interface AboutQualityStep {
   step: string;
   title: string;
-  description: string;
+  description?: string;
+  icon?: string;
 }
 
 export interface AboutQualityContent {
@@ -133,7 +136,7 @@ export interface AboutTeamDiscipline {
   id: string;
   title: string;
   scope: string;
-  description: string;
+  description?: string;
   focusAreas: string[];
   icon: string;
 }
@@ -150,7 +153,7 @@ export interface AboutValueItem {
   number: string;
   title: string;
   tagline: string;
-  description: string;
+  description?: string;
   icon: string;
 }
 
@@ -165,7 +168,7 @@ export interface AboutHowItWorksStep {
   number: string;
   title: string;
   summary: string;
-  description: string;
+  description?: string;
   details: string[];
   icon: string;
 }
@@ -227,17 +230,14 @@ export const aboutData: AboutPageData = {
       {
         icon: "🔍",
         title: "Direct Discovery",
-        subtitle: "Clear service scopes & itemized pricing",
       },
       {
         icon: "📅",
         title: "Structured Booking",
-        subtitle: "Transparent scheduling & slot protection",
       },
       {
         icon: "🔄",
         title: "Tracked Workflows",
-        subtitle: "Traceable progress from request to completion",
       },
     ],
   },
@@ -253,22 +253,19 @@ export const aboutData: AboutPageData = {
       "At the same time, skilled service professionals often lack a structured digital platform through which customers can discover and request their services directly without unnecessary friction.",
       "We built HomeCareX as a centralized digital marketplace to address these everyday challenges. Our platform enables customers to browse clear service catalogs with published scopes, while providing service professionals with an organized channel to manage and fulfill service opportunities.",
     ],
-    challengesTitle: "The real challenges we focus on solving:",
+    challengesTitle: "Key Challenges We Address",
     challenges: [
       {
-        title: "Inconvenient Service Discovery",
-        description:
-          "Finding suitable assistance often requires calling multiple contacts with uncertain rates and unclear service scopes.",
+        icon: "🔍",
+        title: "Uncertain Rates & Fragmented Discovery",
       },
       {
-        title: "Booking & Coordination Friction",
-        description:
-          "Scheduling appointments manually can lead to misunderstandings around timing, requirements, and job status.",
+        icon: "⏱️",
+        title: "Manual Booking & Timing Conflicts",
       },
       {
-        title: "Need for Digital Structure",
-        description:
-          "Independent service professionals benefit from an organized digital workflow to receive requests and manage bookings efficiently.",
+        icon: "📱",
+        title: "Disorganized Service Workflows",
       },
     ],
     image: {
@@ -342,20 +339,14 @@ export const aboutData: AboutPageData = {
     pillars: [
       {
         title: "Simplicity & Accessibility",
-        description:
-          "Designing straightforward digital interfaces that make arranging home care effortless on any device.",
         icon: "✨",
       },
       {
         title: "Transparency & Clear Scope",
-        description:
-          "Providing clear service scopes and published pricing details so expectations are aligned before work begins.",
         icon: "👁️",
       },
       {
         title: "Respect for Professionals",
-        description:
-          "Valuing the craftsmanship, time, and dedication of service professionals through organized workflows.",
         icon: "🤝",
       },
     ],
@@ -372,18 +363,15 @@ export const aboutData: AboutPageData = {
     commitments: [
       {
         title: "Confidence in Every Booking",
-        description:
-          "Creating a reliable ecosystem where homeowners can request essential services knowing that workflows, pricing, and expectations are clearly defined.",
+        icon: "🎯",
       },
       {
         title: "Empowerment Through Technology",
-        description:
-          "Providing independent service professionals with intuitive tools to manage their bookings, communicate effectively, and build sustainable local livelihoods.",
+        icon: "💻",
       },
       {
         title: "Continuous Platform Evolution",
-        description:
-          "Iterating on our software architecture to make home care more accessible, dependable, and efficient for communities over time.",
+        icon: "🔄",
       },
     ],
   },
@@ -399,43 +387,31 @@ export const aboutData: AboutPageData = {
     practices: [
       {
         title: "Clear Service Information",
-        description:
-          "Every service page details inclusions, exclusions, and line items so expectations are clear from the outset.",
         tag: "Clarity",
         icon: "📋",
       },
       {
         title: "Transparent Communication",
-        description:
-          "Direct channels and timely status updates keep customers and service partners aligned throughout each booking.",
         tag: "Communication",
         icon: "💬",
       },
       {
         title: "Structured Interactions",
-        description:
-          "Standardized service milestones (Confirmed, Assigned, En Route, In Progress, Completed) ensure clear operational flow.",
         tag: "Workflow",
         icon: "🔄",
       },
       {
         title: "Responsible Data Handling",
-        description:
-          "User credentials and personal details are protected through encrypted storage, secure session tokens, and role-based permissions.",
         tag: "Privacy",
         icon: "🔒",
       },
       {
         title: "Slot Concurrency Controls",
-        description:
-          "Automated booking mechanisms lock appointment slots during scheduling to prevent double bookings and capacity conflicts.",
         tag: "Integrity",
         icon: "🛡️",
       },
       {
         title: "Resolution Pathways",
-        description:
-          "Dedicated inquiry and support workflows provide customers and partners with structured assistance when questions arise.",
         tag: "Support",
         icon: "🤝",
       },
@@ -461,32 +437,27 @@ export const aboutData: AboutPageData = {
       {
         step: "01",
         title: "Clear Service Information",
-        description:
-          "Detailed service descriptions and defined scope items help ensure mutual understanding before any service begins.",
+        icon: "📋",
       },
       {
         step: "02",
         title: "Consistent Service Workflows",
-        description:
-          "Predictable milestone stages give both customers and service partners clear visibility into job progression.",
+        icon: "🔄",
       },
       {
         step: "03",
         title: "Thoughtful User Experience",
-        description:
-          "Carefully designed, accessible interfaces reduce friction and make managing bookings simple across all devices.",
+        icon: "📱",
       },
       {
         step: "04",
         title: "Structured Partner Collaboration",
-        description:
-          "Clear dispatch notifications and organized job details support service partners in delivering their work smoothly.",
+        icon: "🤝",
       },
       {
         step: "05",
         title: "Feedback & Continuous Improvement",
-        description:
-          "Customer reviews and post-service feedback loops inform ongoing platform enhancements and process refinements.",
+        icon: "📈",
       },
     ],
   },
@@ -504,8 +475,6 @@ export const aboutData: AboutPageData = {
         id: "prod-tech",
         title: "Product & Technology",
         scope: "Platform Architecture & Engineering",
-        description:
-          "Responsible for designing and maintaining the booking architecture, capacity scheduling engine, secure user sessions, and accessible web interfaces.",
         focusAreas: [
           "Platform Architecture",
           "Capacity & Scheduling Engine",
@@ -518,8 +487,6 @@ export const aboutData: AboutPageData = {
         id: "service-ops",
         title: "Service Operations",
         scope: "Catalog & Workflow Coordination",
-        description:
-          "Focuses on defining standardized service scopes, establishing partner onboarding criteria, and coordinating service fulfillment across active categories.",
         focusAreas: [
           "Catalog Scope Standardization",
           "Partner Onboarding Guidelines",
@@ -532,8 +499,6 @@ export const aboutData: AboutPageData = {
         id: "customer-exp",
         title: "Customer Experience",
         scope: "Support & User Advocacy",
-        description:
-          "Dedicated to assisting customers throughout their service journey, answering platform inquiries, and managing feedback to guide product improvements.",
         focusAreas: [
           "User Inquiry Support",
           "Booking Assistance",
@@ -546,8 +511,6 @@ export const aboutData: AboutPageData = {
         id: "quality-safeguards",
         title: "Quality & Platform Safeguards",
         scope: "Process & System Integrity",
-        description:
-          "Monitors operational consistency, evaluates workflow reliability, and implements safety enhancements to maintain dependable service standards.",
         focusAreas: [
           "Workflow Auditing",
           "Platform Reliability",
@@ -570,40 +533,30 @@ export const aboutData: AboutPageData = {
         number: "01",
         title: "Customer First",
         tagline: "Design experiences around real customer needs.",
-        description:
-          "We prioritize user clarity, convenience, and intuitive workflows to make arranging home maintenance straightforward and stress-free.",
         icon: "🎯",
       },
       {
         number: "02",
         title: "Transparency",
         tagline: "Make service information and interactions easier to understand.",
-        description:
-          "We believe in upfront scopes, clear pricing breakdowns, and open communication with no hidden fees or unexpected surprises.",
         icon: "🔍",
       },
       {
         number: "03",
         title: "Respect",
         tagline: "Value the time, skills, and effort of service professionals.",
-        description:
-          "We recognize service partners as essential professionals, providing organized digital tools and equitable workflows that respect their craftsmanship.",
         icon: "🤝",
       },
       {
         number: "04",
         title: "Responsibility",
         tagline: "Build and operate the platform thoughtfully.",
-        description:
-          "We safeguard user data, implement dependable scheduling controls, and maintain ethical practices across every platform interaction.",
         icon: "⚖️",
       },
       {
         number: "05",
         title: "Continuous Improvement",
         tagline: "Learn from feedback and improve the experience over time.",
-        description:
-          "We actively listen to customer and partner insights, using real feedback to refine our software, expand services, and elevate standards.",
         icon: "📈",
       },
     ],
@@ -620,8 +573,6 @@ export const aboutData: AboutPageData = {
         number: "01",
         title: "Discover",
         summary: "Customers explore available home services.",
-        description:
-          "Browse catalogued services across essential home categories, review detailed scopes of work, and inspect itemized upfront pricing.",
         details: [
           "Browse residential service categories",
           "Inspect transparent rate cards & inclusions",
@@ -633,8 +584,6 @@ export const aboutData: AboutPageData = {
         number: "02",
         title: "Request",
         summary: "Customers select and request the service they need through the platform.",
-        description:
-          "Choose a convenient appointment slot, provide necessary service address details, and submit a structured booking request.",
         details: [
           "Choose preferred date & time slot",
           "Provide task details and location",
@@ -646,8 +595,6 @@ export const aboutData: AboutPageData = {
         number: "03",
         title: "Connect",
         summary: "The platform facilitates the interaction between customers and service partners.",
-        description:
-          "The platform coordinates with service partners to confirm scheduling and tracks milestone progress from arrival to completion.",
         details: [
           "Platform coordinates partner assignment",
           "Track real-time status transitions",
