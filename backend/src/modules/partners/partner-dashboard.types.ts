@@ -41,3 +41,24 @@ export interface ReviewKycInput {
   to: Extract<KycStatus, 'in_review' | 'approved' | 'rejected' | 'suspended'>;
   note?: string;
 }
+/** Job the partner is physically on right now. Dates are ISO strings on the wire. */
+export interface ActiveJobDto {
+  id: string;
+  service: string;
+  customer: string;
+  address: string;
+  status: 'en_route' | 'arrived' | 'in_progress';
+  scheduledAt: string;
+}
+
+/** Response of GET /partner/dashboard (own data only). Rates are percentages 0-100, earnings are INR. */
+export interface PartnerDashboardDto {
+  newJobs: number;
+  todayJobs: number;
+  completedJobs: number;
+  todayEarnings: number;
+  rating: number;
+  acceptanceRate: number;
+  completionRate: number;
+  activeJob: ActiveJobDto | null;
+}

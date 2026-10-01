@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import PartnerLayout from "../layouts/PartnerLayout";
 import PartnerDashboard from "../pages/partner/Dashboard";
+import ProfileMenu from "../components/partner/ProfileMenu";
 
 // Placeholder for Devangam's pages – swap each `element` when the real page lands.
 const Placeholder = ({ title }: { title: string }) => (
@@ -65,7 +66,11 @@ export default function PartnerRoutes() {
       <Route element={<PartnerLayout />}>
         <Route index element={<PartnerDashboard />} />
         {PARTNER_PAGES.map(({ path, title }) => (
-          <Route key={path} path={path} element={<Placeholder title={title} />} />
+          <Route
+            key={path}
+            path={path}
+            element={path === "profile" ? <ProfileMenu /> : <Placeholder title={title} />}
+          />
         ))}
         <Route path="*" element={<Placeholder title="Page not found" />} />
       </Route>

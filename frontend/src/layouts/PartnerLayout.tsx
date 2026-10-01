@@ -7,7 +7,7 @@ import { useState, useEffect, createContext, useContext } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Home, Briefcase, CalendarClock, Wrench, Wallet, Star, User,
-  LifeBuoy, Settings, Bell, Menu, X, ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen,
+  LifeBuoy, Settings, Bell, ArrowLeft, ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -29,8 +29,8 @@ export const NAV = [
   { key: "system", label: "System", to: "/partner/system", icon: Settings },
 ];
 
-// Bottom nav shows 4 primary tabs + "More" sheet for the rest
-const BOTTOM_KEYS = ["home", "work", "earnings", "profile"];
+// Bottom nav shows 4 primary tabs. Every other page is reached from the Profile tab (see ProfileMenu).
+export const BOTTOM_KEYS = ["home", "work", "earnings", "profile"];
 
 // ---- Online status shared with dashboard pages via context ----
 const PartnerStatusContext = createContext<{ online: boolean; setOnline: (v: boolean) => void }>({ online: false, setOnline: () => {} });
@@ -45,9 +45,10 @@ const NAV_GROUPS: { groupName: string; keys: string[] }[] = [
 ];
 
 // ---- Sidebar: reuses the admin sidebar CSS so both portals look the same ----
+// Desktop only (>=1024px). On mobile the bottom bar + Profile page replace the old drawer.
 function PartnerSidebar({
-  collapsed, mobileOpen, onClose, currentLabel,
-}: { collapsed: boolean; mobileOpen: boolean; onClose: () => void; currentLabel?: string }) {
+  collapsed, currentLabel,
+}: { collapsed: boolean; currentLabel?: string }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -59,19 +60,10 @@ function PartnerSidebar({
 
   useEffect(() => { setOpenGroup(groupOf(currentLabel)); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!mobileOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [mobileOpen, onClose]);
-
-  const cls = ["admin-sidebar", collapsed ? "is-collapsed" : "", mobileOpen ? "is-mobile-open" : ""]
-    .filter(Boolean).join(" ");
+  const cls = ["admin-sidebar", collapsed ? "is-collapsed" : ""].filter(Boolean).join(" ");
 
   return (
     <>
-      {mobileOpen && <div className="sidebar-overlay" style={{ zIndex: 35 }} onClick={onClose} aria-hidden />}
       <aside className={cls} aria-label="Partner navigation">
         <div className="sidebar-brand">
           <div className="sidebar-brand__top">
@@ -79,9 +71,6 @@ function PartnerSidebar({
               <span className="sidebar-brand__icon"><HomeCarexMark size={22} /></span>
               {!collapsed && <span className="sidebar-brand__name">HomeCareX</span>}
             </div>
-            <button type="button" onClick={onClose} className="sidebar-close-btn" aria-label="Close menu">
-              <X size={20} />
-            </button>
           </div>
           {!collapsed && (
             <p className="sidebar-brand__guide">
@@ -114,7 +103,6 @@ function PartnerSidebar({
                         <NavLink
                           to={to}
                           end={end}
-                          onClick={onClose}
                           title={collapsed ? label : undefined}
                           className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}
                         >
@@ -136,7 +124,7 @@ function PartnerSidebar({
             type="button"
             className="sidebar-footer__user sidebar-footer__user-btn"
             title={collapsed ? displayName : undefined}
-            onClick={() => { onClose(); navigate("/partner/profile"); }}
+            onClick={() => navigate("/partner/profile")}
           >
             <span className="avatar">{displayName.charAt(0).toUpperCase()}</span>
             {!collapsed && <span className="profile-name">{displayName}</span>}
@@ -159,36 +147,41 @@ function PartnerSidebar({
 // ---- Layout ----
 export default function PartnerLayout() {
   const [online, setOnline] = useState(false); // TODO: persist via availability API
-  const [drawer, setDrawer] = useState(false);
   const [collapsedPref, setCollapsedPref] = useState(false);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const collapsed = collapsedPref && isDesktop;
   const { pathname } = useLocation();
-
-  useEffect(() => setDrawer(false), [pathname]);
+  const navigate = useNavigate();
 
   const current = NAV.find((n) => (n.end ? pathname === n.to : pathname.startsWith(n.to)));
   const bottom = NAV.filter((n) => BOTTOM_KEYS.includes(n.key));
-  const moreActive = current && !BOTTOM_KEYS.includes(current.key);
+
+  // Mobile back button: shown on every page except Home.
+  const showBack = pathname !== "/partner";
+  const isTabRoot = bottom.some((n) => n.to === pathname); // /partner/work, /earnings, /profile
+  const goBack = () => {
+    if (isTabRoot) return navigate("/partner"); // tab root -> Home
+    const hasHistory = (window.history.state as { idx?: number } | null)?.idx;
+    if (hasHistory) return navigate(-1); // came from a page inside the app
+    // opened directly (refresh / bookmark): go to the logical parent
+    navigate(current && !BOTTOM_KEYS.includes(current.key) ? "/partner/profile" : "/partner");
+  };
 
   return (
     <PartnerStatusContext.Provider value={{ online, setOnline }}>
       <div className="flex min-h-screen bg-slate-50 text-slate-900">
-        <PartnerSidebar
-          collapsed={collapsed}
-          mobileOpen={drawer}
-          onClose={() => setDrawer(false)}
-          currentLabel={current?.label}
-        />
+        <PartnerSidebar collapsed={collapsed} currentLabel={current?.label} />
 
         <div className="min-w-0 flex-1">
           {/* Header */}
           <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
             <div className="flex items-center gap-3">
-              <button onClick={() => setDrawer(true)} aria-label="Open menu"
-                className="rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:hidden">
-                <Menu size={20} />
-              </button>
+              {showBack && (
+                <button onClick={goBack} aria-label="Go back"
+                  className="rounded-md p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338ca] lg:hidden">
+                  <ArrowLeft size={20} />
+                </button>
+              )}
               <button onClick={() => setCollapsedPref((v) => !v)}
                 aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                 className="hidden rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:inline-flex">
@@ -215,7 +208,7 @@ export default function PartnerLayout() {
 
         {/* Mobile bottom nav */}
         <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">
-          <ul className="grid grid-cols-5">
+          <ul className="grid grid-cols-4">
             {bottom.map(({ key, label, to, icon: Icon, end }) => (
               <li key={key}>
                 <NavLink to={to} end={end}
@@ -227,13 +220,6 @@ export default function PartnerLayout() {
                 </NavLink>
               </li>
             ))}
-            <li>
-              <button onClick={() => setDrawer(true)}
-                className={`flex w-full flex-col items-center gap-0.5 py-2 text-xs font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#4338ca] ${moreActive ? "text-[#ff8a3d]" : "text-slate-500"}`}>
-                <Menu size={20} aria-hidden />
-                More
-              </button>
-            </li>
           </ul>
         </nav>
       </div>
