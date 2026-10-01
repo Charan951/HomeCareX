@@ -1,14 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowRight } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-
+ 
+import RecaptchaNotice from '@/components/public/RecaptchaNotice';
 import { useCreateLead } from '@/features/public/leads';
-
+import { isRecaptchaConfigured } from '@/features/public/recaptcha';
+ 
 const inputClassName =
   'min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition-colors duration-150 placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus:ring-red-100';
-
+ 
 const partnerInterestSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
   phone: z
@@ -22,13 +24,17 @@ const partnerInterestSchema = z.object({
   skills: z.string().trim().min(1, 'Skills are required'),
   honeypot: z.string().optional(),
 });
-
+ 
 export type PartnerInterestFormValues = z.infer<typeof partnerInterestSchema>;
-
+ 
 const PartnerInterestForm: React.FC = () => {
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const mutation = useCreateLead();
-
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const handleCaptchaToken = useCallback((token: string | null) => setCaptchaToken(token), []);
+  const captchaMissing = isRecaptchaConfigured && !captchaToken;
+ 
   const defaultValues = useMemo<PartnerInterestFormValues>(() => ({
     name: '',
     phone: '',
@@ -36,7 +42,7 @@ const PartnerInterestForm: React.FC = () => {
     skills: '',
     honeypot: '',
   }), []);
-
+ 
   const {
     register,
     handleSubmit,
@@ -46,15 +52,20 @@ const PartnerInterestForm: React.FC = () => {
     resolver: zodResolver(partnerInterestSchema),
     defaultValues,
   });
-
+ 
   const onSubmit = async (values: PartnerInterestFormValues) => {
     if (values.honeypot && values.honeypot.trim().length > 0) {
       reset(defaultValues);
       return;
     }
-
+ 
     setFeedback(null);
 
+    if (captchaMissing) {
+      setFeedback({ type: 'error', text: 'Please complete the security check.' });
+      return;
+    }
+ 
     try {
       await mutation.mutateAsync({
         name: values.name,
@@ -62,14 +73,17 @@ const PartnerInterestForm: React.FC = () => {
         city: values.city,
         skills: values.skills,
         source: 'partner',
+        ...(captchaToken ? { recaptchaToken: captchaToken } : {}),
       });
-
+ 
       setFeedback({
         type: 'success',
         text: 'Thanks! Our team will get in touch with you.',
       });
       reset(defaultValues);
+      setCaptchaResetKey((k) => k + 1);
     } catch (error) {
+      setCaptchaResetKey((k) => k + 1);
       setFeedback({
         type: 'error',
         text:
@@ -77,7 +91,7 @@ const PartnerInterestForm: React.FC = () => {
       });
     }
   };
-
+ 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5 sm:p-7">
       <div className="mb-6 border-b border-slate-200 pb-5">
@@ -85,7 +99,7 @@ const PartnerInterestForm: React.FC = () => {
         <h3 className="mt-2 text-2xl font-bold tracking-tight text-slate-950">Share your interest</h3>
         <p className="mt-2 text-sm leading-6 text-slate-600">Tell us about your skills and location.</p>
       </div>
-
+ 
       {feedback && (
         <div
           role={feedback.type === 'success' ? 'status' : 'alert'}
@@ -98,7 +112,7 @@ const PartnerInterestForm: React.FC = () => {
           {feedback.text}
         </div>
       )}
-
+ 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
         <div>
           <label htmlFor="partner-name" className="mb-2 block text-sm font-medium text-slate-700">
@@ -117,7 +131,7 @@ const PartnerInterestForm: React.FC = () => {
           />
           {errors.name && <p id="partner-name-error" role="alert" className="mt-1.5 text-sm text-red-700">{errors.name.message}</p>}
         </div>
-
+ 
         <div className="grid gap-5 md:grid-cols-2">
           <div>
             <label htmlFor="partner-phone" className="mb-2 block text-sm font-medium text-slate-700">
@@ -136,7 +150,7 @@ const PartnerInterestForm: React.FC = () => {
             />
             {errors.phone && <p id="partner-phone-error" role="alert" className="mt-1.5 text-sm text-red-700">{errors.phone.message}</p>}
           </div>
-
+ 
           <div>
             <label htmlFor="partner-city" className="mb-2 block text-sm font-medium text-slate-700">
               City <span aria-hidden="true" className="text-blue-700">*</span>
@@ -155,7 +169,7 @@ const PartnerInterestForm: React.FC = () => {
             {errors.city && <p id="partner-city-error" role="alert" className="mt-1.5 text-sm text-red-700">{errors.city.message}</p>}
           </div>
         </div>
-
+ 
         <div>
           <label htmlFor="partner-skills" className="mb-2 block text-sm font-medium text-slate-700">
             Skills <span aria-hidden="true" className="text-blue-700">*</span>
@@ -172,15 +186,17 @@ const PartnerInterestForm: React.FC = () => {
           />
           {errors.skills && <p id="partner-skills-error" role="alert" className="mt-1.5 text-sm text-red-700">{errors.skills.message}</p>}
         </div>
-
+ 
         <div className="sr-only" aria-hidden="true">
           <label htmlFor="partner-honeypot">Leave this blank</label>
           <input id="partner-honeypot" tabIndex={-1} autoComplete="off" {...register('honeypot')} />
         </div>
+ 
+        <RecaptchaNotice onTokenChange={handleCaptchaToken} resetKey={captchaResetKey} />
 
         <button
           type="submit"
-          disabled={isSubmitting || mutation.isPending}
+          disabled={isSubmitting || mutation.isPending || captchaMissing}
           className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-slate-400"
         >
           {mutation.isPending || isSubmitting ? 'Submitting...' : <>Submit interest <ArrowRight aria-hidden="true" size={17} /></>}
@@ -189,5 +205,5 @@ const PartnerInterestForm: React.FC = () => {
     </div>
   );
 };
-
+ 
 export default PartnerInterestForm;

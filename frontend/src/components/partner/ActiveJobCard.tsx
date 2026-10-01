@@ -1,53 +1,47 @@
 import { Link } from "react-router-dom";
+import { ArrowRight, MapPin, Navigation } from "lucide-react";
 import type { ActiveJob } from "@/types/partner";
 
-const STATUS: Record<ActiveJob["status"], { label: string; chip: string }> = {
-  en_route: { label: "On the way", chip: "bg-indigo-50 text-[#4338ca]" },
-  arrived: { label: "Arrived", chip: "bg-amber-50 text-amber-700" },
-  in_progress: { label: "In progress", chip: "bg-emerald-50 text-emerald-700" },
+const STATUS_LABEL: Record<ActiveJob["status"], string> = {
+  en_route: "On the way",
+  arrived: "Arrived",
+  in_progress: "In progress",
 };
 
-/** The job the partner is working on right now. Text-only card: status chip, service, customer, address, one action. */
+/** Lavender banner (like the customer's "track" strip) for the job in progress. */
 export default function ActiveJobCard({ job }: { job: ActiveJob | null }) {
   if (!job) {
     return (
-      <div className="rounded-xl border border-dashed border-line bg-panel p-6 text-center">
+      <div className="rounded border border-dashed border-line bg-panel p-6 text-center">
         <p className="text-sm font-medium text-ink">No active job</p>
         <p className="mt-1 text-xs text-muted">When you start a job, it shows up here.</p>
       </div>
     );
   }
   const time = new Date(job.scheduledAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  const { label, chip } = STATUS[job.status];
 
   return (
-    <section aria-label="Active job" className="rounded-xl border border-line border-l-4 border-l-brand bg-panel p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${chip}`}>{label}</span>
-        <span className="text-xs font-medium text-muted">{time}</span>
-      </div>
-
-      <h3 className="mt-3 truncate text-base font-semibold text-ink">{job.service}</h3>
-
-      <dl className="mt-2 space-y-1 text-sm">
-        <div className="flex gap-2">
-          <dt className="w-16 shrink-0 text-muted">Customer</dt>
-          <dd className="min-w-0 truncate text-ink">{job.customer}</dd>
-        </div>
+    <Link
+      to={`/partner/work/${job.id}`}
+      className="flex items-center gap-4 rounded bg-brand-soft px-4 py-4 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-white">
+        <Navigation className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-ink">{job.service}</p>
+        <p className="truncate text-xs text-muted">
+          {STATUS_LABEL[job.status]} · {job.customer} · {time}
+        </p>
         {job.address && (
-          <div className="flex gap-2">
-            <dt className="w-16 shrink-0 text-muted">Address</dt>
-            <dd className="min-w-0 text-ink">{job.address}</dd>
-          </div>
+          <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted">
+            <MapPin size={12} aria-hidden /> {job.address}
+          </p>
         )}
-      </dl>
-
-      <Link
-        to={`/partner/work/${job.id}`}
-        className="mt-4 flex w-full items-center justify-center rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
-      >
-        Open job
-      </Link>
-    </section>
+      </div>
+      <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-brand">
+        Open <ArrowRight className="h-4 w-4" aria-hidden="true" />
+      </span>
+    </Link>
   );
 }

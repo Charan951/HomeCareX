@@ -61,10 +61,10 @@ describe('GET /partner/dashboard', () => {
     assert.equal(res.status, 200);
   });
 
-   it('401 NO_ACCESS_TOKEN: no token', async () => {
+  it('401 UNAUTHENTICATED: no token', async () => {
     const res = await call('');
     assert.equal(res.status, 401);
-    assert.equal(((await res.json()) as { code: string }).code, 'NO_ACCESS_TOKEN');
+    assert.equal(((await res.json()) as { code: string }).code, 'UNAUTHENTICATED');
   });
 
   it('401: garbage token', async () => {

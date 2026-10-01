@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Home } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import type { ApiError } from '@/lib/http';
@@ -21,7 +21,7 @@ function destinationFor(user: AuthUser, returnUrl: string | null): string {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const LoginPage: React.FC = () => {
-  const { login, user, isAuthenticated } = useAuth();
+  const { login, logout, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const returnUrl = safeReturnUrl(params.get('returnUrl'));
@@ -37,7 +37,34 @@ export const LoginPage: React.FC = () => {
   }, []);
 
   // Already signed in: go straight to the role's dashboard.
-  if (isAuthenticated && user && !loading) return <Navigate to={destinationFor(user, returnUrl)} replace />;
+  // Already signed in: don't silently jump to that account's page (it hid which account was active).
+  // Let the person continue, or sign out and use a different account (e.g. admin instead of partner).
+  if (isAuthenticated && user && !loading) {
+    return (
+      <div className="bg-white/90 rounded-2xl shadow border border-gray-100 p-8">
+        <h1 className="text-2xl font-bold text-accent-700 mb-1">You&apos;re already signed in</h1>
+        <p className="text-gray-600 mb-6">
+          Signed in as <b>{user.name}</b>
+          {user.email ? ` (${user.email})` : ''} &middot; role: <b>{user.role}</b>
+        </p>
+        <div className="flex flex-col gap-3">
+          <Link
+            to={destinationFor(user, returnUrl)}
+            className="w-full text-center rounded-lg bg-brand-600 text-white font-medium py-2.5 hover:bg-brand-700"
+          >
+            Continue to my dashboard
+          </Link>
+          <button
+            type="button"
+            onClick={() => void logout()}
+            className="w-full rounded-lg border border-gray-300 py-2.5 font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Log out and use another account
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

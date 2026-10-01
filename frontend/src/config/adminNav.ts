@@ -11,6 +11,7 @@ import {
   HardHat,
   Headset,
   UserCog,
+  UserPlus,
   LayoutDashboard,
   LayoutGrid,
   Megaphone,
@@ -52,6 +53,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     items: [
       { label: 'Bookings', path: '/admin/bookings', icon: CalendarCheck },
       { label: 'Customers', path: '/admin/customers', icon: Users },
+      { label: 'Manage Partners', path: '/admin/manage-partners', icon: UserPlus },
       { label: 'Partners & KYC', path: '/admin/partners', icon: HardHat },
       { label: 'Support', path: '/admin/support', icon: Headset },
     ],

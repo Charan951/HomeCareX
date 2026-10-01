@@ -25,6 +25,7 @@ export const contactLeadSchema = z.object({
     .max(1000, 'Message must be 1000 characters or fewer'),
   source: z.literal('contact'),
   honeypot: z.string().trim().optional(),
+  recaptchaToken: z.string().max(4096).optional(),
 });
 
 export const partnerLeadSchema = z.object({
@@ -40,6 +41,7 @@ export const partnerLeadSchema = z.object({
   skills: z.string().trim().min(1, 'Skills are required'),
   source: z.literal('partner'),
   honeypot: z.string().trim().optional(),
+  recaptchaToken: z.string().max(4096).optional(),
 });
 
 export const publicLeadSchema = z.union([contactLeadSchema, partnerLeadSchema]);

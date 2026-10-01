@@ -1,10 +1,10 @@
 export type UserRole = "admin" | "customer" | "partner";
-
+ 
 export const ADMIN_ROLES: UserRole[] = ["admin"];
-
+ 
 /** 'expired' = a previously valid session ended (401 / refresh failed). */
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated" | "expired";
-
+ 
 export interface AuthUser {
   id: string;
   name: string;
@@ -16,12 +16,12 @@ export interface AuthUser {
   /** Landing route for the role: /customer, /partner or /admin. */
   home: string;
 }
-
+ 
 export interface LoginInput {
   email: string;
   password: string;
 }
-
+ 
 export interface AuthContextValue {
   user: AuthUser | null;
   status: AuthStatus;

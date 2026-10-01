@@ -1,0 +1,188 @@
+/* ==========================================================================
+   calm-overrides.css  — load AFTER Availability.css, Earnings, Availability
+   home, Blackout Dates and Working Hours CSS.
+   1) Calmer colour (desktop + mobile): gradients -> flat white/neutral,
+      indigo only for key actions, orange only as a small accent.
+   2) Mobile (<1024px): bottom nav hidden, shared top bar with back + title.
+   3) Mobile: scrollbars hidden.
+   ========================================================================== */
+
+:root {
+  --calm-bg: #f7f7fb;
+  --calm-shadow: 0 1px 3px rgba(16, 24, 40, .06);
+  --calm-shadow-hover: 0 4px 12px rgba(16, 24, 40, .08);
+}
+
+/* ---------- 1. Calmer colour ---------- */
+
+body:has(.pa-page) { background: var(--calm-bg); }
+
+/* Flat cards, neutral shadows */
+.pa-status-card, .pa-week, .pa-link-row,
+.av-hero, .av-card, .av-link,
+.bd-form, .bd-card, .bd-empty,
+.wh-card, .wh-bar,
+.earn-hero, .earn-period {
+  box-shadow: var(--calm-shadow);
+}
+.pa-link-row:hover, .av-link:hover, .bd-card:hover, .wh-card:hover,
+.earn-period:hover, .av-stat:hover, .av-chip:hover {
+  box-shadow: var(--calm-shadow-hover);
+}
+.pa-link-row:hover, .av-link:hover { border-color: #c7c9e6; }
+.pa-link-row:hover svg:last-child, .av-link:hover .av-link-arrow { color: var(--indigo, #4338ca); }
+
+/* Plain-status card (old pa-* pages) */
+.pa-status-on {
+  background: #fff; color: var(--ink, #1e1b4b);
+  border-color: var(--line, #e4e6f5); border-left: 4px solid var(--indigo, #4338ca);
+  box-shadow: var(--calm-shadow);
+}
+.pa-status-on::after, .pa-status-card::after { display: none; }
+.pa-status-on .pa-muted { color: var(--muted, #64648a); }
+.pa-btn { box-shadow: none; }
+
+/* Availability home hero */
+.av-hero::after { display: none; }
+.av-hero-on {
+  background: #fff; color: var(--ink, #1e1b4b);
+  border: 1px solid var(--line, #e4e6f5); border-left: 4px solid var(--indigo, #4338ca);
+  box-shadow: var(--calm-shadow);
+  animation: av-rise .6s cubic-bezier(.2, .8, .2, 1) var(--d, 0ms) backwards;
+}
+.av-hero-on .av-hero-sub { color: var(--muted, #64648a); }
+.av-hero-on .av-hero-today { background: var(--indigo-50, #eef2ff); color: var(--indigo, #4338ca); border: 0; }
+.av-switch-on { box-shadow: none; }
+.av-chip { background: var(--indigo-50, #eef2ff); }
+.av-chip-off { background: var(--orange-50, #fff4ec); }
+.av-stat-working, .av-stat-off, .av-stat-blackout { background: #fff; border-color: var(--line, #e4e6f5); }
+.av-stat-working { color: var(--ink, #1e1b4b); }
+.av-stat-blackout { color: #b5470a; }
+.av-link-icon { background: var(--indigo-50, #eef2ff); }
+.av-link-icon-orange { background: var(--orange-50, #fff4ec); }
+
+/* Page headings: solid colour instead of animated gradient text */
+.bd-h1, .wh-h1 {
+  background: none; -webkit-text-fill-color: var(--indigo, #4338ca);
+  color: var(--indigo, #4338ca);
+}
+.bd-h1 { animation: bd-rise .5s .05s cubic-bezier(.2, .8, .2, 1) backwards; }
+.wh-h1 { animation: wh-rise .5s .05s cubic-bezier(.2, .8, .2, 1) backwards; }
+
+/* Blackout dates */
+.bd-form::before { height: 3px; background: var(--indigo, #4338ca); animation: none; }
+.bd-form-badge { animation: none; }
+.bd-count-label { background: var(--indigo-50, #eef2ff); box-shadow: none; }
+.bd-card { background: #fff; }
+.bd-card-danger { background: #fff8f8; }
+.bd-datechip { background: var(--indigo, #4338ca); box-shadow: none; }
+.bd-datechip-today { background: var(--orange, #ff8a3d); box-shadow: none; }
+
+/* Working hours */
+.wh-summary {
+  background: #fff; color: var(--ink, #1e1b4b);
+  border: 1px solid var(--line, #e4e6f5); box-shadow: var(--calm-shadow);
+  animation: wh-zoom .6s cubic-bezier(.34, 1.56, .64, 1) 60ms backwards;
+}
+.wh-summary::before, .wh-summary::after { display: none; }
+.wh-cap { opacity: 1; color: var(--muted, #64648a); }
+.wh-bars-well { background: var(--indigo-50, #eef2ff); }
+.wh-bars-fill { background: var(--indigo, #4338ca); }
+.wh-bars-lbl { opacity: 1; color: var(--muted, #64648a); }
+.wh-copy { background: var(--indigo, #4338ca); color: #fff; }
+.wh-copy:hover:not(:disabled) { box-shadow: none; }
+.wh-copy:disabled { background: #eceef8; color: var(--muted, #64648a); }
+.wh-card { background: #fff; }
+.wh-card-off { background: #fff; }
+.wh-track span { background: var(--indigo, #4338ca); }
+.wh-bar { box-shadow: 0 -2px 10px rgba(16, 24, 40, .06); }
+
+/* Earnings: pending panel becomes a soft tint instead of a solid indigo block */
+.earn-hero-side {
+  background: var(--earn-primary-soft); color: var(--earn-ink);
+  border-top: 1px solid var(--earn-primary-line);
+}
+.earn-hero-side::before, .earn-hero-side::after, .earn-bubbles { display: none; }
+.earn-eyebrow--light { color: var(--earn-muted); }
+.earn-eyebrow--light svg { color: var(--earn-primary); }
+.earn-side-value { color: var(--earn-ink); }
+.earn-side-text { color: var(--earn-muted); }
+.earn-progress { background: #fff; }
+.earn-hero, .earn-period:hover { box-shadow: var(--calm-shadow); }
+@media (min-width: 900px) {
+  .earn-hero-side { border-top: 0; border-left: 1px solid var(--earn-primary-line); }
+}
+
+/* ---------- 2. Mobile top bar (replaces bottom nav) ---------- */
+
+.pl-mobile-bar { display: none; }
+
+@media (max-width: 1023px) {
+  /* Hide the old bottom navbar. Adjust these selectors to PartnerLayout's real class names. */
+  .pl-bottom-nav, .pl-bottomnav, .partner-bottom-nav, nav[aria-label="Main"] { display: none !important; }
+
+  .pl-mobile-bar {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 12px;
+    min-height: 56px; padding: env(safe-area-inset-top, 0px) 14px 0;
+    background: #fff; border-bottom: 1px solid var(--line, #e4e6f5);
+  }
+  .pl-mobile-back {
+    flex-shrink: 0; display: grid; place-items: center;
+    width: 40px; height: 40px; border: 0; border-radius: 12px;
+    background: transparent; color: var(--indigo, #4338ca); cursor: pointer;
+  }
+  .pl-mobile-back:active { background: var(--indigo-50, #eef2ff); }
+  .pl-mobile-back:focus-visible { outline: 3px solid var(--orange, #ff8a3d); outline-offset: 2px; }
+  .pl-mobile-title {
+    margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--ink, #1e1b4b);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+
+  /* The top bar now owns back + title, so drop the duplicates inside pages */
+  .wh-back, .bd-back, .wh-h1, .bd-h1 { display: none; }
+
+  /* No bottom nav any more: pull the floating save bar down, trim spacer */
+  .wh-bar { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .pa-page.wh-page { padding-bottom: 88px; }
+}
+
+/* ---------- 3. Hide scrollbars on mobile ---------- */
+
+@media (max-width: 1023px) {
+  html, body, * { scrollbar-width: none; -ms-overflow-style: none; }
+  html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
+    display: none; width: 0; height: 0;
+  }
+}
+
+/* ---------- 4. Lighter, less heavy look ---------- */
+
+/* Softer text weights: 800/700 -> 600 */
+.pa-title, .av-title, .bd-h1, .wh-h1, .earn-title,
+[class*="-h1"], .av-hero-title, .av-link-title, .bd-card-title {
+  font-weight: 600 !important;
+}
+.pa-page h2, .pa-page h3, .av-page h2, .av-page h3 { font-weight: 600; }
+
+/* Lighter borders and quieter surfaces */
+.pa-status-card, .pa-week, .pa-link-row, .av-hero, .av-card, .av-link,
+.bd-form, .bd-card, .bd-empty, .wh-card, .earn-hero, .earn-period {
+  border-color: #eceef5;
+  box-shadow: none;
+}
+.pa-link-row:hover, .av-link:hover, .bd-card:hover, .wh-card:hover, .earn-period:hover {
+  box-shadow: 0 2px 8px rgba(16, 24, 40, .05);
+}
+
+/* Left accent bars on the hero cards: thinner */
+.pa-status-on, .av-hero-on { border-left-width: 3px; }
+
+/* Icon tiles: neutral instead of tinted */
+.av-link-icon, .av-link-icon-orange { background: #f4f5fb; }
+
+/* Mobile: less crowded on small screens */
+@media (max-width: 1023px) {
+  main { padding-top: 16px; }
+  .av-hero, .bd-form, .wh-summary, .earn-hero { border-radius: 14px; }
+}
