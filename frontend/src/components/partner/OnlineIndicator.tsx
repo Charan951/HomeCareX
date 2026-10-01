@@ -7,13 +7,13 @@ export default function OnlineIndicator({ online, onChange }: Props) {
   const dot = (
     <span className="relative flex h-2.5 w-2.5">
       {online && (
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff8a3d] opacity-60 motion-reduce:animate-none" />
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff8a3d] opacity-40 motion-reduce:animate-none" />
       )}
       <span className={`relative inline-flex h-2.5 w-2.5 rounded-full ${online ? "bg-[#ff8a3d]" : "bg-slate-400"}`} />
     </span>
   );
-  const cls = `flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium ${
-    online ? "border-[#ff8a3d] bg-[#fff1e6] text-[#b45309]" : "border-slate-300 bg-white text-slate-600"
+  const cls = `flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm ${
+    online ? "text-slate-700" : "text-slate-500"
   }`;
   const label = online ? "Online" : "Offline";
 

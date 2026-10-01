@@ -6,6 +6,7 @@ import { availabilityRoutes } from '../modules/availability/availability.routes'
 import { blackoutRoutes } from '../modules/availability/blackout.routes';
 import { scheduleRoutes } from '../modules/availability/schedule.routes';
 import { partnerDashboardRoutes } from '../modules/partners/partner-dashboard.routes';
+import { earningsRoutes } from '../modules/earnings/earnings.routes';
 
 import leadsRoutes from '../modules/leads/leads.routes';
 import { bookingsRoutes } from '../modules/bookings/bookings.routes';
@@ -22,5 +23,5 @@ rootRouter.use('/partner/blackout-dates', blackoutRoutes); // GET, POST, PATCH, 
 rootRouter.use('/partner/schedule', scheduleRoutes); // GET /partner/schedule
 rootRouter.use(leadsRoutes); // POST /public/leads
 rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings, GET /bookings/:id
-
+rootRouter.use('/partner/earnings', earningsRoutes); // GET /partner/earnings/summary
 export default rootRouter;

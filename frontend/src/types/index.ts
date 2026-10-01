@@ -1,2 +1,1 @@
-// types exports
-export * from "./booking";
+export * from "./earnings";

@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import { ZodError } from 'zod';
-import { ERROR_CODES } from '../constants/errorcodes';
+import { ERROR_CODES } from '../constants/errorCodes';
 import { HttpError } from '../modules/auth/auth.types';
 import type { ErrorEnvelope } from '../utils/response';
 
