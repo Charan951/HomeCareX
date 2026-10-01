@@ -1,18 +1,11 @@
-// import React from 'react';
-
-// export const AdminAuditLogsPage: React.FC = () => {
-//   return (
-//     <div className="admin-page-container p-6">
-//       <h1 className="text-2xl font-bold">Admin AuditLogs</h1>
-//     </div>
-//   );
-// };
-
-// export default AdminAuditLogsPage;
-import React, { useState } from "react";
-
+import React, { useEffect, useState } from "react";
+import DataTable, {
+  Column,
+} from "../../../components/tables/DataTable";
+import './index.css';
+import { useUIStore } from "@/store/useUIStore";
 interface AuditLog {
-  id: number;
+  id: string;
   timestamp: string;
   actor: string;
   action: string;
@@ -24,172 +17,336 @@ interface AuditLog {
   after: string;
 }
 
-const auditLogsData: AuditLog[] = [
-  {
-    id: 1,
-    timestamp: "2026-09-28 10:15 AM",
-    actor: "Admin",
-    action: "CREATE",
-    entity: "Category",
-    entityId: "CAT001",
-    ip: "192.168.1.10",
-    result: "Success",
-    before: "{}",
-    after: '{"name":"Home Cleaning","status":"Active"}',
-  },
-  {
-    id: 2,
-    timestamp: "2026-09-28 11:20 AM",
-    actor: "Manager",
-    action: "UPDATE",
-    entity: "Partner",
-    entityId: "PAR002",
-    ip: "192.168.1.15",
-    result: "Success",
-    before: '{"status":"Pending"}',
-    after: '{"status":"Approved"}',
-  },
-  {
-    id: 3,
-    timestamp: "2026-09-28 12:45 PM",
-    actor: "Admin",
-    action: "DELETE",
-    entity: "Service",
-    entityId: "SER003",
-    ip: "192.168.1.22",
-    result: "Failed",
-    before: '{"name":"AC Repair"}',
-    after: "{}",
-  },
-];
+interface AuditLogApi {
+  _id?: string;
+  id?: string;
+  actor: string;
+  action: string;
+  entity: string;
+  entityId: string;
+  before?: unknown;
+  after?: unknown;
+  ip: string;
+  result: "Success" | "Failed";
+  timestamp?: string;
+  createdAt?: string;
+}
+
+interface AuditLogsResponse {
+  success: boolean;
+  data: {
+    items: AuditLogApi[];
+    total: number;
+    page: number;
+    limit: number;
+  };
+}
 
 const AdminAuditLogsPage: React.FC = () => {
-  const [search, setSearch] = useState("");
-  const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+   // Search text comes from the navbar search bar
+  const search = useUIStore((state) => state.pageSearch);
+  const [selectedLog, setSelectedLog] =
+    useState<AuditLog | null>(null);
 
-  const filteredLogs = auditLogsData.filter(
-    (log) =>
-      log.actor.toLowerCase().includes(search.toLowerCase()) ||
-      log.action.toLowerCase().includes(search.toLowerCase()) ||
-      log.entity.toLowerCase().includes(search.toLowerCase())
-  );
+  const [auditLogsData, setAuditLogsData] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const fetchAuditLogs = async () => {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(
+          "http://localhost:5000/api/v1/admin/audit-logs"
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch audit logs: ${response.status}`
+          );
+        }
+
+        const result: AuditLogsResponse =
+          await response.json();
+
+        if (!result.success) {
+          throw new Error("Failed to load audit logs");
+        }
+
+        const logs: AuditLog[] =
+          result.data.items.map((log) => ({
+            id: log.id || log._id || "",
+            timestamp: new Date(
+              log.timestamp || log.createdAt || ""
+            ).toLocaleString(),
+            actor: log.actor,
+            action: log.action,
+            entity: log.entity,
+            entityId: log.entityId,
+            ip: log.ip,
+            result: log.result,
+            before:
+              log.before === undefined ||
+              log.before === null
+                ? "{}"
+                : typeof log.before === "string"
+                ? log.before
+                : JSON.stringify(
+                    log.before,
+                    null,
+                    2
+                  ),
+            after:
+              log.after === undefined ||
+              log.after === null
+                ? "{}"
+                : typeof log.after === "string"
+                ? log.after
+                : JSON.stringify(
+                    log.after,
+                    null,
+                    2
+                  ),
+          }));
+
+        setAuditLogsData(logs);
+      } catch (err) {
+        console.error(
+          "Failed to fetch audit logs:",
+          err
+        );
+
+        setError(
+          "Unable to load audit logs. Please check that the backend is running."
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuditLogs();
+  }, []);
+
+  const filteredLogs = auditLogsData.filter((log) => {
+    const searchValue = search.toLowerCase().trim();
+
+    if (!searchValue) {
+      return true;
+    }
+
+    return (
+      log.actor
+        .toLowerCase()
+        .includes(searchValue) ||
+      log.action
+        .toLowerCase()
+        .includes(searchValue) ||
+      log.entity
+        .toLowerCase()
+        .includes(searchValue) ||
+      log.entityId
+        .toLowerCase()
+        .includes(searchValue) ||
+      log.ip
+        .toLowerCase()
+        .includes(searchValue) ||
+      log.result
+        .toLowerCase()
+        .includes(searchValue)
+    );
+  });
+
+  const auditColumns: Column<AuditLog>[] = [
+    {
+      key: "timestamp",
+      header: "Timestamp",
+      sortValue: (row) => row.timestamp,
+    },
+    {
+      key: "actor",
+      header: "Actor",
+      sortValue: (row) => row.actor,
+    },
+    {
+      key: "action",
+      header: "Action",
+      sortValue: (row) => row.action,
+    },
+    {
+      key: "entity",
+      header: "Entity",
+      sortValue: (row) => row.entity,
+    },
+    {
+      key: "entityId",
+      header: "Entity ID",
+      sortValue: (row) => row.entityId,
+    },
+    {
+      key: "ip",
+      header: "IP Address",
+      sortValue: (row) => row.ip,
+    },
+    {
+      key: "result",
+      header: "Result",
+      sortValue: (row) => row.result,
+      cell: (row) => (
+        <span
+          className={
+            row.result === "Success"
+              ? "success-badge"
+              : "failed-badge"
+          }
+        >
+          {row.result}
+        </span>
+      ),
+    },
+    {
+      key: "details",
+      header: "Details",
+      cell: (row) => (
+        <button
+          type="button"
+          className="view-btn"
+          onClick={() => setSelectedLog(row)}
+        >
+          View
+        </button>
+      ),
+    },
+  ];
 
   return (
     <div className="admin-auditlogs-container">
       <div className="auditlogs-header">
-        <h1 className="auditlogs-title">Audit Logs</h1>
+        <h1 className="auditlogs-title">
+          Audit Logs
+        </h1>
       </div>
 
-      <div className="auditlogs-search">
-        <input
-          type="text"
-          placeholder="Search Actor, Action or Entity"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      
 
-      <div className="auditlogs-table-wrapper">
-        <table className="auditlogs-table">
-          <thead>
-            <tr>
-              <th>Timestamp</th>
-              <th>Actor</th>
-              <th>Action</th>
-              <th>Entity</th>
-              <th>Entity ID</th>
-              <th>IP Address</th>
-              <th>Result</th>
-              <th>Details</th>
-            </tr>
-          </thead>
+      {loading && (
+        <div className="auditlogs-count">
+          Loading audit logs...
+        </div>
+      )}
 
-          <tbody>
-            {filteredLogs.length > 0 ? (
-              filteredLogs.map((log) => (
-                <tr key={log.id}>
-                  <td>{log.timestamp}</td>
-                  <td>{log.actor}</td>
-                  <td>{log.action}</td>
-                  <td>{log.entity}</td>
-                  <td>{log.entityId}</td>
-                  <td>{log.ip}</td>
+      {!loading && error && (
+        <div className="auditlogs-count">
+          {error}
+        </div>
+      )}
 
-                  <td>
-                    <span
-                      className={
-                        log.result === "Success"
-                          ? "success-badge"
-                          : "failed-badge"
-                      }
-                    >
-                      {log.result}
-                    </span>
-                  </td>
+      {!loading && !error && (
+        <>
+          <div className="auditlogs-table-container">
+            <DataTable
+              columns={auditColumns}
+              data={filteredLogs}
+              rowKey={(row) => String(row.id)}
+              label="Audit logs"
+              defaultPageSize={10}
+              pageSizeOptions={[5, 10, 20, 50]}
+              emptyTitle="No audit logs found"
+              emptyMessage={
+                search
+                  ? "No audit logs match your search."
+                  : "There are no audit logs to display."
+              }
+            />
+          </div>
 
-                  <td>
-                    <button
-                      className="view-btn"
-                      onClick={() => setSelectedLog(log)}
-                    >
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={8} className="no-records">
-                  No Audit Logs Found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="auditlogs-count">
-        Total Logs: {filteredLogs.length}
-      </div>
+          <div className="auditlogs-count">
+            Total Logs: {filteredLogs.length}
+          </div>
+        </>
+      )}
 
       {selectedLog && (
-        <div className="audit-drawer-overlay">
-          <div className="audit-drawer">
+        <div
+          className="audit-drawer-overlay"
+          role="presentation"
+          onClick={() => setSelectedLog(null)}
+        >
+          <aside
+            className="audit-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="audit-drawer-title"
+            onClick={(event) =>
+              event.stopPropagation()
+            }
+          >
             <div className="audit-drawer-header">
-              <h2 className="audit-drawer-title">
+              <h2
+                id="audit-drawer-title"
+                className="audit-drawer-title"
+              >
                 Audit Log Details
               </h2>
 
               <button
+                type="button"
                 className="close-btn"
-                onClick={() => setSelectedLog(null)}
+                onClick={() =>
+                  setSelectedLog(null)
+                }
               >
                 Close
               </button>
             </div>
 
             <div className="audit-info">
-              <strong>Actor:</strong> {selectedLog.actor}
+              <strong>Timestamp:</strong>{" "}
+              {selectedLog.timestamp}
             </div>
 
             <div className="audit-info">
-              <strong>Action:</strong> {selectedLog.action}
+              <strong>Actor:</strong>{" "}
+              {selectedLog.actor}
             </div>
 
             <div className="audit-info">
-              <strong>Entity:</strong> {selectedLog.entity}
+              <strong>Action:</strong>{" "}
+              {selectedLog.action}
             </div>
 
             <div className="audit-info">
-              <strong>Entity ID:</strong> {selectedLog.entityId}
+              <strong>Entity:</strong>{" "}
+              {selectedLog.entity}
             </div>
 
             <div className="audit-info">
-              <strong>IP:</strong> {selectedLog.ip}
+              <strong>Entity ID:</strong>{" "}
+              {selectedLog.entityId}
+            </div>
+
+            <div className="audit-info">
+              <strong>IP Address:</strong>{" "}
+              {selectedLog.ip}
+            </div>
+
+            <div className="audit-info">
+              <strong>Result:</strong>{" "}
+              <span
+                className={
+                  selectedLog.result === "Success"
+                    ? "success-badge"
+                    : "failed-badge"
+                }
+              >
+                {selectedLog.result}
+              </span>
             </div>
 
             <div className="audit-section">
               <h3>Before JSON</h3>
+
               <pre className="json-box">
                 {selectedLog.before}
               </pre>
@@ -197,11 +354,12 @@ const AdminAuditLogsPage: React.FC = () => {
 
             <div className="audit-section">
               <h3>After JSON</h3>
+
               <pre className="json-box">
                 {selectedLog.after}
               </pre>
             </div>
-          </div>
+          </aside>
         </div>
       )}
     </div>

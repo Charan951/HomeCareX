@@ -1,15 +1,35 @@
+/** Mirror of backend/src/modules/bookings/bookings.constants.ts (BOOKING_STATUSES). Keep in sync. */
+export const BOOKING_STATUSES = [
+  'pending_payment',
+  'confirmed',
+  'created',
+  'searching_for_partner',
+  'assigned',
+  'en_route',
+  'arrived',
+  'in_progress',
+  'completed',
+  'rated',
+  'cancelled_by_customer',
+  'cancelled_by_partner',
+  'no_show',
+  'disputed',
+] as const;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+/** Named access to the statuses used by the customer booking flow. */
 export const BOOKING_STATUS = {
-  PENDING_PAYMENT: 'PENDING_PAYMENT',
-  CONFIRMED: 'CONFIRMED',
-  ASSIGNED: 'ASSIGNED',
-  ACCEPTED: 'ACCEPTED',
-  EN_ROUTE: 'EN_ROUTE',
-  ARRIVED: 'ARRIVED',
-  IN_PROGRESS: 'IN_PROGRESS',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED',
-} as const;
-export type BookingStatus = (typeof BOOKING_STATUS)[keyof typeof BOOKING_STATUS];
+  PENDING_PAYMENT: 'pending_payment',
+  CONFIRMED: 'confirmed',
+  SEARCHING_FOR_PARTNER: 'searching_for_partner',
+  ASSIGNED: 'assigned',
+  EN_ROUTE: 'en_route',
+  ARRIVED: 'arrived',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  RATED: 'rated',
+  CANCELLED_BY_CUSTOMER: 'cancelled_by_customer',
+} as const satisfies Record<string, BookingStatus>;
 
 export const PAYMENT_STATUS = {
   PENDING: 'PENDING',
@@ -64,7 +84,7 @@ export interface BookingHistoryEntry {
   at: string;
   actorId?: string;
   actorRole: 'customer' | 'partner' | 'admin' | 'system';
-  note?: string;
+  reason?: string;
 }
 
 export interface BookingView {
@@ -81,7 +101,7 @@ export interface BookingView {
   paymentStatus: PaymentStatus;
   partnerId?: string;
   otp?: { code: string; verifiedAt?: string };
-  history: BookingHistoryEntry[];
+  statusHistory: BookingHistoryEntry[];
   holdExpiresAt?: string;
   createdAt: string;
   updatedAt: string;

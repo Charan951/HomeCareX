@@ -1,12 +1,12 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
-import { Booking } from '../../models/Booking';
+import { BookingModel as Booking } from '../../models/Booking';
 import { PaymentModel } from '../../models/Payment';
 import { UserModel } from '../../models/User';
 import { getAuthUser } from '../../middleware/auth.middleware';
 import { getRazorpay, verifyRazorpaySignature } from '../../integrations/razorpay';
 import { AppError } from '../../utils/AppError';
-import { BOOKING_HOLD_MS } from '../bookings/bookings.constants';
+import { BOOKING_HOLD_MS, BOOKING_STATUS } from '../bookings/bookings.constants';
 
 const isId = (v: unknown): v is string => typeof v === 'string' && Types.ObjectId.isValid(v);
 const str = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length < 200;
@@ -27,7 +27,7 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<v
   const booking = await Booking.findOne({ _id: bookingId, customerId });
   if (!booking) throw new AppError(404, 'BOOKING_NOT_FOUND', 'Booking not found');
   if (booking.paymentStatus === 'PAID') throw new AppError(409, 'ALREADY_PAID', 'This booking is already paid');
-  if (booking.status !== 'PENDING_PAYMENT') {
+  if (booking.status !== BOOKING_STATUS.PENDING_PAYMENT) {
     throw new AppError(409, 'BOOKING_NOT_PAYABLE', 'This booking can no longer be paid. Please start a new booking.');
   }
   if (booking.holdExpiresAt && booking.holdExpiresAt.getTime() <= Date.now()) {
@@ -39,7 +39,7 @@ export const createPaymentOrder = async (req: Request, res: Response): Promise<v
 
   // Give the customer a fresh window for each payment attempt.
   await Booking.updateOne(
-    { _id: booking._id, status: 'PENDING_PAYMENT' },
+    { _id: booking._id, status: BOOKING_STATUS.PENDING_PAYMENT },
     { $set: { holdExpiresAt: new Date(Date.now() + BOOKING_HOLD_MS) } }
   );
 
@@ -126,10 +126,10 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
   const now = new Date();
   // Atomic PENDING_PAYMENT -> CONFIRMED. Only one concurrent request can win this.
   const updated = await Booking.findOneAndUpdate(
-    { _id: booking._id, customerId, status: 'PENDING_PAYMENT', paymentStatus: 'PENDING' },
+    { _id: booking._id, customerId, status: BOOKING_STATUS.PENDING_PAYMENT, paymentStatus: 'PENDING' },
     {
       $set: {
-        status: 'CONFIRMED',
+        status: BOOKING_STATUS.CONFIRMED,
         paymentStatus: 'PAID',
         'paymentDetails.orderId': orderId,
         'paymentDetails.paymentId': paymentId,
@@ -139,13 +139,13 @@ export const verifyPayment = async (req: Request, res: Response): Promise<void> 
       },
       $unset: { holdExpiresAt: 1 },
       $push: {
-        history: {
-          from: 'PENDING_PAYMENT',
-          to: 'CONFIRMED',
+        statusHistory: {
+          from: BOOKING_STATUS.PENDING_PAYMENT,
+          to: BOOKING_STATUS.CONFIRMED,
           at: now,
-          actorId: new Types.ObjectId(customerId),
+          actorId: customerId,
           actorRole: 'customer',
-          note: 'Payment verified',
+          reason: 'Payment verified',
         },
       },
     },

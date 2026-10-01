@@ -7,7 +7,7 @@ import { ErrorState, LoadingState } from "@/components/customer";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import { customerPath } from "@/routes/customerPath";
 import { useBookingDraftStore } from "@/features/booking";
-import type { BookingView } from "@/types/booking";
+import { BOOKING_STATUS, type BookingView } from "@/types/booking";
 import { formatSlotLabel } from "../Book/components/SlotPicker";
 
 function formatDate(iso: string): string {
@@ -63,8 +63,8 @@ export default function BookingSuccess() {
 
   const confirmed =
     data.paymentStatus === "PAID" &&
-    data.status !== "PENDING_PAYMENT" &&
-    data.status !== "CANCELLED";
+    data.status !== BOOKING_STATUS.PENDING_PAYMENT &&
+    data.status !== BOOKING_STATUS.CANCELLED_BY_CUSTOMER;
 
   if (!confirmed) {
     return (

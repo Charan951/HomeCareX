@@ -16,7 +16,7 @@ export class BookingsRepository {
     }).exec();
   }
 
-  /** Cancels lapsed PENDING_PAYMENT holds for one slot so their seats are freed. */
+  /** Cancels lapsed pending_payment holds for one slot so their seats are freed. */
   releaseStaleHolds(serviceId: string, date: string, slot: string, now: Date = new Date()): Promise<unknown> {
     if (!Types.ObjectId.isValid(serviceId)) return Promise.resolve(null);
 
@@ -29,14 +29,16 @@ export class BookingsRepository {
         holdExpiresAt: { $lte: now },
       },
       {
-        $set: { status: BOOKING_STATUS.CANCELLED },
+        $set: { status: BOOKING_STATUS.CANCELLED_BY_CUSTOMER },
+        // Free the seat so the unique (service, date, slot, seat) index lets someone else take it.
+        $unset: { slotSeat: '' },
         $push: {
-          history: {
+          statusHistory: {
             from: BOOKING_STATUS.PENDING_PAYMENT,
-            to: BOOKING_STATUS.CANCELLED,
+            to: BOOKING_STATUS.CANCELLED_BY_CUSTOMER,
             at: now,
             actorRole: 'system',
-            note: 'Payment hold expired',
+            reason: 'Payment hold expired',
           },
         },
       }

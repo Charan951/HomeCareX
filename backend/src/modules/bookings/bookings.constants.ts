@@ -1,48 +1,63 @@
 /**
- * Booking contract constants. Frontend mirror: frontend/src/types/booking.ts (BOOKING_STATUS).
- * Keep both in sync — the status enum and its transitions are shared with Partner/Admin modules.
+ * Booking status contract, shared by Customer (R01-R07), Partner (P02-P05) and Admin.
+ * Frontend mirror: frontend/src/types/booking.ts. Transitions live in bookings.stateMachine.ts.
+ *
+ * Customer flow: pending_payment -> confirmed -> searching_for_partner -> assigned (partner accepted)
+ *   -> en_route -> arrived -> in_progress -> completed -> rated
  */
+export const BOOKING_STATUSES = [
+  'pending_payment',
+  'confirmed',
+  'created',
+  'searching_for_partner',
+  'assigned',
+  'en_route',
+  'arrived',
+  'in_progress',
+  'completed',
+  'rated',
+  'cancelled_by_customer',
+  'cancelled_by_partner',
+  'no_show',
+  'disputed',
+] as const;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
 
+/** Named access to the statuses used by the customer booking flow. */
 export const BOOKING_STATUS = {
-  PENDING_PAYMENT: 'PENDING_PAYMENT',
-  CONFIRMED: 'CONFIRMED',
-  ASSIGNED: 'ASSIGNED',
-  ACCEPTED: 'ACCEPTED',
-  EN_ROUTE: 'EN_ROUTE',
-  ARRIVED: 'ARRIVED',
-  IN_PROGRESS: 'IN_PROGRESS',
-  COMPLETED: 'COMPLETED',
-  CANCELLED: 'CANCELLED',
-} as const;
-export type BookingStatus = (typeof BOOKING_STATUS)[keyof typeof BOOKING_STATUS];
-export const BOOKING_STATUS_VALUES = Object.values(BOOKING_STATUS) as BookingStatus[];
-
-/** Linear happy-path transitions. Any state (except terminal ones) may also transition to CANCELLED. */
-export const BOOKING_STATUS_TRANSITIONS: Record<BookingStatus, BookingStatus[]> = {
-  PENDING_PAYMENT: [BOOKING_STATUS.CONFIRMED, BOOKING_STATUS.CANCELLED],
-  CONFIRMED: [BOOKING_STATUS.ASSIGNED, BOOKING_STATUS.CANCELLED],
-  ASSIGNED: [BOOKING_STATUS.ACCEPTED, BOOKING_STATUS.CANCELLED],
-  ACCEPTED: [BOOKING_STATUS.EN_ROUTE, BOOKING_STATUS.CANCELLED],
-  EN_ROUTE: [BOOKING_STATUS.ARRIVED, BOOKING_STATUS.CANCELLED],
-  ARRIVED: [BOOKING_STATUS.IN_PROGRESS, BOOKING_STATUS.CANCELLED],
-  IN_PROGRESS: [BOOKING_STATUS.COMPLETED, BOOKING_STATUS.CANCELLED],
-  COMPLETED: [],
-  CANCELLED: [],
-};
+  PENDING_PAYMENT: 'pending_payment',
+  CONFIRMED: 'confirmed',
+  SEARCHING_FOR_PARTNER: 'searching_for_partner',
+  ASSIGNED: 'assigned',
+  EN_ROUTE: 'en_route',
+  ARRIVED: 'arrived',
+  IN_PROGRESS: 'in_progress',
+  COMPLETED: 'completed',
+  RATED: 'rated',
+  CANCELLED_BY_CUSTOMER: 'cancelled_by_customer',
+} as const satisfies Record<string, BookingStatus>;
 
 /** Statuses that hold a slot seat (counted against slot capacity / the double-booking guard). */
 export const SLOT_HOLDING_STATUSES: BookingStatus[] = [
-  BOOKING_STATUS.PENDING_PAYMENT,
-  BOOKING_STATUS.CONFIRMED,
-  BOOKING_STATUS.ASSIGNED,
-  BOOKING_STATUS.ACCEPTED,
-  BOOKING_STATUS.EN_ROUTE,
-  BOOKING_STATUS.ARRIVED,
-  BOOKING_STATUS.IN_PROGRESS,
+  'pending_payment',
+  'confirmed',
+  'created',
+  'searching_for_partner',
+  'assigned',
+  'en_route',
+  'arrived',
+  'in_progress',
 ];
 
+/** Who triggers a transition. 'system' = matching engine / scheduled jobs. */
 export const ACTOR_ROLES = ['customer', 'partner', 'admin', 'system'] as const;
 export type ActorRole = (typeof ACTOR_ROLES)[number];
+
+/** Partner is physically on a job. */
+export const ACTIVE_JOB_STATUSES: BookingStatus[] = ['en_route', 'arrived', 'in_progress'];
+/** Counts toward "today's jobs" once assigned. */
+export const SCHEDULED_JOB_STATUSES: BookingStatus[] = ['assigned', 'en_route', 'arrived', 'in_progress', 'completed', 'rated'];
+export const COMPLETED_STATUSES: BookingStatus[] = ['completed', 'rated'];
 
 /** Default concurrent bookings one (service, date, slot) can hold. The live value comes from
  *  bookings.settings.ts (Settings), so this is only the fallback. */

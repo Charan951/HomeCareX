@@ -42,7 +42,8 @@ export default function MyBookingsPage() {
             status === "IN_PROGRESS" ||
             status === "IN-PROGRESS" ||
             status === "STARTED" ||
-            status === "EN_ROUTE"
+            status === "EN_ROUTE" ||
+            status === "ARRIVED"
           );
         case "upcoming":
           // Confirmed, pending, or scheduled
@@ -50,12 +51,14 @@ export default function MyBookingsPage() {
             status === "CONFIRMED" ||
             status === "PENDING" ||
             status === "PENDING_PAYMENT" ||
+            status === "CREATED" ||
+            status === "SEARCHING_FOR_PARTNER" ||
             status === "ASSIGNED"
           );
         case "completed":
-          return status === "COMPLETED";
+          return status === "COMPLETED" || status === "RATED";
         case "cancelled":
-          return status === "CANCELLED" || status === "CANCELED";
+          return status.startsWith("CANCEL");
         default:
           return false;
       }
@@ -86,21 +89,21 @@ export default function MyBookingsPage() {
   // Badge appearance by status
   const getStatusBadge = (status: string) => {
     const s = (status || "").toUpperCase();
-    if (s.includes("PROGRESS") || s === "STARTED" || s === "EN_ROUTE") {
+    if (s.includes("PROGRESS") || s === "STARTED" || s === "EN_ROUTE" || s === "ARRIVED") {
       return (
         <span className="rounded-full bg-orange-100 px-3 py-0.5 text-xs font-semibold text-orange-700">
           In Progress
         </span>
       );
     }
-    if (s === "CONFIRMED" || s === "ASSIGNED") {
+    if (s === "CONFIRMED" || s === "CREATED" || s === "SEARCHING_FOR_PARTNER" || s === "ASSIGNED") {
       return (
         <span className="rounded-full bg-blue-100 px-3 py-0.5 text-xs font-semibold text-blue-700">
           Confirmed
         </span>
       );
     }
-    if (s === "COMPLETED") {
+    if (s === "COMPLETED" || s === "RATED") {
       return (
         <span className="rounded-full bg-green-100 px-3 py-0.5 text-xs font-semibold text-green-700">
           Completed

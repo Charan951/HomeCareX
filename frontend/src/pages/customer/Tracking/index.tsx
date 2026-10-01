@@ -9,7 +9,7 @@ import type { BookingView } from "@/types/booking";
 // Timeline steps corresponding to booking lifecycle
 const TIMELINE_STEPS = [
   { key: "CONFIRMED", label: "Confirmed" },
-  { key: "SEARCHING", label: "Searching for Partner" },
+  { key: "SEARCHING_FOR_PARTNER", label: "Searching for Partner" },
   { key: "ASSIGNED", label: "Partner Assigned" },
   { key: "EN_ROUTE", label: "En Route" },
   { key: "ARRIVED", label: "Arrived" },
@@ -37,6 +37,8 @@ export default function TrackingPage() {
       const status = (b.status || "").toUpperCase();
       return (
         status === "CONFIRMED" ||
+        status === "CREATED" ||
+        status === "SEARCHING_FOR_PARTNER" ||
         status === "ASSIGNED" ||
         status === "EN_ROUTE" ||
         status === "ARRIVED" ||
@@ -109,9 +111,10 @@ export default function TrackingPage() {
   const getStatusIndex = (status: string): number => {
     switch (status) {
       case "CONFIRMED":
+      case "CREATED":
       case "PENDING":
         return 0;
-      case "SEARCHING":
+      case "SEARCHING_FOR_PARTNER":
         return 1;
       case "ASSIGNED":
         return 2;
@@ -138,11 +141,12 @@ export default function TrackingPage() {
   };
 
   const getStepTime = (stepKey: string): string => {
-    if (!b.history || !Array.isArray(b.history)) {
+    const history = b.statusHistory ?? b.history;
+    if (!Array.isArray(history)) {
       if (stepKey === "CONFIRMED") return formatTime(b.createdAt);
       return "";
     }
-    const entry = b.history.find(
+    const entry = history.find(
       (h: any) => (h.to || "").toUpperCase() === stepKey || (h.status || "").toUpperCase() === stepKey
     );
     if (entry && entry.at) return formatTime(entry.at);

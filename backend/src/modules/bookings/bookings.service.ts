@@ -65,6 +65,11 @@ function toView(doc: { toObject?: () => Record<string, unknown> } | Record<strin
   return rest;
 }
 
+/** "2026-10-01" + "10:00-12:00" -> the slot start instant in Asia/Kolkata. */
+function slotStartDate(date: string, slot: string): Date {
+  return new Date(`${date}T${slot.slice(0, 5)}:00+05:30`);
+}
+
 function isDuplicateKey(err: unknown, indexName: string): boolean {
   const e = err as { code?: number; message?: string };
   return e?.code === 11000 && String(e.message ?? '').includes(indexName);
@@ -220,19 +225,39 @@ export const BookingService = {
             ...addressSnapshot,
             sourceAddressId: addressSnapshot.sourceAddressId ? new Types.ObjectId(addressSnapshot.sourceAddressId) : undefined,
           },
+          // Fields read by the partner jobs/dashboard side (P02-P05).
+          serviceName: service.name,
+          address: {
+            line1: addressSnapshot.line1,
+            area: addressSnapshot.line2,
+            city: addressSnapshot.city,
+            pincode: addressSnapshot.pincode,
+            ...(addressSnapshot.location
+              ? { location: { type: 'Point', coordinates: [addressSnapshot.location.lng, addressSnapshot.location.lat] } }
+              : {}),
+          },
+          scheduledAt: slotStartDate(input.date, input.slot),
+          priceBreakdown: {
+            base: lines[0].amount,
+            addOns: addOnLines.reduce((sum, l) => sum + l.amount, 0),
+            discount: priceSnapshot.discount,
+            convenienceFee: priceSnapshot.convenienceFee,
+            tax: 0,
+            total: priceSnapshot.total,
+          },
           date: input.date,
           slot: input.slot,
           priceSnapshot,
           status: initialStatus,
           paymentStatus: initialPaymentStatus,
-          history: [
+          statusHistory: [
             {
               from: null,
               to: initialStatus,
               at: now,
-              actorId: new Types.ObjectId(customerId),
+              actorId: customerId,
               actorRole: 'customer',
-              note: requirePayment ? 'Booking created, awaiting payment' : 'Booking confirmed',
+              reason: requirePayment ? 'Booking created, awaiting payment' : 'Booking confirmed',
             },
           ],
           slotSeat: seat,

@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { z } from 'zod';
 import { AppError } from '../utils/AppError';
+import { Errors } from '../utils/errors';
 
 export type RequestSchemas = {
   body?: z.ZodTypeAny;
@@ -70,3 +71,21 @@ export const validationMiddleware = (schema: z.ZodTypeAny | RequestSchemas): Req
     return next();
   };
 };
+
+
+type Source = 'body' | 'query' | 'params';
+
+/** Validates req[source] with a zod schema; replaces it with the parsed value or responds 400 VALIDATION_ERROR. */
+export const validate =
+  (schema: z.ZodTypeAny, source: Source = 'body') =>
+  (req: Request, _res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req[source]);
+    if (!result.success) {
+      return next(
+        Errors.validation(result.error.issues.map((i) => ({ field: i.path.join('.') || source, message: i.message }))),
+      );
+    }
+    req[source] = result.data;
+    next();
+  };
+

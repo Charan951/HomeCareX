@@ -1,8 +1,10 @@
-import { useEffect, useRef, type RefObject } from "react";
-import { Link } from "react-router-dom";
-import { X } from "lucide-react";
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { LogOut, X } from "lucide-react";
 import clsx from "clsx";
+import { useAuth } from "@/hooks/useAuth";
 import { customerPath } from "@/routes/customerPath";
+import { LOGIN_PATH } from "@/routes/authPaths";
 import SidebarNav from "./SidebarNav";
 import { FOCUS_RING } from "./focusRing";
 import { NO_SCROLLBAR } from "./noScrollbar";
@@ -18,7 +20,7 @@ interface MobileDrawerProps {
 
 /**
  * Slide-in navigation for screens below md (opened by the hamburger in TopBar).
- *  - Same grouped links as the desktop sidebar (SidebarNav).
+ *  - Same grouped links as the desktop sidebar (SidebarNav), with Log out pinned at the bottom.
  *  - Closes on: link click, overlay click, Escape, route change (layout), or growing to desktop width.
  *  - While open: page scroll is locked, focus moves inside and Tab is trapped in the panel.
  *  - While closed it is `invisible`, so it is skipped by Tab and screen readers.
@@ -26,6 +28,24 @@ interface MobileDrawerProps {
 export default function MobileDrawer({ open, onClose, returnFocusRef }: MobileDrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleLogout() {
+    setBusy(true);
+    setError(null);
+    try {
+      await logout();
+      onClose();
+      navigate(LOGIN_PATH, { replace: true });
+    } catch {
+      setError("Couldn't log out. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -109,8 +129,28 @@ export default function MobileDrawer({ open, onClose, returnFocusRef }: MobileDr
           </button>
         </div>
 
-        <div className={clsx("flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)] pt-4", NO_SCROLLBAR)}>
+        <div className={clsx("flex-1 overflow-y-auto pt-4", NO_SCROLLBAR)}>
           <SidebarNav idPrefix="drawer" onNavigate={onClose} />
+        </div>
+
+        <div className="shrink-0 border-t border-line px-2 pb-[env(safe-area-inset-bottom)] pt-2">
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={busy}
+            className={clsx(
+              "flex min-h-[44px] w-full items-center gap-2 rounded px-3 text-left text-sm font-medium text-danger hover:bg-danger-soft disabled:opacity-60",
+              FOCUS_RING,
+            )}
+          >
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+            {busy ? "Logging out…" : "Log out"}
+          </button>
+          {error && (
+            <p role="alert" className="px-3 pb-2 text-xs text-danger">
+              {error}
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -173,6 +173,20 @@ export const SUPPORT_TICKETS: SupportTicket[] = [
   { id: "TK-3988", subject: "Partner arrived late", category: "Service Quality", status: "Resolved", slaDue: "—", date: "10 Sep" },
 ];
 
+export interface Offer {
+  id: string;
+  title: string;
+  description: string;
+  code: string;
+  accent: "brand" | "accent";
+}
+
+export const OFFERS: Offer[] = [
+  { id: "off-1", title: "20% off Salon & Spa", description: "Valid on your first at-home spa booking this month.", code: "SPA20", accent: "brand" },
+  { id: "off-2", title: "Flat ₹100 off Home Cleaning", description: "On bookings above ₹1000. Ends this weekend.", code: "CLEAN100", accent: "accent" },
+  { id: "off-3", title: "Refer a friend, earn ₹150", description: "Both of you get wallet credit on their first booking.", code: "REFERRAL", accent: "brand" },
+];
+
 export const REFERRAL = {
   code: "ANANYA150",
   rewardPerReferral: 150,
