@@ -589,5 +589,390 @@ body {
 }
 
 
+/* ========================================
+   CUSTOMER MOBILE EXPERIENCE
+   ======================================== */
+.dashboard-mobile {
+  position: relative;
+  isolation: isolate;
+}
+
+.dashboard-mobile::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  /* Spans the screen exactly. (It used to be inset -24px, which pushed the page ~12px wider
+     than the phone, so it scrolled sideways and the fixed bottom nav slid off-screen.) */
+  inset: -24px -16px auto;
+  height: 330px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(67, 56, 202, .10), transparent 32%),
+    radial-gradient(circle at 92% 0%, rgba(255, 138, 61, .13), transparent 30%);
+}
+
+.dashboard-hero {
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(255, 255, 255, .92), transparent 25%),
+    linear-gradient(135deg, #eeecfb 0%, #f8f7ff 48%, #fff1e8 100%);
+}
+
+.dashboard-hero__orb {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+  filter: blur(1px);
+}
+
+.dashboard-hero__orb--one {
+  width: 145px;
+  height: 145px;
+  right: -65px;
+  top: -58px;
+  background: rgba(255, 138, 61, .24);
+  animation: dashboardOrb 7s ease-in-out infinite;
+}
+
+.dashboard-hero__orb--two {
+  width: 125px;
+  height: 125px;
+  left: -74px;
+  bottom: -70px;
+  background: rgba(67, 56, 202, .14);
+  animation: dashboardOrb 9s ease-in-out infinite reverse;
+}
+
+.dashboard-hero__spark {
+  position: absolute;
+  color: rgba(67, 56, 202, .45);
+  font-size: 18px;
+  pointer-events: none;
+  animation: dashboardSpark 3.8s ease-in-out infinite;
+}
+
+.dashboard-hero__spark--one { right: 23%; top: 24%; }
+.dashboard-hero__spark--two { right: 9%; bottom: 18%; animation-delay: -1.7s; }
+
+.dashboard-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 0 5px rgba(34, 197, 94, .10);
+  animation: livePulse 2s ease-out infinite;
+}
+
+.dashboard-action,
+.dashboard-category,
+.dashboard-service,
+.dashboard-offer {
+  will-change: transform;
+}
+
+.dashboard-action {
+  min-height: 92px;
+  box-shadow: 0 8px 22px rgba(30, 27, 46, .05);
+  transition: transform .28s cubic-bezier(.2,.8,.2,1), box-shadow .28s ease, border-color .28s ease;
+}
+
+.dashboard-action:hover,
+.dashboard-action:active {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 16px 30px rgba(67, 56, 202, .12);
+}
+
+.dashboard-category,
+.dashboard-service,
+.dashboard-offer {
+  transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s ease, border-color .3s ease;
+}
+
+.dashboard-category:hover,
+.dashboard-category:active,
+.dashboard-service:hover,
+.dashboard-service:active,
+.dashboard-offer:hover,
+.dashboard-offer:active {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 34px rgba(30, 27, 46, .12);
+}
+
+.dashboard-category__glow {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  right: -42px;
+  top: -42px;
+  border-radius: 999px;
+  background: rgba(67, 56, 202, .08);
+  transition: transform .45s ease, opacity .45s ease;
+}
+
+.dashboard-category:hover .dashboard-category__glow,
+.dashboard-category:active .dashboard-category__glow { transform: scale(1.8); opacity: .8; }
+.dashboard-category:hover .dashboard-category__icon,
+.dashboard-category:active .dashboard-category__icon { transform: translateY(-2px) rotate(-3deg) scale(1.06); }
+.dashboard-category:hover .dashboard-category__arrow,
+.dashboard-category:active .dashboard-category__arrow { transform: translateX(2px); background: #4338ca; color: #fff; }
+
+.dashboard-service__ring {
+  position: absolute;
+  width: 92px;
+  height: 92px;
+  border: 1px solid rgba(67,56,202,.09);
+  border-radius: 999px;
+  animation: dashboardRing 4.5s ease-in-out infinite;
+}
+
+.dashboard-service__visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 20%, rgba(255,255,255,.5) 42%, transparent 62%);
+  transform: translateX(-130%);
+  transition: transform .65s ease;
+}
+
+.dashboard-service:hover .dashboard-service__visual::after,
+.dashboard-service:active .dashboard-service__visual::after { transform: translateX(130%); }
+
+.dashboard-offer__shine {
+  position: absolute;
+  top: -60%;
+  left: -25%;
+  width: 38%;
+  height: 220%;
+  transform: rotate(20deg);
+  background: rgba(255,255,255,.35);
+  animation: offerShine 5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes dashboardOrb {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(9px, 12px, 0) scale(1.08); }
+}
+
+@keyframes dashboardSpark {
+  0%, 100% { opacity: .25; transform: translateY(0) rotate(0); }
+  50% { opacity: .8; transform: translateY(-7px) rotate(12deg); }
+}
+
+@keyframes livePulse {
+  0% { box-shadow: 0 0 0 0 rgba(34,197,94,.28); }
+  70% { box-shadow: 0 0 0 7px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+@keyframes dashboardRing {
+  0%, 100% { transform: scale(.9); opacity: .35; }
+  50% { transform: scale(1.08); opacity: .75; }
+}
+
+@keyframes offerShine {
+  0%, 42% { transform: translateX(-140%) rotate(20deg); }
+  58%, 100% { transform: translateX(330%) rotate(20deg); }
+}
+
+@keyframes mobileSectionIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 767px) {
+  .customer-topbar {
+    border-radius: 0 0 16px 16px;
+  }
+
+  .location-picker-trigger {
+    max-width: min(72vw, 270px);
+  }
+
+  .location-picker-pin {
+    width: 30px;
+    height: 30px;
+  }
+
+  .dashboard-mobile {
+    padding-bottom: .75rem;
+  }
+
+  .dashboard-mobile > * {
+    animation: mobileSectionIn .55s cubic-bezier(.2,.75,.2,1) both;
+  }
+
+  .dashboard-mobile > *:nth-child(1) { animation-delay: .02s; }
+  .dashboard-mobile > *:nth-child(2) { animation-delay: .08s; }
+  .dashboard-mobile > *:nth-child(3) { animation-delay: .14s; }
+  .dashboard-mobile > *:nth-child(4) { animation-delay: .20s; }
+  .dashboard-mobile > *:nth-child(5) { animation-delay: .26s; }
+  .dashboard-mobile > *:nth-child(6) { animation-delay: .32s; }
+
+  .dashboard-mobile .dashboard-hero {
+    min-height: 214px;
+    border-radius: 24px;
+    padding: 16px;
+    box-shadow: 0 18px 42px rgba(67, 56, 202, .14);
+  }
+
+  .dashboard-mobile .dashboard-hero form input {
+    height: 50px;
+    border: 1px solid rgba(67, 56, 202, .12);
+    border-radius: 16px;
+    background: rgba(255,255,255,.88);
+    box-shadow: 0 8px 22px rgba(30,27,46,.08), inset 0 0 0 1px rgba(255,255,255,.7);
+    backdrop-filter: blur(10px);
+    transition: box-shadow .25s ease, transform .25s ease, border-color .25s ease;
+  }
+
+  .dashboard-mobile .dashboard-hero form input:focus {
+    border-color: rgba(67,56,202,.28);
+    box-shadow: 0 10px 28px rgba(67,56,202,.14), 0 0 0 4px rgba(67,56,202,.07);
+    transform: translateY(-1px);
+  }
+
+  .dashboard-mobile section.rounded-lg,
+  .dashboard-mobile section.rounded-xl {
+    border-radius: 20px;
+  }
+
+  .dashboard-mobile .dashboard-section > .mb-3 {
+    margin-bottom: 12px;
+    padding: 0 2px;
+  }
+
+  .dashboard-mobile .dashboard-section h2 {
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+  }
+
+  .dashboard-mobile .dashboard-section--categories .grid {
+    gap: 10px;
+  }
+
+  .dashboard-mobile .dashboard-category {
+    min-height: 122px;
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .dashboard-mobile .dashboard-action {
+    min-height: 82px;
+    border-radius: 18px;
+    padding: 10px 7px;
+  }
+
+  .dashboard-mobile .dashboard-service {
+    width: 188px;
+    border-radius: 20px;
+    padding: 10px;
+  }
+
+  .dashboard-mobile .dashboard-offer {
+    width: 286px;
+    min-height: 154px;
+    border-radius: 20px;
+  }
+
+  .dashboard-mobile .dashboard-service:active,
+  .dashboard-mobile .dashboard-category:active,
+  .dashboard-mobile .dashboard-action:active {
+    transform: scale(.975);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-mobile *,
+  .dashboard-mobile *::before,
+  .dashboard-mobile *::after,
+  .customer-topbar * {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .customer-topbar .location-picker-trigger {
+    padding-right: 2px;
+  }
+
+  .customer-topbar .location-picker-trigger .location-picker-address {
+    max-width: 145px;
+  }
+
+  /* Keep the address menu fully inside the phone viewport instead of
+     rendering the desktop 380px menu off-screen. */
+  .customer-topbar .location-picker-menu {
+    left: 50%;
+    width: calc(100vw - 16px);
+    max-width: 380px;
+    transform: translateX(-50%);
+    margin-top: 8px;
+    border-radius: 18px;
+    box-shadow: 0 18px 50px rgba(30, 27, 46, .18);
+  }
+
+  .customer-topbar .location-picker-menu ul {
+    max-height: min(52vh, 340px);
+  }
+
+  .customer-topbar .relative.shrink-0 > a {
+    width: 38px;
+    height: 38px;
+  }
+}
 
 
+/* ========================================
+   PROFILE (mobile account hub)
+   ======================================== */
+.profile-rise {
+  animation: profileRise .55s cubic-bezier(.2,.75,.2,1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.profile-pop { animation: profilePop .5s cubic-bezier(.2,1.4,.4,1) both; }
+.profile-pop-in { animation: profileFade .22s ease-out both; }
+
+/* A slowly turning gradient ring behind the avatar. */
+.profile-avatar-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: conic-gradient(from 0deg, #ff8a3d, #ffffff, #a99cff, #ff8a3d);
+  animation: profileSpin 7s linear infinite;
+}
+
+@keyframes profileRise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes profilePop {
+  0% { opacity: 0; transform: scale(.6); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes profileFade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes profileSpin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-page *,
+  .profile-page *::before,
+  .profile-page *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -21,7 +21,9 @@ export interface LoginInput {
   email: string;
   password: string;
 }
- 
+
+export type ProfilePatch = Partial<Pick<AuthUser, "name" | "email" | "phone">>;
+
 export interface AuthContextValue {
   user: AuthUser | null;
   status: AuthStatus;
@@ -30,4 +32,6 @@ export interface AuthContextValue {
   login: (input: LoginInput) => Promise<AuthUser>;
   /** Shared logout: ends the session on the server and clears local state. */
   logout: () => Promise<void>;
+  /** Updates the signed-in user's editable details in the local session (no backend endpoint yet). */
+  updateProfile: (patch: ProfilePatch) => void;
 }

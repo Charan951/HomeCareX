@@ -17,6 +17,7 @@ import { notificationsRoutes } from '../modules/notifications/notifications.rout
 import leadsRoutes from '../modules/leads/leads.routes';
 
 import { bookingsRoutes } from '../modules/bookings/bookings.routes';
+import customerDashboardRoutes from '../modules/customer-dashboard/customer-dashboard.routes';
 import { addressesRoutes } from '../modules/addresses/addresses.routes';
 import { reviewsRoutes } from '../modules/reviews/reviews.routes';
 
@@ -36,7 +37,7 @@ rootRouter.use('/admin', adminRoutes); // GET /admin/bookings
 rootRouter.use('/admin/partners', partnersRoutes); // GET /admin/partners, GET /admin/partners/stats, POST /admin/partners
 
 rootRouter.use('/partner/dashboard', partnerDashboardRoutes);
-
+rootRouter.use('/customer/dashboard', customerDashboardRoutes); // GET /customer/dashboard
 rootRouter.use('/partner/availability', availabilityRoutes);
 
 rootRouter.use('/partner/blackout-dates', blackoutRoutes); // GET, POST, PATCH, DELETE /partner/blackout-dates
