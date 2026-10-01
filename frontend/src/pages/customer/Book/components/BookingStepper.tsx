@@ -8,9 +8,11 @@ interface BookingStepperProps {
   currentStep: number;
   /** Focus the heading on first render too (used when the step guard redirected the customer). */
   focusOnMount?: boolean;
+  /** Tighter vertical spacing (Step 4 fits on one screen). */
+  compact?: boolean;
 }
 
-export default function BookingStepper({ currentStep, focusOnMount = false }: BookingStepperProps) {
+export default function BookingStepper({ currentStep, focusOnMount = false, compact = false }: BookingStepperProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const isInitialMount = useRef(true);
 
@@ -25,11 +27,11 @@ export default function BookingStepper({ currentStep, focusOnMount = false }: Bo
   }, [currentStep]);
 
   return (
-    <div className="mb-6 w-full">
+    <div className={`w-full ${compact ? "mb-0" : "mb-6"}`}>
       <h2
         ref={headingRef}
         tabIndex={-1}
-        className="mb-3 rounded text-lg font-semibold text-ink outline-none focus:outline-none focus:ring-0"
+        className={`rounded text-lg font-semibold text-ink outline-none focus:outline-none focus:ring-0 ${compact ? "mb-2" : "mb-3"}`}
       >
         Step {currentStep} of 4: {STEP_TITLES[currentStep - 1]}
       </h2>
