@@ -1,26 +1,52 @@
-import React from "react";
+import React from 'react';
 
 const TestimonialSkeleton: React.FC = () => {
   return (
-    <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      {/* Rating */}
-      <div className="h-5 w-24 rounded bg-gray-200" />
+    <section className="w-full bg-white px-5 py-14 sm:px-6 lg:px-8 lg:py-20">
+      <div className="mx-auto max-w-7xl">
 
-      {/* Review */}
-      <div className="mt-5 h-4 w-full rounded bg-gray-200" />
-      <div className="mt-2 h-4 w-11/12 rounded bg-gray-200" />
-      <div className="mt-2 h-4 w-3/4 rounded bg-gray-200" />
+        {/* Heading */}
+        <div className="mx-auto mb-10 max-w-2xl text-center">
+          <div className="mx-auto h-6 w-32 animate-pulse rounded-full bg-slate-200" />
 
-      {/* Divider */}
-      <div className="mt-6 border-t border-gray-100 pt-5">
+          <div className="mx-auto mt-4 h-9 w-72 max-w-full animate-pulse rounded-lg bg-slate-200" />
 
-        {/* Name */}
-        <div className="h-5 w-32 rounded bg-gray-200" />
+          <div className="mx-auto mt-3 h-4 w-full max-w-lg animate-pulse rounded bg-slate-200" />
+        </div>
 
-        {/* Customer text */}
-        <div className="mt-2 h-3 w-24 rounded bg-gray-200" />
+        {/* Testimonials */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+
+          {Array.from({ length: 3 }).map((_, index) => (
+            <div
+              key={index}
+              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              {/* Stars */}
+              <div className="h-5 w-24 animate-pulse rounded bg-slate-200" />
+
+              {/* Quote */}
+              <div className="mt-5 space-y-2">
+                <div className="h-4 w-full animate-pulse rounded bg-slate-200" />
+                <div className="h-4 w-full animate-pulse rounded bg-slate-200" />
+                <div className="h-4 w-4/5 animate-pulse rounded bg-slate-200" />
+              </div>
+
+              {/* User */}
+              <div className="mt-6 flex items-center gap-3">
+                <div className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-slate-200" />
+
+                <div className="space-y-2">
+                  <div className="h-4 w-28 animate-pulse rounded bg-slate-200" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-slate-200" />
+                </div>
+              </div>
+            </div>
+          ))}
+
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 

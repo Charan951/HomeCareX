@@ -4,7 +4,8 @@ import HeroSearch from "../../../components/public/HeroSearch";
 import TrustStrip from "../../../components/public/TrustStrip";
 import Testimonials from "../../../components/public/Testimonials";
 import StatsStrip from "../../../components/public/StatsStrip";
-
+import BannerSlider from "../../../components/public/BannerSlider";
+import CategoryCard from "../../../components/public/CategoryCard";
 /* =========================================================
    DESIGN TOKENS
    Brand: Indigo #4338ca (trust)  +  Orange #ff8a3d (energy)
@@ -57,18 +58,7 @@ const styles = `
 .hcx-acc.open { grid-template-rows: 1fr; }
 .hcx-acc > div { overflow: hidden; }
 
-/* --- Blog coverflow carousel --- */
-.hcx-cf { perspective: 1400px; }
-.hcx-cf-card {
-  position: absolute; top: 16px; bottom: 16px; left: 50%;
-  width: min(300px, 70vw); overflow: hidden; border-radius: 28px; background: #1e1b6e;
-  transition: transform .8s cubic-bezier(.2,.7,.2,1), opacity .8s ease, filter .8s ease, box-shadow .8s ease;
-  will-change: transform;
-}
-@keyframes hcx-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-.hcx-fill { animation-name: hcx-fill; animation-timing-function: linear; animation-fill-mode: forwards; }
 .hcx-clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-@media (max-width: 639px) { .hcx-cf-card[data-far="true"] { opacity: 0 !important; pointer-events: none; } }
 
 /* --- Static multi-colour headline text (no animation) --- */
 .hcx-grad { background: linear-gradient(90deg, #4338ca 0%, #ff8a3d 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
@@ -169,23 +159,16 @@ const faqs = [
   { question: "Is regular maintenance available?", answer: "Yes. Home maintenance services help keep your home safe and comfortable all year." },
 ];
 
-interface BlogPost {
-  id: string;
-  title: string;
-  category: string;
-  excerpt: string;
-  readTime: string;
-  image: string;
-}
-
-const blogs: BlogPost[] = [
-  { id: "habits-for-a-cleaner-home", title: "7 Simple Habits for a Cleaner Home", category: "Cleaning", excerpt: "Small daily routines that keep every room fresh without a weekend of scrubbing.", readTime: "5 min", image: "/images/blog-cleaning.jpg" },
-  { id: "signs-you-need-a-plumber", title: "Signs You Need a Plumber Before It Gets Costly", category: "Plumbing", excerpt: "Slow drains, damp walls and odd noises: what to watch for and when to call.", readTime: "4 min", image: "/images/blog-plumbing.jpg" },
-  { id: "electrical-safety-checklist", title: "An Electrical Safety Checklist for Every Home", category: "Electrical", excerpt: "Quick checks for sockets, wiring and appliances that keep your family safe.", readTime: "6 min", image: "/images/electrical.jpg" },
-  { id: "choosing-paint-colours", title: "Choosing Paint Colours That Brighten Any Room", category: "Painting", excerpt: "How light, space and mood help you pick a colour you will love for years.", readTime: "5 min", image: "/images/painting.jpg" },
-  { id: "repair-or-replace-appliances", title: "Repair or Replace? A Guide for Your Appliances", category: "Appliances", excerpt: "A simple way to decide when a repair makes sense and when it does not.", readTime: "4 min", image: "/images/appliance-repair.jpg" },
-  { id: "seasonal-maintenance-checklist", title: "A Seasonal Home Maintenance Checklist", category: "Maintenance", excerpt: "What to inspect each season so small issues never become big repairs.", readTime: "7 min", image: "/images/blog-maintenance.jpg" },
-];
+/* Structured data so search engines can show the FAQ as rich results */
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({
+    "@type": "Question",
+    name: f.question,
+    acceptedAnswer: { "@type": "Answer", text: f.answer },
+  })),
+};
 
 /* =========================================================
    HOOKS + SMALL COMPONENTS
@@ -294,120 +277,6 @@ const SectionHead: React.FC<{ title: string; text?: string }> = ({ title, text }
    PAGE
 ========================================================= */
 
-const AUTOPLAY_MS = 5000;
-
-/** Coverflow carousel: centre card is large, neighbours shrink and dim behind it. */
-const BlogCarousel: React.FC = () => {
-  const n = blogs.length;
-  const [active, setActive] = useState(0);
-
-  // Fully automatic: moves to the next article every 5 seconds (skipped for reduced motion)
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
-    const id = window.setInterval(() => setActive((prev) => (prev + 1) % n), AUTOPLAY_MS);
-    return () => window.clearInterval(id);
-  }, [n]);
-
-  return (
-    <div>
-      <div
-        className="hcx-cf relative mx-auto h-[470px] max-w-5xl select-none overflow-hidden sm:h-[520px]"
-        role="region"
-        aria-roledescription="carousel"
-        aria-label="Blog articles"
-      >
-        {blogs.map((b, i) => {
-          let o = (i - active + n) % n;
-          if (o > n / 2) o -= n;
-          const abs = Math.abs(o);
-          const center = o === 0;
-
-          const style: React.CSSProperties = {
-            transform: `translateX(${-50 + o * 64}%) scale(${1 - abs * 0.13})`,
-            zIndex: 10 - abs,
-            opacity: abs > 2 ? 0 : abs === 2 ? 0.6 : 1,
-            filter: center ? "none" : `brightness(${abs === 1 ? 0.72 : 0.6}) saturate(0.85)`,
-            pointerEvents: center ? "auto" : "none",
-          };
-
-          return (
-            <article
-              key={b.id}
-              className={`hcx-cf-card ${
-                center
-                  ? "shadow-[0_30px_60px_-20px_rgba(30,27,110,0.6)] ring-2 ring-[#ff8a3d]"
-                  : "ring-1 ring-white/40"
-              }`}
-              style={style}
-              data-far={abs === 2}
-              aria-hidden={abs > 2}
-            >
-              <img src={b.image} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#14124f] via-[#14124f]/35 to-transparent" />
-
-              <div className="relative flex h-full flex-col justify-between p-5">
-                <div className="flex items-start justify-between gap-2">
-                  <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-[#4338ca] shadow-sm">
-                    {b.category}
-                  </span>
-                  <span
-                    className={`rounded-full bg-[#ff8a3d] px-3 py-1 text-xs font-bold text-[#1b1b3a] shadow-sm transition-all duration-500 ${
-                      center ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
-                    }`}
-                  >
-                    {b.readTime} read
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className={`display hcx-clamp2 font-bold leading-tight text-white ${center ? "text-2xl" : "text-lg"}`}>
-                    {b.title}
-                  </h3>
-
-                  <div
-                    className={`overflow-hidden transition-all duration-500 ${
-                      center ? "max-h-56 translate-y-0 opacity-100" : "max-h-0 translate-y-3 opacity-0"
-                    }`}
-                  >
-                    <p className="mt-3 text-sm leading-6 text-indigo-100">{b.excerpt}</p>
-                    <Link
-                      to={`/blog/${b.id}`}
-                      tabIndex={center ? 0 : -1}
-                      className="group mt-5 inline-flex items-center gap-2 rounded-xl bg-[#ff8a3d] px-5 py-3 text-sm font-bold text-[#1b1b3a] shadow-lg transition duration-300 hover:bg-white"
-                    >
-                      Read article
-                      <span className="transition-transform duration-300 group-hover:translate-x-1" aria-hidden>→</span>
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-
-      {/* Progress indicator (display only, no controls) */}
-      <div className="mt-8 flex items-center justify-center gap-2" aria-hidden>
-        {blogs.map((b, i) => (
-          <span
-            key={b.id}
-            className={`relative h-2.5 overflow-hidden rounded-full bg-[#4338ca]/20 transition-all duration-500 ${
-              i === active ? "w-10" : "w-2.5"
-            }`}
-          >
-            {i === active && (
-              <span
-                className="hcx-fill absolute inset-0 origin-left rounded-full bg-[#ff8a3d]"
-                style={{ animationDuration: `${AUTOPLAY_MS}ms` }}
-              />
-            )}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 /**
  * Keeps hero content inside the available height at any browser zoom.
  * If the content is taller than the space, it is scaled down to fit;
@@ -456,6 +325,7 @@ const Home: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [catalog, setCatalog] = useState<ServiceItem[]>(defaultCatalog);
   const [processRef, processSeen] = useInView<HTMLDivElement>(0.3);
+  const faqButtons = useRef<(HTMLButtonElement | null)[]>([]);
 
   // Load the service list, then keep the category counts in sync with it
   useEffect(() => {
@@ -480,6 +350,20 @@ const Home: React.FC = () => {
         .map((s) => ({ ...s, count: catalog.filter((item) => item.categoryId === s.id).length })),
     [catalog]
   );
+
+  /* FAQ keyboard support: arrow keys move between questions, Home / End jump to first / last */
+  const handleFaqKeys = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const last = faqs.length - 1;
+    let next = -1;
+    if (e.key === "ArrowDown") next = index === last ? 0 : index + 1;
+    else if (e.key === "ArrowUp") next = index === 0 ? last : index - 1;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = last;
+    if (next >= 0) {
+      e.preventDefault();
+      faqButtons.current[next]?.focus();
+    }
+  };
 
   return (
     <div className="hcx overflow-x-hidden bg-white">
@@ -524,14 +408,30 @@ const Home: React.FC = () => {
                 Book trusted professionals for cleaning, plumbing, electrical work and maintenance, all in one place.
               </p>
 
-              {/* Search / booking bar (your existing component) */}
+              {/*
+                Search / pincode bar
+                - Desktop / web (768px and up): visible
+                - Mobile (below 768px): completely hidden (display: none)
+                  "hidden md:flex" matches the header, which also switches at md.
+              */}
               <div
-                className="hcx-in hcx-search mt-8 flex items-center rounded-3xl bg-white p-5 shadow-[0_20px_50px_-20px_rgba(67,56,202,0.45)] ring-1 ring-[#4338ca]/10 sm:p-6"
+                className="hcx-in hcx-search mt-8 hidden items-center rounded-3xl bg-white p-5 shadow-[0_20px_50px_-20px_rgba(67,56,202,0.45)] ring-1 ring-[#4338ca]/10 sm:p-6 md:flex"
                 style={{ animationDelay: "0.8s" }}
               >
                 <div className="w-full">
                   <HeroSearch />
                 </div>
+              </div>
+
+              {/* Mobile only: a simple button in place of the hidden search bar */}
+              <div className="hcx-in mt-8 md:hidden" style={{ animationDelay: "0.8s" }}>
+                <Link
+                  to="/services"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#ff8a3d] px-7 py-3.5 font-bold text-[#1b1b3a] shadow-[0_10px_30px_-10px_rgba(255,138,61,0.9)] transition duration-300 hover:bg-[#ff7a22]"
+                >
+                  Explore services
+                  <span aria-hidden>→</span>
+                </Link>
               </div>
             </FitToHeight>
           </div>
@@ -545,51 +445,79 @@ const Home: React.FC = () => {
       </section>
 
       <Marquee />
+      <BannerSlider />
 
-      {/* ================= POPULAR CATEGORIES ================= */}
-      <section className="bg-white py-20 sm:py-28">
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHead
-            title="Popular categories"
-            text="Explore our most requested home services and find the right professional for your needs."
-          />
+      {/* ================= POPULAR CATEGORIES (animated cards) ================= */}
+      <section
+        id="categories"
+        aria-labelledby="categories-heading"
+        className="relative overflow-hidden bg-gradient-to-b from-white via-[#f5f6ff] to-white py-20 sm:py-28"
+      >
+        {/* Background: faded dot grid + two slowly drifting colour glows */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.12]"
+          style={{
+            backgroundImage: "radial-gradient(#4338ca 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+            WebkitMaskImage: "radial-gradient(ellipse at center, black 25%, transparent 75%)",
+            maskImage: "radial-gradient(ellipse at center, black 25%, transparent 75%)",
+          }}
+          aria-hidden
+        />
+        <div
+          className="hcx-drift pointer-events-none absolute -right-24 top-12 h-80 w-80 rounded-full bg-[#ff8a3d]/15 blur-3xl"
+          aria-hidden
+        />
+        <div
+          className="hcx-drift pointer-events-none absolute -left-24 bottom-0 h-96 w-96 rounded-full bg-[#4338ca]/10 blur-3xl"
+          style={{ animationDelay: "-6s" }}
+          aria-hidden
+        />
+
+        <div className="relative mx-auto max-w-7xl px-6">
+          {/* Heading row: title on the left, "browse all" on the right */}
+          <div className="mb-12 flex flex-col gap-6 md:mb-14 md:flex-row md:items-end md:justify-between">
+            <Reveal className="max-w-2xl">
+              <h2
+                id="categories-heading"
+                className="text-3xl font-extrabold text-[#1e1b6e] sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]"
+              >
+                Popular categories
+              </h2>
+
+              {/* Accent bar that draws itself when the heading appears */}
+              <div className="mt-5 h-1 w-20 overflow-hidden rounded-full bg-[#4338ca]/10" aria-hidden>
+                <div className="hcx-line h-full w-full bg-gradient-to-r from-[#4338ca] to-[#ff8a3d]" />
+              </div>
+
+              <p className="mt-5 text-lg leading-8 text-[#5b5b7a]">
+                Explore our most requested home services and find the right professional for your needs.
+              </p>
+            </Reveal>
+
+            <Reveal delay={150}>
+              <Link
+                to="/services"
+                className="group inline-flex items-center gap-2 rounded-xl border-2 border-[#4338ca] bg-white px-6 py-3 font-bold text-[#4338ca] transition duration-300 hover:-translate-y-0.5 hover:bg-[#4338ca] hover:text-white"
+              >
+                Browse all services
+                <span className="transition-transform duration-300 group-hover:translate-x-1" aria-hidden>→</span>
+              </Link>
+            </Reveal>
+          </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {popularCategories.map((c, i) => (
-              <Reveal key={c.id} delay={i * 90}>
-                <Link
-                  to={`/services/${c.id}`}
-                  {...tilt}
-                  className="group flex h-full flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-[#4338ca]/10 transition duration-500 hover:-translate-y-2 hover:shadow-[0_30px_60px_-25px_rgba(67,56,202,0.45)] hover:ring-[#4338ca]/30"
-                >
-                  <div className="relative h-44 overflow-hidden">
-                    <img
-                      src={c.image}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#14124f]/50 via-transparent to-transparent" />
-                    <span className="absolute left-4 top-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-xl shadow-lg transition duration-500 group-hover:-rotate-6 group-hover:bg-[#ff8a3d]" aria-hidden>
-                      {c.icon}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-1 flex-col p-6">
-                    <h3 className="display text-xl font-bold text-[#1e1b6e]">{c.title}</h3>
-                    <p className="hcx-clamp2 mt-2 flex-1 text-sm leading-6 text-[#5b5b7a]">{c.description}</p>
-
-                    <div className="mt-5 flex items-center justify-between border-t border-[#4338ca]/10 pt-4">
-                      <span className="rounded-full bg-[#eef0ff] px-3 py-1 text-xs font-bold text-[#4338ca]">
-                        {c.count} {c.count === 1 ? "service" : "services"}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 text-sm font-bold text-[#4338ca] group-hover:text-[#e06a12]">
-                        View
-                        <span className="transition-transform duration-300 group-hover:translate-x-1.5" aria-hidden>→</span>
-                      </span>
-                    </div>
-                  </div>
-                </Link>
+              <Reveal key={c.id} delay={i * 110}>
+                <CategoryCard
+                  id={c.id}
+                  name={c.title}
+                  description={c.description}
+                  image={c.image}
+                  serviceCount={c.count}
+                  link={`/services/${c.id}`}
+                  icon={c.icon}
+                />
               </Reveal>
             ))}
           </div>
@@ -671,70 +599,133 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* ================= BLOG ================= */}
-      <section className="bg-white py-20 sm:py-28">
-        <div className="mx-auto max-w-7xl px-6">
-          <SectionHead
-            title="Tips and advice for your home"
-            text="Practical guides from the HomeCareX team to help you care for your home."
-          />
+      {/* ================= FAQ (two columns: intro + help card, accordion) ================= */}
+      <section id="faq" aria-labelledby="faq-heading" className="relative overflow-hidden bg-white py-20 sm:py-28">
+        {/* Search engines can show these questions as rich results */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
 
-          <Reveal>
-            <BlogCarousel />
-          </Reveal>
+        {/* Soft background glow */}
+        <div
+          className="pointer-events-none absolute -left-32 top-10 h-96 w-96 rounded-full bg-[#eef0ff] blur-3xl"
+          aria-hidden
+        />
 
-          <Reveal className="mt-10 text-center">
-            <Link
-              to="/blog"
-              className="group inline-flex items-center gap-2 rounded-xl border-2 border-[#4338ca] px-7 py-3.5 font-bold text-[#4338ca] transition duration-300 hover:-translate-y-0.5 hover:bg-[#4338ca] hover:text-white"
-            >
-              View all articles
-              <span className="transition-transform duration-300 group-hover:translate-x-1" aria-hidden>→</span>
-            </Link>
-          </Reveal>
-        </div>
-      </section>
+        <div className="relative mx-auto max-w-7xl px-6">
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+            {/* ---------- Left: heading + help card (stays in view on desktop) ---------- */}
+            <div className="lg:sticky lg:top-28 lg:self-start">
+              <Reveal>
+                <h2
+                  id="faq-heading"
+                  className="text-3xl font-extrabold text-[#1e1b6e] sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]"
+                >
+                  Frequently asked questions
+                </h2>
+                <p className="mt-4 max-w-md text-lg leading-8 text-[#5b5b7a]">
+                  Everything you need to know about HomeCareX, answered in one place.
+                </p>
+              </Reveal>
 
-      {/* ================= FAQ ================= */}
-      <section className="bg-[#eef0ff] py-20 sm:py-28">
-        <div className="mx-auto max-w-3xl px-6">
-          <SectionHead title="Frequently asked questions" text="Everything you need to know about HomeCareX." />
+              <Reveal delay={120}>
+                <div className="relative mt-10 overflow-hidden rounded-3xl bg-[#1e1b6e] p-7 text-white shadow-[0_30px_60px_-30px_rgba(30,27,110,0.8)] sm:p-8">
+                  <div
+                    className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#ff8a3d]/30 blur-2xl"
+                    aria-hidden
+                  />
+                  <span
+                    className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20"
+                    aria-hidden
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                    </svg>
+                  </span>
+                  <h3 className="display relative mt-5 text-2xl font-bold">Still have questions?</h3>
+                  <p className="relative mt-2 leading-7 text-white/80">
+                    Can&apos;t find what you are looking for? Send us a message and we will help you out.
+                  </p>
+                  <Link
+                    to="/contact"
+                    className="group relative mt-6 inline-flex items-center gap-2 rounded-xl bg-[#ff8a3d] px-6 py-3 font-bold text-[#1b1b3a] shadow-[0_10px_30px_-10px_rgba(255,138,61,0.9)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#ff7a22]"
+                  >
+                    Contact us
+                    <span className="transition-transform duration-300 group-hover:translate-x-1" aria-hidden>→</span>
+                  </Link>
+                </div>
+              </Reveal>
+            </div>
 
-          <div className="space-y-4">
-            {faqs.map((f, i) => {
-              const open = openFaq === i;
-              return (
-                <Reveal key={f.question} delay={i * 70}>
-                  <div className={`rounded-2xl bg-white transition duration-300 ${open ? "shadow-lg ring-2 ring-[#4338ca]/30" : "shadow-sm ring-1 ring-[#4338ca]/10 hover:ring-[#4338ca]/30"}`}>
-                    <h3>
-                      <button
-                        type="button"
-                        onClick={() => setOpenFaq(open ? null : i)}
-                        aria-expanded={open}
-                        aria-controls={`faq-panel-${i}`}
-                        id={`faq-btn-${i}`}
-                        className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left"
-                      >
-                        <span className="text-lg font-bold text-[#1e1b6e]">{f.question}</span>
-                        <span
-                          className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-xl font-bold transition duration-300 ${
-                            open ? "rotate-45 bg-[#ff8a3d] text-white" : "bg-[#ff8a3d]/15 text-[#e06a12]"
-                          }`}
-                          aria-hidden
+            {/* ---------- Right: accordion ---------- */}
+            <div className="space-y-3">
+              {faqs.map((f, i) => {
+                const open = openFaq === i;
+                return (
+                  <Reveal key={f.question} delay={i * 70}>
+                    <div
+                      className={`relative overflow-hidden rounded-2xl transition duration-300 ${
+                        open
+                          ? "bg-[#eef0ff] shadow-lg shadow-[#4338ca]/10 ring-1 ring-[#4338ca]/25"
+                          : "bg-white ring-1 ring-[#4338ca]/10 hover:shadow-md hover:ring-[#4338ca]/30"
+                      }`}
+                    >
+                      {/* Accent bar that grows in when the question is open */}
+                      <span
+                        className={`absolute inset-y-0 left-0 w-1 origin-top bg-[#ff8a3d] transition-transform duration-300 ${
+                          open ? "scale-y-100" : "scale-y-0"
+                        }`}
+                        aria-hidden
+                      />
+
+                      <h3>
+                        <button
+                          type="button"
+                          ref={(el) => {
+                            faqButtons.current[i] = el;
+                          }}
+                          onClick={() => setOpenFaq(open ? null : i)}
+                          onKeyDown={(e) => handleFaqKeys(e, i)}
+                          aria-expanded={open}
+                          aria-controls={`faq-panel-${i}`}
+                          id={`faq-btn-${i}`}
+                          className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left sm:px-7 sm:py-6"
                         >
-                          +
-                        </span>
-                      </button>
-                    </h3>
-                    <div id={`faq-panel-${i}`} role="region" aria-labelledby={`faq-btn-${i}`} className={`hcx-acc ${open ? "open" : ""}`}>
-                      <div>
-                        <p className="px-6 pb-6 leading-7 text-[#5b5b7a]">{f.answer}</p>
+                          <span
+                            className={`text-lg font-bold transition-colors duration-300 ${
+                              open ? "text-[#4338ca]" : "text-[#1e1b6e]"
+                            }`}
+                          >
+                            {f.question}
+                          </span>
+                          <span
+                            className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full transition duration-300 ${
+                              open
+                                ? "rotate-45 bg-[#ff8a3d] text-white shadow-md"
+                                : "bg-[#eef0ff] text-[#4338ca]"
+                            }`}
+                            aria-hidden
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.75" strokeLinecap="round">
+                              <path d="M12 5v14M5 12h14" />
+                            </svg>
+                          </span>
+                        </button>
+                      </h3>
+
+                      <div
+                        id={`faq-panel-${i}`}
+                        role="region"
+                        aria-labelledby={`faq-btn-${i}`}
+                        className={`hcx-acc ${open ? "open" : ""}`}
+                      >
+                        <div>
+                          <p className="px-6 pb-6 pr-16 leading-7 text-[#5b5b7a] sm:px-7 sm:pb-7">{f.answer}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Reveal>
-              );
-            })}
+                  </Reveal>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
