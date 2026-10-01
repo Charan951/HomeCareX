@@ -14,7 +14,7 @@ interface SidebarProps {
 }
 
 /**
- * Desktop sidebar (md and up). On mobile the MobileDrawer + BottomNav take over.
+ * Desktop sidebar (md and up). On mobile the BottomNav + Profile page take over.
  * When collapsed it is `invisible`, so its links are skipped by Tab and screen readers.
  * The inner panel keeps a fixed width so the links don't reflow while the width animates.
  */

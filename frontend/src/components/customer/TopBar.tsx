@@ -1,4 +1,3 @@
-import type { RefObject } from "react";
 import { Link } from "react-router-dom";
 import { Menu } from "lucide-react";
 import clsx from "clsx";
@@ -6,15 +5,10 @@ import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { customerPath } from "@/routes/customerPath";
 import LocationPicker from "./LocationPicker";
 import NotificationBell from "./NotificationBell";
-import { MOBILE_DRAWER_ID } from "./MobileDrawer";
 import { CUSTOMER_SIDEBAR_ID } from "./Sidebar";
 import { FOCUS_RING } from "./focusRing";
 
 interface TopBarProps {
-  /** Mobile: is the slide-in menu open? */
-  menuOpen: boolean;
-  onMenuClick: () => void;
-  menuButtonRef: RefObject<HTMLButtonElement>;
   /** Desktop: is the sidebar expanded? */
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -24,28 +18,17 @@ const HAMBURGER = "-ml-2 flex h-11 w-11 items-center justify-center rounded-lg t
 
 /**
  * Top bar.
- *  - mobile: ☰ (opens the slide-in menu) + brand … bell
- *  - md+   : ☰ (collapses the sidebar) | delivery-location picker (Zomato-style) … bell
- * The account avatar/menu now lives at the bottom of the sidebar (SidebarAccount) and in the mobile drawer.
+ *  - mobile: delivery-location picker (Zomato-style) … bell. No hamburger: the bottom nav and the
+ *            Profile tab carry all navigation.
+ *  - md+   : ☰ (collapses the sidebar) | brand | location picker … bell
+ * The account avatar/menu lives at the bottom of the sidebar (SidebarAccount) and on the Profile page.
  */
-export default function TopBar({ menuOpen, onMenuClick, menuButtonRef, sidebarOpen, onToggleSidebar }: TopBarProps) {
+export default function TopBar({ sidebarOpen, onToggleSidebar }: TopBarProps) {
   const unread = useUnreadNotifications();
 
   return (
     <header className="customer-topbar sticky top-0 z-30 flex h-[62px] items-center justify-between gap-2 border-b border-white/80 bg-white/90 px-3 shadow-[0_6px_22px_rgba(30,27,46,.06)] backdrop-blur-xl md:h-16 md:px-8">
       <div className="flex min-w-0 flex-1 items-center gap-1">
-        <button
-          ref={menuButtonRef}
-          type="button"
-          onClick={onMenuClick}
-          aria-label="Open menu"
-          aria-expanded={menuOpen}
-          aria-controls={MOBILE_DRAWER_ID}
-          className={clsx(HAMBURGER, "md:hidden", FOCUS_RING)}
-        >
-          <Menu className="h-6 w-6" aria-hidden="true" />
-        </button>
-
         <button
           type="button"
           onClick={onToggleSidebar}

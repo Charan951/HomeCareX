@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { AuthContextValue, AuthStatus, AuthUser, LoginInput } from "../types/auth";
+import type { AuthContextValue, AuthStatus, AuthUser, LoginInput, ProfilePatch } from "../types/auth";
 import { authApi } from "@/services/authApi";
 import { SESSION_EXPIRED_EVENT, tokenStore } from "@/lib/tokenStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -71,9 +71,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [applySession]);
 
+  // Edits name / email / phone in the local session. Swap the body for an API call once the backend has one.
+  const updateProfile = useCallback((patch: ProfilePatch) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      syncStore(next);
+      return next;
+    });
+  }, []);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, status, isAuthenticated: status === "authenticated" && user !== null, login, logout }),
-    [user, status, login, logout],
+    () => ({ user, status, isAuthenticated: status === "authenticated" && user !== null, login, logout, updateProfile }),
+    [user, status, login, logout, updateProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

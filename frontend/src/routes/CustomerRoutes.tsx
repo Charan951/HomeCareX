@@ -16,6 +16,7 @@ import Tracking from "../pages/customer/Tracking";
 import Wallet from "../pages/customer/Wallet";
 import Tickets from "@/pages/customer/Tickets";
 import BookServiceShell from "../pages/customer/Book";
+import EditProfile from "@/pages/customer/Profile/EditProfile";
 
 /**
  * CustomerRoutes — every route the Customer Dashboard serves, nested inside
@@ -41,6 +42,8 @@ export default function CustomerRoutes() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/profile" element={<Profile />} />
+         <Route path="/profile/edit" element={<EditProfile />} />
+
         <Route path="/referrals" element={<Referrals />} />
         <Route path="/reviews" element={<Reviews />} />
         <Route path="/services" element={<Services />} />
