@@ -9,6 +9,7 @@ import {
   getBookingParamsSchema,
   getSlotsParamsSchema,
   getSlotsQuerySchema,
+  checkSlotBodySchema,
 } from './bookings.validation';
 
 export const bookingsRoutes = Router();
@@ -20,7 +21,14 @@ bookingsRoutes.get(
   asyncHandler(async (req, res) => bookingsController.getSlots(req, res))
 );
 
-// POST /bookings
+// POST /bookings/check-slot — Real-time slot verification when clicking "Next Step"
+bookingsRoutes.post(
+  '/bookings/check-slot',
+  validationMiddleware({ body: checkSlotBodySchema }),
+  asyncHandler(async (req, res) => bookingsController.checkSlot(req, res))
+);
+
+// POST /bookings — Pay & Confirm (returns 201 Created or 409 Conflict if slot was taken)
 bookingsRoutes.post(
   '/bookings',
   authMiddleware,
@@ -45,3 +53,5 @@ bookingsRoutes.get(
   validationMiddleware({ params: getBookingParamsSchema }),
   asyncHandler(async (req, res) => bookingsController.getBooking(req, res))
 );
+
+export default bookingsRoutes;

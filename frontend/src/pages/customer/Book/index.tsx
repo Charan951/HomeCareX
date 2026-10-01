@@ -20,6 +20,8 @@ export default function BookServiceShell() {
   const slot = useBookingDraftStore((s) => s.slot);
   const setStep = useBookingDraftStore((s) => s.setStep);
   const clearDraft = useBookingDraftStore((s) => s.clearDraft);
+  const notice = useBookingDraftStore((s) => s.notice);
+  const setNotice = useBookingDraftStore((s) => s.setNotice);
 
   // A draft belongs to one service. Opening a different service's wizard starts clean.
   const draftIsForOtherService = draftSlug !== null && draftSlug !== serviceSlug;
@@ -69,6 +71,22 @@ export default function BookServiceShell() {
         <h1 className="text-xl font-semibold text-ink">Book a Service</h1>
         <p className="mt-1 text-sm text-muted">Complete the steps below to confirm your booking.</p>
       </div>
+      {notice && (
+        <div
+          role="alert"
+          className="flex items-start justify-between gap-3 rounded border border-danger bg-danger-soft px-3 py-2 text-sm text-ink"
+        >
+          <span>{notice}</span>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            aria-label="Dismiss message"
+            className="shrink-0 text-xs font-medium underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       <BookingStepper currentStep={effectiveStep} focusOnMount={redirectedByGuard.current} />
       <div className="rounded border border-line bg-panel p-4 sm:p-6">
         {effectiveStep === 1 && <StepService serviceSlug={serviceSlug} />}

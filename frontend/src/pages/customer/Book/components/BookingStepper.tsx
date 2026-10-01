@@ -24,20 +24,20 @@ export default function BookingStepper({ currentStep, focusOnMount = false }: Bo
     // eslint-disable-next-line react-hooks/exhaustive-deps -- focusOnMount only matters on the first run
   }, [currentStep]);
 
-  return (
-    <div className="mb-6 w-full">
-      <h2
-        ref={headingRef}
-        tabIndex={-1}
-        className="mb-3 rounded text-lg font-semibold text-ink outline-none focus:outline-none focus:ring-0"
-      >
-        Step {currentStep} of 4: {STEP_TITLES[currentStep - 1]}
-      </h2>
-      <div className="flex gap-2" role="progressbar" aria-valuenow={currentStep} aria-valuemin={1} aria-valuemax={4}>
-        {[1, 2, 3, 4].map((step) => (
-          <div key={step} className={`h-1.5 flex-1 rounded-full transition-colors ${currentStep >= step ? "bg-brand" : "bg-line"}`} />
-        ))}
-      </div>
+return (
+  <div className="w-full">
+    <h2
+      ref={headingRef}
+      tabIndex={-1}
+      className="mb-2 rounded text-base font-semibold text-ink outline-none focus:outline-none focus:ring-0 sm:text-lg"
+    >
+      Step {currentStep} of 4: {STEP_TITLES[currentStep - 1]}
+    </h2>
+    <div className="flex gap-2" role="progressbar" aria-valuenow={currentStep} aria-valuemin={1} aria-valuemax={4}>
+      {[1, 2, 3, 4].map((step) => (
+        <div key={step} className={`h-1.5 flex-1 rounded-full transition-colors ${currentStep >= step ? "bg-brand" : "bg-line"}`} />
+      ))}
     </div>
-  );
+  </div>
+);
 }

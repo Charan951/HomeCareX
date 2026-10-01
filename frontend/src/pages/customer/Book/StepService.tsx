@@ -99,14 +99,17 @@ export default function StepService({ serviceSlug }: { serviceSlug?: string }) {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="border-b border-line pb-4">
-        <h3 className="text-xl font-semibold text-ink">{service.name}</h3>
-        <p className="mt-1 text-sm text-muted">Base price: ₹{service.basePrice} per unit</p>
-      </div>
+return (
+  <div className="flex h-full min-h-0 flex-col">
+    {/* Header */}
+    <div className="shrink-0 border-b border-line px-4 py-3">
+      <h3 className="text-lg font-bold text-ink">{service.name}</h3>
+      <p className="text-xs text-muted">Base price: ₹{service.basePrice} per unit</p>
+    </div>
 
-      <div className="flex items-center gap-4">
+    {/* Body: scrolls only on very short screens */}
+    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-3">
+      <div className="flex items-center justify-between gap-4 sm:justify-start">
         <span className="text-sm font-medium text-ink">Quantity:</span>
         <div className="flex items-center rounded border border-line">
           <button
@@ -131,22 +134,31 @@ export default function StepService({ serviceSlug }: { serviceSlug?: string }) {
         </div>
       </div>
 
-      <AddOnSelector addOns={service.addOns} selectedIds={new Set(selectedAddOns.keys())} onToggle={toggleAddOn} />
+      <AddOnSelector
+        addOns={service.addOns}
+        selectedIds={new Set(selectedAddOns.keys())}
+        onToggle={toggleAddOn}
+      />
+    </div>
 
-      <div className="mt-6 flex items-center justify-between rounded border border-brand bg-panel p-4">
+    {/* Footer: always pinned */}
+    <div className="shrink-0 border-t border-line bg-panel px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs text-muted">Running Estimate</p>
-          <p className="text-lg font-semibold text-ink">₹{runningEstimate}</p>
+          <p className="text-lg font-bold leading-tight text-ink">₹{runningEstimate}</p>
         </div>
         <button
           type="button"
           onClick={handleNextStep}
           disabled={isSubmitting}
-          className={`min-h-[44px] rounded bg-brand px-6 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 ${FOCUS_RING}`}
+          aria-busy={isSubmitting}
+          className={`h-10 rounded bg-brand px-6 text-xs font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50 ${FOCUS_RING}`}
         >
           {isSubmitting ? "Saving…" : "Next Step"}
         </button>
       </div>
     </div>
-  );
+  </div>
+);
 }
