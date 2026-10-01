@@ -67,7 +67,6 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
         'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
       );
 
-    // Wait until drawer is rendered
     requestAnimationFrame(() => {
       firstFocusableElement?.focus();
     });
@@ -82,18 +81,15 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
-    // Drawer has just opened
     if (isOpen) {
       wasOpenRef.current = true;
       return;
     }
 
-    // Drawer was already closed
     if (!wasOpenRef.current) {
       return;
     }
 
-    // Drawer has just closed
     wasOpenRef.current = false;
 
     requestAnimationFrame(() => {
@@ -137,9 +133,9 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
       focusableElements[focusableElements.length - 1];
 
     /*
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     | Shift + Tab
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     */
 
     if (
@@ -152,9 +148,9 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
     }
 
     /*
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     | Tab
-    |----------------------------------------------------------------------
+    |--------------------------------------------------------------------------
     */
 
     if (
@@ -191,7 +187,7 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
       aria-modal="true"
       aria-label="Mobile navigation menu"
     >
-      <nav className="flex flex-col gap-4 px-6 py-4">
+      <nav className="flex flex-col gap-3 px-5 py-3">
 
         {/* Home */}
         <NavLink
@@ -200,8 +196,8 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "font-bold text-[#ff8a3d] transition"
-              : "text-gray-700 transition hover:text-[#4338ca]"
+              ? "text-sm font-bold text-[#ff8a3d] transition"
+              : "text-sm text-gray-700 transition hover:text-[#4338ca]"
           }
         >
           Home
@@ -213,8 +209,8 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "font-bold text-[#ff8a3d] transition"
-              : "text-gray-700 transition hover:text-[#4338ca]"
+              ? "text-sm font-bold text-[#ff8a3d] transition"
+              : "text-sm text-gray-700 transition hover:text-[#4338ca]"
           }
         >
           Services
@@ -227,8 +223,8 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "font-bold text-[#ff8a3d] transition"
-              : "text-gray-700 transition hover:text-[#4338ca]"
+              ? "text-sm font-bold text-[#ff8a3d] transition"
+              : "text-sm text-gray-700 transition hover:text-[#4338ca]"
           }
         >
           About
@@ -240,14 +236,14 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "font-bold text-[#ff8a3d] transition"
-              : "text-gray-700 transition hover:text-[#4338ca]"
+              ? "text-sm font-bold text-[#ff8a3d] transition"
+              : "text-sm text-gray-700 transition hover:text-[#4338ca]"
           }
         >
           Contact
         </NavLink>
 
-        <hr className="border-gray-200" />
+        <hr className="my-1 border-gray-200" />
 
         {/* Login */}
         <NavLink
@@ -255,8 +251,8 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "font-bold text-[#ff8a3d] transition"
-              : "font-medium text-[#4338ca] transition hover:text-[#ff8a3d]"
+              ? "text-sm font-bold text-[#ff8a3d] transition"
+              : "text-sm font-medium text-[#4338ca] transition hover:text-[#ff8a3d]"
           }
         >
           Login
@@ -268,8 +264,8 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({
           onClick={onClose}
           className={({ isActive }) =>
             isActive
-              ? "rounded-lg bg-[#4338ca] px-5 py-2.5 text-center font-medium text-white transition"
-              : "rounded-lg bg-[#ff8a3d] px-5 py-2.5 text-center font-medium text-white transition hover:bg-[#4338ca]"
+              ? "rounded-lg bg-[#4338ca] px-4 py-2 text-center text-sm font-medium text-white transition"
+              : "rounded-lg bg-[#ff8a3d] px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-[#4338ca]"
           }
         >
           Register

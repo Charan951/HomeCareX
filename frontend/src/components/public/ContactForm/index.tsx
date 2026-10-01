@@ -7,6 +7,7 @@ import { z } from 'zod';
 import RecaptchaNotice from '@/components/public/RecaptchaNotice';
 import { isRecaptchaConfigured } from '@/features/public/recaptcha';
 import { useCreateLead } from '@/features/public/leads';
+import { isRecaptchaConfigured } from '@/features/public/recaptcha';
 
 const inputClassName =
   'min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition-colors duration-150 placeholder:text-slate-400 hover:border-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100 aria-[invalid=true]:border-red-500 aria-[invalid=true]:focus:ring-red-100';

@@ -2,6 +2,11 @@ import http, { type ApiResponse } from "@/lib/http";
 import { mockDashboard, mockEarningsSummary, mockJobRequests, mockNotifications } from "@/mocks/partnerDashboard";
 import type { EarningsSummary, JobRequest, PartnerDashboard, PartnerNotification } from "@/types/partner";
 
+export interface PartnerProfileInput {
+  name: string;
+  phone: string;
+}
+
 export type { ActiveJob, EarningsSummary, JobRequest, PartnerDashboard, PartnerNotification } from "@/types/partner";
 import {
   PARTNER_DETAILS,
@@ -235,6 +240,11 @@ export const partnerApi = {
   // TODO(backend): GET /partner/earnings/summary
   async getEarningsSummary(): Promise<EarningsSummary> {
     return mockEarningsSummary();
+  },
+  // TODO(backend): PATCH /partner/profile  (no endpoint yet, so this only simulates a save)
+  async updateProfile(input: PartnerProfileInput): Promise<PartnerProfileInput> {
+    await new Promise((r) => setTimeout(r, 500));
+    return input;
   },
   // TODO(backend): GET /partner/notifications
   async getNotifications(): Promise<PartnerNotification[]> {

@@ -85,11 +85,7 @@ export const Sidebar: React.FC = () => {
               <X size={20} />
             </button>
           </div>
-          {!isCollapsed && (
-            <p className="sidebar-brand__guide">
-              {currentPage ? `${currentPage.groupName} / ${currentPage.label}` : 'Admin Console'}
-            </p>
-          )}
+          
         </div>
 
         <nav className="sidebar-nav">

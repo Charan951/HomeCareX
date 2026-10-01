@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Banknote, CalendarCheck, HardHat, Users } from 'lucide-react';
 import { adminApi, type AdminStats } from '@/services/adminApi';
 
@@ -14,10 +15,10 @@ export const AdminDashboardPage: React.FC = () => {
   const live = (n?: number) => (error ? '—' : n === undefined ? '…' : n.toLocaleString('en-IN'));
 
   const kpis = [
-    { label: 'Total Bookings', value: '1,284', change: '+8.2% this month', icon: CalendarCheck },
-    { label: 'Total Customers', value: live(stats?.customers), change: 'Registered customers', icon: Users },
-    { label: 'Total Partners', value: live(stats?.partners), change: 'Registered partners', icon: HardHat },
-    { label: 'Revenue', value: '₹18,42,500', change: '+11.4% this month', icon: Banknote },
+    { label: 'Total Bookings', value: '1,284', change: '+8.2% this month', icon: CalendarCheck, to: '/admin/bookings' },
+    { label: 'Total Customers', value: live(stats?.customers), change: 'Registered customers', icon: Users, to: '/admin/customers' },
+    { label: 'Total Partners', value: live(stats?.partners), change: 'Registered partners', icon: HardHat, to: '/admin/manage-partners' },
+    { label: 'Revenue', value: '₹18,42,500', change: '+11.4% this month', icon: Banknote, to: '/admin/payments' },
   ];
 
   return (
@@ -28,7 +29,7 @@ export const AdminDashboardPage: React.FC = () => {
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
-            <div key={kpi.label} className="kpi-card">
+            <Link key={kpi.label} to={kpi.to} className="kpi-card kpi-card--link" aria-label={`${kpi.label}: open page`}>
               <div className="kpi-card__icon">
                 <Icon size={20} />
               </div>
@@ -37,7 +38,7 @@ export const AdminDashboardPage: React.FC = () => {
                 <p className="kpi-card__value">{kpi.value}</p>
                 <p className="kpi-card__change">{kpi.change}</p>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
