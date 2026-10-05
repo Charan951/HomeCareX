@@ -41,6 +41,6 @@ export default function BookingStepper({ currentStep, focusOnMount = false, comp
         ))}
       </div>
     </div>
-  </div>
+  
 );
 }
