@@ -220,19 +220,6 @@ const contact = {
 
 /* =========================================================
    NAVIGATION
-========================================================= */
-
-const navItems = [
-  { to: "/", label: "Home", end: true },
-  { to: "/services", label: "Services", end: false },
-  { to: "/about", label: "About", end: false },
-  { to: "/contact", label: "Contact", end: false },
-];
-
-/* =========================================================
-   ICONS
-========================================================= */
-
 const PhoneIcon: React.FC = () => (
   <svg
     width="15"
@@ -285,9 +272,9 @@ const ClockIcon: React.FC = () => (
 
 /* =========================================================
    HEADER COMPONENT
-========================================================= */
 
 const Header: React.FC = () => {
+  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 

@@ -37,7 +37,6 @@ docs/
 *.pdf
 MEMORY.md
 
-package.json
 
 .postman/
 postman/

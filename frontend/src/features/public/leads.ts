@@ -16,6 +16,7 @@ export type ContactLeadPayload = {
 
 export type PartnerLeadPayload = {
   name: string;
+  email: string;
   phone: string;
   city: string;
   skills: string;

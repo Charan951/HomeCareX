@@ -13,7 +13,8 @@
     "build:frontend": "npm run build --workspace=frontend",
     "build:backend": "npm run build --workspace=backend",
     "lint": "npm run lint --workspaces",
-    "seed:users": "npm run seed:users --workspace=backend"
+    "seed:users": "npm run seed:users --workspace=backend",
+    "seed:dashboard": "npm run seed:dashboard --workspace=backend"
   },
   "keywords": [
     "homecarex",

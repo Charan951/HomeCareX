@@ -7,11 +7,6 @@ interface DatePickerProps {
   onChange: (date: string) => void;
 }
 
-/**
- * Next-14-days picker. A radio group with a roving tab stop: Tab enters/leaves the group once,
- * arrow keys move focus between dates, Space/Enter selects. Wraps to a grid, so the page never
- * scrolls sideways at 360px.
- */
 export default function DatePicker({ value, onChange }: DatePickerProps) {
   const dates = useMemo(() => getBookableDates(), []);
   const refs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -28,13 +23,13 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
 
   return (
     <div>
-      <span id="booking-date-label" className="mb-1.5 block text-sm font-medium text-ink">
+      <span id="booking-date-label" className="mb-1 block text-xs font-semibold text-ink">
         Choose a date
       </span>
       <div
         role="radiogroup"
         aria-labelledby="booking-date-label"
-        className="grid grid-cols-4 gap-2 sm:grid-cols-7"
+        className="grid grid-cols-7 gap-1"
       >
         {dates.map((d, i) => {
           const selected = d.iso === value;
@@ -51,13 +46,15 @@ export default function DatePicker({ value, onChange }: DatePickerProps) {
               tabIndex={i === tabStopIndex ? 0 : -1}
               onClick={() => onChange(d.iso)}
               onKeyDown={(e) => onKeyDown(e, i)}
-              className={`flex min-h-[56px] flex-col items-center justify-center rounded border px-1 py-2 text-center transition-colors ${FOCUS_RING} ${
+              className={`flex h-11 flex-col items-center justify-center rounded border px-0.5 py-0.5 text-center leading-none transition-colors ${FOCUS_RING} ${
                 selected ? "border-brand bg-brand text-white" : "border-line bg-panel text-ink hover:border-brand"
               }`}
             >
-              <span className={`text-xs ${selected ? "text-white/90" : "text-muted"}`}>{d.isToday ? "Today" : d.weekday}</span>
-              <span className="text-base font-semibold leading-tight">{d.day}</span>
-              <span className={`text-xs ${selected ? "text-white/90" : "text-muted"}`}>{d.month}</span>
+              <span className={`text-[10px] ${selected ? "text-white/90" : "text-muted"}`}>
+                {d.isToday ? "Today" : d.weekday}
+              </span>
+              <span className="my-0.5 text-xs font-bold">{d.day}</span>
+              <span className={`text-[9px] ${selected ? "text-white/90" : "text-muted"}`}>{d.month}</span>
             </button>
           );
         })}

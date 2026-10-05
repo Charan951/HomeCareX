@@ -30,6 +30,14 @@ export const contactLeadSchema = z.object({
 
 export const partnerLeadSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address')
+    .refine((value) => value.toLowerCase().endsWith('@gmail.com'), {
+      message: 'Please use a Gmail address ending in @gmail.com',
+    }),
   phone: z
     .string()
     .trim()

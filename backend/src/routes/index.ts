@@ -1,5 +1,5 @@
 import { Router } from 'express';
-
+import paymentRoutes from '../modules/payments/payments.routes';
 import { authRoutes } from '../modules/auth/auth.routes';
 import { auditRoutes } from '../modules/audit/audit.routes';
 import { adminRoutes } from '../modules/admin/admin.routes';
@@ -17,6 +17,7 @@ import { notificationsRoutes } from '../modules/notifications/notifications.rout
 import leadsRoutes from '../modules/leads/leads.routes';
 
 import { bookingsRoutes } from '../modules/bookings/bookings.routes';
+import customerDashboardRoutes from '../modules/customer-dashboard/customer-dashboard.routes';
 import { addressesRoutes } from '../modules/addresses/addresses.routes';
 import { reviewsRoutes } from '../modules/reviews/reviews.routes';
 
@@ -36,7 +37,7 @@ rootRouter.use('/admin', adminRoutes); // GET /admin/bookings
 rootRouter.use('/admin/partners', partnersRoutes); // GET /admin/partners, GET /admin/partners/stats, POST /admin/partners
 
 rootRouter.use('/partner/dashboard', partnerDashboardRoutes);
-
+rootRouter.use('/customer/dashboard', customerDashboardRoutes); // GET /customer/dashboard
 rootRouter.use('/partner/availability', availabilityRoutes);
 
 rootRouter.use('/partner/blackout-dates', blackoutRoutes); // GET, POST, PATCH, DELETE /partner/blackout-dates
@@ -45,9 +46,10 @@ rootRouter.use('/partner/schedule', scheduleRoutes); // GET /partner/schedule
 
 rootRouter.use(leadsRoutes); // POST /public/leads
 
-rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings, GET /bookings/:id
+rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings/check-slot, POST /bookings, GET /bookings/:id
 rootRouter.use('/partner/earnings', earningsRoutes); // GET /partner/earnings/summary
 rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, GET /addresses/serviceability
+rootRouter.use('/payments', paymentRoutes); // POST /payments/create-order, /verify, /attempt
 rootRouter.use(reviewsRoutes); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
 
 export default rootRouter;

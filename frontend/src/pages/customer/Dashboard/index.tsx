@@ -1,101 +1,99 @@
-import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useMockAsync } from "@/hooks/useMockAsync";
 import { customerPath } from "@/routes/customerPath";
-import { ADDRESSES, BOOKINGS, CATEGORIES, OFFERS, PROFILE, SERVICES } from "@/mocks/customerMockData";
+import { ErrorState, OfflineState } from "@/components/customer";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useCustomerDashboard } from "@/features/customer";
+import { OFFERS } from "@/mocks/customerMockData"; // no offers endpoint yet — promos stay static
 import DashboardSkeleton from "./sections/DashboardSkeleton";
-import LocationSearchBar from "./sections/LocationSearchBar";
+import GreetingSection from "./sections/GreetingSection";
+import SearchBar from "./sections/SearchBar";
 import ActiveBookingCard from "./sections/ActiveBookingCard";
 import QuickActions from "./sections/QuickActions";
+import UpcomingBookings from "./sections/UpcomingBookings";
+import CategoryCard from "./sections/CategoryCard";
 import RecommendedServices from "./sections/RecommendedServices";
 import OffersCarousel from "./sections/OffersCarousel";
-import UpcomingBookings from "./sections/UpcomingBookings";
 import NewCustomerEmptyState from "./sections/NewCustomerEmptyState";
 
-const ACTIVE_STATUSES = new Set(["Confirmed", "Partner Assigned", "En Route", "Arrived", "In Progress"]);
+function SectionHeader({ title, to }: { title: string; to?: string }) {
+  return (
+    <div className="mb-3 flex items-center justify-between">
+      <h2 className="text-base font-semibold text-ink">{title}</h2>
+      {to && (
+        <Link to={to} className="text-sm font-medium text-brand hover:underline">
+          View all
+        </Link>
+      )}
+    </div>
+  );
+}
 
 export default function Dashboard() {
-  // Dev-only toggle so the new-customer empty state can be reviewed/screenshotted
-  // without editing mock data. Remove once a real "no bookings yet" account exists.
-  const [previewNewCustomer] = useState(false);
+  const { data, isPending, isError, error, refetch } = useCustomerDashboard();
+  const online = useOnlineStatus();
 
-  const bookings = previewNewCustomer ? [] : BOOKINGS;
-  const { data, loading } = useMockAsync({ bookings, categories: CATEGORIES, services: SERVICES, offers: OFFERS });
+  if (isPending) return <DashboardSkeleton />;
 
-  const upcoming = useMemo(() => data.bookings.filter((b) => ACTIVE_STATUSES.has(b.status)), [data.bookings]);
-  const activeBooking = useMemo(() => data.bookings.find((b) => b.status === "In Progress"), [data.bookings]);
-  const hasCompletedBooking = data.bookings.some((b) => b.status === "Completed");
-  const isNewCustomer = data.bookings.length === 0;
-  const defaultAddress = ADDRESSES.find((a) => a.isDefault);
-  const recommended = data.services.slice(0, 5);
+  // Failed and nothing cached to fall back on. (If we already have data, a failed
+  // background refetch keeps showing it — the layout's offline banner covers "you're offline".)
+  if (isError || !data) {
+    const noConnection = !online || error?.code === "NETWORK_ERROR";
+    return noConnection ? (
+      <OfflineState onRetry={() => void refetch()} />
+    ) : (
+      <ErrorState
+        title="We couldn't load your dashboard"
+        message={error?.message ?? "Please try again. If the problem continues, contact support."}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
-  if (loading) return <DashboardSkeleton />;
+  const { activeBookings, upcomingBookings, categories, recommendedServices, isNewCustomer } = data;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-ink">Welcome back, {PROFILE.name.split(" ")[0]} 👋</h1>
-          <p className="mt-1 text-sm text-muted">Here's an overview of your account.</p>
-        </div>
-     
-      </div>
+    <div className="dashboard-mobile space-y-6">
+      <GreetingSection firstName={data.greeting.firstName} isNewCustomer={isNewCustomer}>
+        <SearchBar services={recommendedServices} />
+      </GreetingSection>
 
-      <LocationSearchBar address={defaultAddress} />
+      {activeBookings.length > 0 && <ActiveBookingCard bookings={activeBookings} />}
 
-      {activeBooking && <ActiveBookingCard booking={activeBooking} />}
-
-      <QuickActions hasActiveBooking={Boolean(activeBooking)} hasCompletedBooking={hasCompletedBooking} />
+      <QuickActions hasActiveBooking={activeBookings.length > 0} hasBookingHistory={!isNewCustomer} />
 
       {isNewCustomer ? (
-        <NewCustomerEmptyState categories={data.categories} />
+        <NewCustomerEmptyState categories={categories} />
       ) : (
-        <div className="rounded border border-line bg-panel p-6">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold text-ink">Upcoming</h2>
-            <Link to={customerPath("/bookings")} className="text-sm font-medium text-brand">
-              View all
-            </Link>
-          </div>
-          {upcoming.length > 0 ? (
-            <UpcomingBookings bookings={upcoming} />
-          ) : (
-            <p className="py-4 text-center text-sm text-muted">No upcoming bookings. Book a service to see it here.</p>
-          )}
-        </div>
+        upcomingBookings.length > 0 && (
+          <section className="rounded-lg border border-line bg-panel p-4 shadow-sm sm:p-5">
+            <SectionHeader title="Upcoming" to={customerPath("/bookings")} />
+            <UpcomingBookings bookings={upcomingBookings} />
+          </section>
+        )
       )}
 
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold text-ink">Browse categories</h2>
-          <Link to={customerPath("/categories")} className="text-sm font-medium text-brand">
-            View all
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {data.categories.slice(0, 4).map((c) => (
-            <Link
-              key={c.id}
-              to={customerPath("/services")}
-              className="rounded border border-line bg-panel p-4 transition-colors hover:border-brand"
-            >
-              <div className="mb-2 text-2xl">{c.icon}</div>
-              <div className="text-sm font-medium text-ink">{c.name}</div>
-              <div className="mt-1 text-xs text-muted">{c.serviceCount} services</div>
-            </Link>
-          ))}
-        </div>
-      </div>
+      {categories.length > 0 && (
+        <section className="dashboard-section dashboard-section--categories">
+          <SectionHeader title="Browse categories" to={customerPath("/categories")} />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {categories.slice(0, 4).map((c) => (
+              <CategoryCard key={c.id} category={c} />
+            ))}
+          </div>
+        </section>
+      )}
 
-      <div>
-        <h2 className="mb-3 font-semibold text-ink">Recommended for you</h2>
-        <RecommendedServices services={recommended} categories={data.categories} />
-      </div>
+      {recommendedServices.length > 0 && (
+        <section className="dashboard-section">
+          <SectionHeader title="Recommended for you" />
+          <RecommendedServices services={recommendedServices} />
+        </section>
+      )}
 
-      <div>
-        <h2 className="mb-3 font-semibold text-ink">Offers for you</h2>
-        <OffersCarousel offers={data.offers} />
-      </div>
+      <section className="dashboard-section dashboard-section--offers">
+        <SectionHeader title="Offers for you" />
+        <OffersCarousel offers={OFFERS} />
+      </section>
     </div>
   );
 }

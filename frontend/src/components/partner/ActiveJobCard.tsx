@@ -19,6 +19,7 @@ export default function ActiveJobCard({ job }: { job: ActiveJob | null }) {
     );
   }
   const time = new Date(job.scheduledAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
   return (
     <Link
       to={`/partner/work/${job.id}`}
