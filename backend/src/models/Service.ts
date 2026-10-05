@@ -1,27 +1,33 @@
-import { Schema, model, type InferSchemaType } from 'mongoose';
+import { Schema, model, type Types } from 'mongoose';
 
-/** A bookable service in the catalog (e.g. "Deep Home Cleaning"). Prices are INR. */
+export interface ServiceAddOn {
+  _id: Types.ObjectId;
+  name: string;
+  price: number;
+}
+
+const AddOnSchema = new Schema(
+  {
+    name: { type: String, required: true, trim: true, maxlength: 60 },
+    price: { type: Number, required: true, min: 0 },
+  },
+  { _id: true },
+);
+
+/** A bookable service (AC Service, Deep Cleaning...) that belongs to one Category. Prices are in rupees. */
 const ServiceSchema = new Schema(
   {
-    name: { type: String, required: true, trim: true },
-    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
     categoryId: { type: Schema.Types.ObjectId, ref: 'Category', required: true, index: true },
-    description: { type: String, trim: true },
-    icon: { type: String },
+    name: { type: String, required: true, trim: true, maxlength: 80 },
+    slug: { type: String, required: true, trim: true, unique: true, index: true },
+    description: { type: String, trim: true, default: '' },
     basePrice: { type: Number, required: true, min: 0 },
-    durationMinutes: { type: Number, required: true, min: 15 },
-    /** Denormalised from reviews so listings need no join. */
-    ratingAvg: { type: Number, default: 0, min: 0, max: 5 },
-    ratingCount: { type: Number, default: 0, min: 0 },
-    /** Used to rank "Recommended for you". */
-    bookingsCount: { type: Number, default: 0, min: 0 },
-    isActive: { type: Boolean, default: true },
+    durationMinutes: { type: Number, required: true, min: 5, max: 1440, default: 60 },
+    addOns: { type: [AddOnSchema], default: [] },
+    active: { type: Boolean, default: true },
   },
   { timestamps: true },
 );
 
-ServiceSchema.index({ isActive: 1, bookingsCount: -1, ratingAvg: -1 });
-
-export type Service = InferSchemaType<typeof ServiceSchema>;
 export const ServiceModel = model('Service', ServiceSchema);
 export default ServiceModel;

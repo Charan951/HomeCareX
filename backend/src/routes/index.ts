@@ -13,6 +13,8 @@ import { adminDashboardRoutes } from '../modules/admin-dashboard/admin-dashboard
 import { settingsRoutes } from '../modules/settings/settings.routes';
 import { designationsRoutes } from '../modules/designations/designations.routes';
 import { notificationsRoutes } from '../modules/notifications/notifications.routes';
+import { categoriesRoutes, categoriesPublicRoutes } from '../modules/categories/categories.routes';
+import { servicesRoutes, servicesPublicRoutes } from '../modules/services/services.routes';
 
 import leadsRoutes from '../modules/leads/leads.routes';
 
@@ -29,6 +31,10 @@ rootRouter.use('/auth', authRoutes);
 rootRouter.use('/admin/dashboard', adminDashboardRoutes); // GET /admin/dashboard/summary, /trends
 rootRouter.use('/admin/settings', settingsRoutes); // GET /admin/settings, PUT /admin/settings/:key
 rootRouter.use('/admin/designations', designationsRoutes); // GET, POST, PATCH /:id, DELETE /:id
+rootRouter.use('/admin/categories', categoriesRoutes); // GET, POST, PATCH /:id, DELETE /:id
+rootRouter.use('/admin/services', servicesRoutes); // GET, GET /:id, POST, PATCH /:id, DELETE /:id
+rootRouter.use('/categories', categoriesPublicRoutes); // GET /categories (active only)
+rootRouter.use('/services', servicesPublicRoutes); // GET /services?category=&q=, GET /services/:idOrSlug
 rootRouter.use('/notifications', notificationsRoutes); // GET /notifications, PATCH /:id/read, PATCH /read-all
 rootRouter.use('/admin', auditRoutes); // GET /admin/audit-logs
 
