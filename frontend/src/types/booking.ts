@@ -58,6 +58,7 @@ export interface AddressSnapshot {
   sourceAddressId?: string;
 }
 
+
 export interface PriceLine {
   kind: 'BASE' | 'ADDON';
   refId: string;
@@ -74,6 +75,9 @@ export interface PriceSnapshot {
   discount: number;
   couponCode?: string;
   convenienceFee: number;
+  /** Added by the pricing engine (R02); older snapshots do not have them. */
+  surge?: number;
+  gst?: number;
   total: number;
   computedAt: string;
 }
@@ -128,6 +132,8 @@ export interface CreateBookingRequest {
   date: string;
   slot: string;
   couponCode?: string;
+  /** The total the server quoted and the customer agreed to. An acknowledgement used to detect a
+   *  price change (409 PRICE_CHANGED), never a value to charge: the server recomputes the price. */
   expectedTotal?: number;
 }
 
