@@ -65,7 +65,7 @@ export default function LocationPicker() {
         aria-expanded={open}
         aria-controls="topbar-address-menu"
         aria-label={current ? `Service address: ${current.label}, ${line}. Change address` : "Choose a service address"}
-        className={clsx("location-picker-trigger flex min-w-0 max-w-[380px] items-center gap-2.5 rounded-full border border-line bg-white py-1 pl-1 pr-3.5 text-left transition-colors duration-200 hover:border-brand/30 hover:bg-brand-soft/40", FOCUS_RING)}
+        className={clsx("location-picker-trigger flex min-w-0 max-w-[380px] items-center gap-2.5 rounded-full bg-white py-1 pl-1 pr-3.5 text-left transition-colors duration-200 hover:border-brand/30 hover:bg-brand-soft/40", FOCUS_RING)}
       >
         <span className="location-picker-pin flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand"><Pin3D className="h-[22px] w-[22px]" /></span>
         <span className="min-w-0 flex-1">

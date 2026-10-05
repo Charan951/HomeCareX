@@ -33,7 +33,7 @@ export function CategoryCard({ category: c, index, featured = false }: Props) {
       to={`${customerPath("/services")}?category=${encodeURIComponent(c.slug)}`}
       aria-label={`${c.name}, ${plural(c.serviceCount, "service")}`}
       className={clsx(
-        "group relative flex h-full w-full flex-col justify-end overflow-hidden rounded-[22px] border border-black/5 p-3.5 transition-shadow duration-200 md:rounded-[26px] md:p-5",
+        "group relative flex h-full w-full flex-col justify-end overflow-hidden rounded-[22px]   transition-shadow duration-200 md:rounded-[26px] md:p-5",
         "hover:shadow-[0_18px_30px_-16px_rgba(67,56,202,.55)]",
         photo ? "bg-ink text-white" : clsx("text-ink", v.tint),
         FOCUS_RING,

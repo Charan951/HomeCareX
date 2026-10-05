@@ -1,24 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowRight, SearchX, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import { SearchX, SlidersHorizontal, X } from "lucide-react";
 import clsx from "clsx";
 import { EmptyState, ErrorState, OfflineState } from "@/components/customer";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import {
-  CategoryChips,
-  FilterBar,
   FilterDrawer,
   Pagination,
   ServiceFilters,
   ServiceGrid,
   ServiceGridSkeleton,
   ServiceSearch,
-  ServiceSort,
   buildFilterGroups,
   plural,
 } from "@/components/customer/catalog";
 import { useCategories } from "@/hooks/useCategories";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { useServices } from "@/hooks/useServices";
 import type { ServiceListParams } from "@/types/catalog";
@@ -34,7 +30,6 @@ export default function Services() {
   const { data, isPending, isError, error, isPlaceholderData, refetch } = useServices(params);
   const categories = useCategories();
   const online = useOnlineStatus();
-  const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
@@ -60,6 +55,10 @@ export default function Services() {
   const total = data?.meta.total ?? 0;
   const filterGroups = buildFilterGroups(params, categories.data ?? [], (patch) => update(patch));
   const activeCategory = categories.data?.find((category) => category.slug === params.category);
+  // Removable chips for every active filter except category (category has its own chip row).
+  const activeChips = filterGroups
+    .filter((g) => g.key !== "category" && g.value !== g.options[0].id)
+    .map((g) => ({ key: g.key, label: g.label, text: (g.options.find((o) => o.id === g.value) ?? g.options[0]).label, clear: () => g.onPick(g.options[0].id) }));
 
   let results;
   if (isPending) {
@@ -122,56 +121,57 @@ export default function Services() {
               {data && params.q && <> matching &ldquo;{params.q}&rdquo;</>}
             </p>
           </div>
-          <ServiceSort value={params.sort} hasQuery={!!params.q} onChange={(sort) => update({ sort })} className="hidden sm:block [&_select]:h-11 [&_select]:min-w-[170px] [&_select]:rounded-full" />
         </div>
-        <div className="mt-4 max-w-4xl">
-          <ServiceSearch value={params.q ?? ""} onSearch={(q) => update({ q: q || undefined }, { replace: true })} />
-        </div>
-      </header>
-
-      <CategoryChips categories={categories.data ?? []} total={categories.data?.reduce((n, c) => n + c.serviceCount, 0) ?? total} selected={params.category} onSelect={(category) => update({ category })} />
-
-      <div className="hidden lg:block">
-        <FilterBar groups={filterGroups.filter((g) => g.key !== "category")} activeCount={filters} onClear={resetFilters} />
-      </div>
-
-      <div className="flex items-center justify-between gap-3 lg:hidden">
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          aria-haspopup="dialog"
-          className={clsx("inline-flex h-11 items-center gap-1.5 rounded-full border bg-panel px-4 text-xs font-semibold text-ink transition hover:border-brand/30 hover:bg-brand-soft", filters > 0 ? "border-brand text-brand" : "border-line", FOCUS_RING)}
-        >
-          <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
-          Filters{filters > 0 && ` (${filters})`}
-        </button>
-        <ServiceSort value={params.sort} hasQuery={!!params.q} onChange={(sort) => update({ sort })} className="sm:hidden [&_select]:h-11 [&_select]:rounded-full [&_select]:text-xs [&_select]:min-w-[150px]" />
-      </div>
-
-      <section className="overflow-hidden rounded-[22px] border border-brand/10 bg-gradient-to-r from-brand-soft to-[#FFF1E6]" aria-label="Same-day availability">
-        <div className="flex items-center gap-3 px-4 py-3 md:px-5">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand shadow-sm"><ShieldCheck className="h-5 w-5" aria-hidden="true" /></span>
+        <div className="mt-4 flex items-center gap-2.5">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-ink">Need it done today?</p>
-            <p className="text-xs text-muted">Filter by availability and find services ready for your preferred time.</p>
+            <ServiceSearch value={params.q ?? ""} onSearch={(q) => update({ q: q || undefined }, { replace: true })} />
           </div>
           <button
             type="button"
-            aria-pressed={params.availability === "today"}
-            onClick={() => update({ availability: params.availability === "today" ? undefined : "today" })}
-            className={clsx("hidden min-h-11 shrink-0 items-center justify-center rounded-full bg-brand px-4 text-xs font-semibold text-white transition hover:bg-[#3730A3] sm:inline-flex", FOCUS_RING)}
+            onClick={() => setDrawerOpen(true)}
+            aria-haspopup="dialog"
+            className={clsx(
+              "inline-flex h-12 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full border bg-panel px-5 text-sm font-semibold transition-colors hover:border-brand",
+              filters > 0 ? "border-brand bg-brand-soft text-brand" : "border-line text-ink",
+              FOCUS_RING,
+            )}
           >
-            {params.availability === "today" ? "Showing available today" : "Show available today"} <ArrowRight className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
+            <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
+            
+            {filters > 0 && <span className="rounded-full bg-brand px-2 text-xs leading-5 text-white">{filters}</span>}
           </button>
         </div>
-      </section>
+      </header>
+
+      {/* <CategoryChips categories={categories.data ?? []} total={categories.data?.reduce((n, c) => n + c.serviceCount, 0) ?? total} selected={params.category} onSelect={(category) => update({ category })} /> */}
+
+      {activeChips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Active filters">
+          {activeChips.map((c) => (
+            <span key={c.key} className="inline-flex items-center gap-1.5 rounded-full bg-brand-soft py-1 pl-3 pr-1.5 text-[13px] font-semibold text-brand">
+              {c.text}
+              <button
+                type="button"
+                onClick={c.clear}
+                aria-label={`Remove ${c.label.toLowerCase()} filter`}
+                className={clsx("flex h-6 w-6 items-center justify-center rounded-full bg-brand/15 hover:bg-brand/25", FOCUS_RING)}
+              >
+                <X className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </span>
+          ))}
+          <button type="button" onClick={resetFilters} className={clsx("px-2 py-1 text-[13px] font-semibold text-brand", FOCUS_RING)}>
+            Clear all
+          </button>
+        </div>
+      )}
 
       <div id="all-services" className="scroll-mt-24">
         {results}
       </div>
 
       <FilterDrawer
-        open={drawerOpen && !isDesktop}
+        open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         doneLabel={data ? `Show ${plural(total, "service")}` : "Done"}
         subtitle={filters > 0 ? `${filters} applied` : "No filters applied"}
