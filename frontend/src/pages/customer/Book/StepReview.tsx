@@ -1,18 +1,58 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAvailableCoupons, useBookingDraftStore, useQuote, useValidateCoupon } from "@/features/booking";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { customerPath } from "@/routes/customerPath";
-import { bookingApi, type NormalizedApiError, type PaymentInit } from "@/services/bookingApi";
+import { bookingApi, type NormalizedApiError } from "@/services/bookingApi";
+import { paymentApi } from "@/services/paymentApi";
 import { PRICING_IS_MOCK } from "@/services/pricingApi";
-import { openRazorpayCheckout, RazorpayCancelledError, RazorpayFailedError } from "@/services/razorpay";
 import type { CreateBookingRequest } from "@/types/booking";
 import { COUPON_ERROR, type PriceQuote, type QuoteRequest } from "@/types/pricing";
 import { formatSlotLabel } from "./components/SlotPicker";
 import CouponInput, { couponErrorText } from "./components/CouponInput";
 import PriceBreakdown from "./components/PriceBreakdown";
 import { formatINR } from "./formatMoney";
+
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Razorpay: any;
+  }
+}
+
+const PRE_POPUP_DELAY_MS = 10000;
+const MAX_PAYMENT_RETRIES = 3;
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (document.getElementById("razorpay-checkout-js")) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "razorpay-checkout-js";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
+/** Forcefully purges the Razorpay DOM backdrop and modal iframe */
+const forceCloseRazorpayModal = () => {
+  try {
+    const containers = document.querySelectorAll(
+      ".razorpay-container, iframe[src*='razorpay'], .razorpay-backdrop"
+    );
+    containers.forEach((el) => el.remove());
+    document.body.style.overflow = "";
+  } catch (err) {
+    console.warn("Could not clean Razorpay DOM nodes:", err);
+  }
+};
 
 const ERROR_TO_STEP: Record<string, number> = {
   SERVICE_NOT_FOUND: 1,
@@ -23,6 +63,9 @@ const ERROR_TO_STEP: Record<string, number> = {
   SLOT_BUSY: 3,
   INVALID_DATE: 3,
 };
+
+const SLOT_ERRORS = new Set(["SLOT_UNAVAILABLE", "SLOT_BUSY", "INVALID_DATE"]);
+const SLOT_TAKEN_NOTICE = "That time slot was just taken by someone else. Please pick another slot.";
 
 const COUPON_ERROR_CODES: string[] = Object.values(COUPON_ERROR);
 
@@ -42,11 +85,24 @@ export default function StepReview() {
   const online = useOnlineStatus();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<NormalizedApiError | null>(null);
+  const [statusMessage, setStatusMessage] = useState("Processing your payment…");
+  const [clickedWhileProcessing, setClickedWhileProcessing] = useState(false);
+  const [error, setError] = useState<NormalizedApiError | { message: string } | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [priceNotice, setPriceNotice] = useState<PriceNotice | null>(null);
-  const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
+
   const inFlight = useRef(false);
+  const mounted = useRef(true);
+  const retryCountRef = useRef(0);
+  const hasExitedRef = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      forceCloseRazorpayModal();
+    };
+  }, []);
 
   const canSubmit = Boolean(draft.serviceId && draft.addressId && draft.date && draft.slot);
 
@@ -71,14 +127,7 @@ export default function StepReview() {
   const { validate, isValidating } = useValidateCoupon();
   const { coupons: availableCoupons, isLoading: couponsLoading } = useAvailableCoupons(baseRequest);
 
-  const quoteTotal = quote?.total;
   const { setCouponCode, setStep } = draft;
-
-  // A new payload needs a new Idempotency-Key, otherwise the server answers 409 IDEMPOTENCY_KEY_REUSED.
-  const addOnsKey = JSON.stringify(draft.addOns);
-  useEffect(() => {
-    setIdempotencyKey(crypto.randomUUID());
-  }, [draft.serviceId, draft.addressId, draft.date, draft.slot, draft.quantity, addOnsKey, draft.couponCode, quoteTotal]);
 
   // The server dropped the coupon (expired, limit reached, order below the minimum...): remove it here too.
   useEffect(() => {
@@ -106,195 +155,18 @@ export default function StepReview() {
     setCouponCode(null);
   };
 
-  /**
-   * Opens Razorpay for the order the backend created, then asks the backend to verify the signature.
-   * Returns true when the booking is paid (or needs no online payment), false when the user should stay
-   * on this step (cancelled / failed). The booking already exists at this point; retrying with the same
-   * Idempotency-Key replays it instead of creating a duplicate.
-   */
- const collectPayment = async (
-  bookingId: string,
-  payment: PaymentInit | undefined
-): Promise<boolean> => {
-  /*
-   * IMPORTANT:
-   * If this booking is ALWAYS supposed to use Razorpay,
-   * missing payment information is an error.
-   */
-  if (!payment) {
-    console.error(
-      "[Payment] Backend did not return payment initialization."
-    );
-
-    setError({
-      status: 500,
-      code: "PAYMENT_INIT_MISSING",
-      message:
-        "The booking was created, but the server did not create a Razorpay payment order. Please try again.",
-    });
-
-    return false;
-  }
-
-  const keyId =
-    payment.keyId ??
-    import.meta.env.VITE_RAZORPAY_KEY_ID;
-
-  if (!keyId) {
-    console.error(
-      "[Payment] Razorpay Key ID is missing."
-    );
-
-    setError({
-      status: 500,
-      code: "RAZORPAY_KEY_MISSING",
-      message:
-        "Online payment is not configured. Razorpay Key ID is missing.",
-    });
-
-    return false;
-  }
-
-  if (!payment.orderId) {
-    console.error(
-      "[Payment] Razorpay order ID is missing:",
-      payment
-    );
-
-    setError({
-      status: 500,
-      code: "RAZORPAY_ORDER_MISSING",
-      message:
-        "The server did not return a Razorpay order ID.",
-    });
-
-    return false;
-  }
-
-  if (
-    !Number.isFinite(payment.amount) ||
-    payment.amount <= 0
-  ) {
-    console.error(
-      "[Payment] Invalid amount:",
-      payment.amount
-    );
-
-    setError({
-      status: 500,
-      code: "RAZORPAY_AMOUNT_INVALID",
-      message:
-        "The server returned an invalid payment amount.",
-    });
-
-    return false;
-  }
-
-  console.log(
-    "[Payment] Starting Razorpay Checkout:",
-    {
-      bookingId,
-      keyId,
-      orderId: payment.orderId,
-      amount: payment.amount,
-      currency: payment.currency,
-    }
-  );
-
-  let result;
-
-  try {
-    result = await openRazorpayCheckout({
-      key: keyId,
-
-      orderId: payment.orderId,
-
-      amount: payment.amount,
-
-      currency:
-        payment.currency || "INR",
-
-      name: "HomeCareX",
-
-      description:
-        "Home service booking",
-    });
-  } catch (err) {
-    console.error(
-      "[Payment] Razorpay Checkout error:",
-      err
-    );
-
-    if (
-      err instanceof RazorpayCancelledError
-    ) {
-      setError({
-        status: 0,
-        code: "PAYMENT_CANCELLED",
-        message:
-          "Payment was cancelled. Your booking is saved. Tap Confirm & Pay to try again.",
-      });
-    } else if (
-      err instanceof RazorpayFailedError
-    ) {
-      setError({
-        status: 0,
-        code: "PAYMENT_FAILED",
-        message: err.message,
-      });
-    } else {
-      setError({
-        status: 0,
-        code: "PAYMENT_FAILED",
-        message:
-          "Payment could not be completed. Please try again.",
-      });
-    }
-
-    return false;
-  }
-
-  console.log(
-    "[Payment] Razorpay returned success:",
-    result
-  );
-
-  try {
-    await bookingApi.verifyPayment(
-      bookingId,
-      result
-    );
-
-    console.log(
-      "[Payment] Backend verification succeeded."
-    );
-
-    return true;
-  } catch (err) {
-    console.error(
-      "[Payment] Verification failed:",
-      err
-    );
-
-    const apiErr =
-      err as NormalizedApiError;
-
-    setError({
-      ...apiErr,
-
-      message:
-        `We received your payment ` +
-        `(ref ${result.razorpay_payment_id}) ` +
-        `but could not confirm it yet. ` +
-        `Please don't pay again. Contact support with this reference.`,
-    });
-
-    return false;
-  }
-};
+  const stopSubmitting = () => {
+    inFlight.current = false;
+    setIsSubmitting(false);
+    setClickedWhileProcessing(false);
+  };
 
   const handlePay = async () => {
-    if (!canSubmit || inFlight.current || !online) return;
+    if (inFlight.current) {
+      setClickedWhileProcessing(true);
+      return;
+    }
+    if (!online) return;
     if (!draft.serviceId || !draft.addressId || !draft.date || !draft.slot) return;
 
     inFlight.current = true;
@@ -306,81 +178,221 @@ export default function StepReview() {
     setClickedWhileProcessing(false);
     setError(null);
     setPriceNotice(null);
-    let leaving = false;
+
+    // 1) Re-quote right before paying, straight from the server (cache bypassed).
+    const shownTotal = quote?.total;
+    let fresh: PriceQuote;
+    try {
+      fresh = await requote();
+    } catch (err) {
+      setError(err as NormalizedApiError);
+      stopSubmitting();
+      return;
+    }
+
+    if (fresh.couponError) {
+      setCouponCode(null);
+      setCouponError(couponErrorText(fresh.couponError.code, fresh.couponError.minOrder));
+    }
+    if (shownTotal !== undefined && fresh.total !== shownTotal) {
+      // Stop here: the customer must see the new price and confirm it deliberately.
+      setPriceNotice({ from: shownTotal, to: fresh.total });
+      stopSubmitting();
+      return;
+    }
+
+    const isSdkLoaded = await loadRazorpayScript();
+    if (!isSdkLoaded) {
+      setError({ message: "Failed to load Razorpay SDK. Please check your internet connection." });
+      stopSubmitting();
+      return;
+    }
+
+    // expectedTotal is the total the SERVER quoted, sent only so a later change is caught (409).
+    // While pricing is mocked the real POST /bookings cannot reproduce the mock numbers (and still
+    // rejects coupons), so both are left out; remove that branch once the real endpoints are live.
+    const payload: CreateBookingRequest = {
+      serviceId: draft.serviceId,
+      addressId: draft.addressId,
+      date: draft.date,
+      slot: draft.slot,
+      quantity: draft.quantity,
+      addOns: draft.addOns.map((a) => ({ addOnId: a.id, quantity: a.quantity })),
+      ...(PRICING_IS_MOCK ? {} : { expectedTotal: fresh.total }),
+      ...(!PRICING_IS_MOCK && fresh.coupon ? { couponCode: fresh.coupon.code } : {}),
+    };
 
     const idempotencyKey = draft.getIdempotencyKey(JSON.stringify(payload));
 
     try {
-      // Re-quote right before paying, straight from the server (cache bypassed).
-      const shownTotal = quote?.total;
-      let fresh: PriceQuote;
-      try {
-        fresh = await requote();
-      } catch (err) {
-        setError(err as NormalizedApiError);
-        return;
-      }
+      // 2) Create the booking on the server.
+      const { booking } = await bookingApi.createBooking(payload, idempotencyKey);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const resolvedBookingId: string = (booking as any)._id || (booking as any).id;
 
-      if (fresh.couponError) {
-        setCouponCode(null);
-        setCouponError(couponErrorText(fresh.couponError.code, fresh.couponError.minOrder));
-      }
-      if (shownTotal !== undefined && fresh.total !== shownTotal) {
-        // Stop here: the customer must see the new price and confirm it deliberately.
-        setPriceNotice({ from: shownTotal, to: fresh.total });
-        return;
-      }
+      const goToFailed = (reason: "failed" | "verification" | "network") =>
+        navigate(`${customerPath(`/booking/failed/${resolvedBookingId}`)}?reason=${reason}`, { replace: true });
 
-      // expectedTotal is the total the SERVER quoted, sent only so a later change is caught (409).
-      // While pricing is mocked the real POST /bookings cannot reproduce the mock numbers (and still
-      // rejects coupons), so both are left out; remove that branch once the real endpoints are live.
-      const payload: CreateBookingRequest = {
-        serviceId: draft.serviceId,
-        addressId: draft.addressId,
-        date: draft.date,
-        slot: draft.slot,
-        quantity: draft.quantity,
-        addOns: draft.addOns.map((a) => ({ addOnId: a.id, quantity: a.quantity })),
-        ...(PRICING_IS_MOCK ? {} : { expectedTotal: fresh.total }),
-        ...(!PRICING_IS_MOCK && fresh.coupon ? { couponCode: fresh.coupon.code } : {}),
+      // 3) Create the Razorpay order. Amount is taken from the booking on the server.
+      const orderData = await paymentApi.createOrder(resolvedBookingId);
+
+      const markFailureOnServer = async (reason: string) => {
+        try {
+          await paymentApi.recordAttempt(resolvedBookingId, "FAILED", orderData.orderId, reason);
+        } catch (e) {
+          console.error("Failed to notify backend of payment failure:", e);
+        }
       };
 
-      // 1) Create the booking (and the Razorpay order) on the server.
-      let created;
-      try {
-        created = await bookingApi.createBooking(payload, idempotencyKey);
-      } catch (err) {
-        const apiErr = err as NormalizedApiError;
-        const backStep = ERROR_TO_STEP[apiErr.code];
+      // Short delay before opening Razorpay so the customer can read the status message.
+      const remainingWaitMs = Math.max(0, PRE_POPUP_DELAY_MS - (Date.now() - startedAt));
+      if (remainingWaitMs > 0) {
+        setStatusMessage("Opening Razorpay checkout in a few seconds…");
+        await sleep(remainingWaitMs);
+      }
 
-        if (apiErr.code === "PRICE_CHANGED") {
-          const d = apiErr.details as { expectedTotal?: number; total?: number } | undefined;
-          setPriceNotice({ from: d?.expectedTotal ?? fresh.total, to: d?.total ?? fresh.total });
-          void requote().catch(() => undefined); // refresh the breakdown with the server's numbers
-        } else if (COUPON_ERROR_CODES.includes(apiErr.code)) {
-          setCouponCode(null);
-          setCouponError(apiErr.code === COUPON_ERROR.INVALID ? apiErr.message : couponErrorText(apiErr.code, minOrderOf(apiErr.details)));
-        } else if (apiErr.status === 401) {
-          setError({ ...apiErr, message: "Please log in to confirm your booking. Your details are saved." });
-        } else {
-          setError(apiErr);
+      if (!mounted.current) return;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let rzpInstance: any = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const address = draft.addressSnapshot as any;
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency || "INR",
+        name: "HomeCareX",
+        description: `Payment for ${draft.serviceName ?? "Home Service"}`,
+        order_id: orderData.orderId,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        handler: async function (response: any) {
+          // Payment went through on Razorpay's side: make sure the dismiss callback can't treat it as a cancel.
+          hasExitedRef.current = true;
+          setIsSubmitting(true);
+          setStatusMessage("Verifying your payment with bank…");
+          try {
+            await paymentApi.verify(resolvedBookingId, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+            // The draft is cleared by the success page itself, so the wizard never flashes back to step 1.
+            navigate(customerPath(`/booking/success/${resolvedBookingId}`), { replace: true });
+          } catch (verifyErr) {
+            const e = verifyErr as Partial<NormalizedApiError>;
+            const uncertain = e?.code === "NETWORK_ERROR" || !e?.status;
+            if (!uncertain) await markFailureOnServer(e?.message || "Payment verification failed");
+            goToFailed(uncertain ? "network" : "verification");
+          }
+        },
+        prefill: {
+          name: orderData.prefill?.name || address?.recipientName || address?.name || "",
+          email: orderData.prefill?.email || "",
+          contact: orderData.prefill?.contact || address?.phoneNumber || address?.phone || "",
+        },
+        theme: {
+          color: "#0066FF",
+        },
+        modal: {
+          // Triggered when user clicks "Yes, exit" on Razorpay dialog
+          ondismiss: async function () {
+            if (hasExitedRef.current) return;
+            hasExitedRef.current = true;
+
+            setIsSubmitting(true);
+            setStatusMessage("Payment cancelled…");
+            await markFailureOnServer("Customer closed the Razorpay checkout");
+            forceCloseRazorpayModal();
+            goToFailed("failed");
+          },
+        },
+      };
+
+      rzpInstance = new window.Razorpay(options);
+
+      // Triggered when payment fails inside Razorpay
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      rzpInstance.on("payment.failed", async function (response: any) {
+        retryCountRef.current += 1;
+        const currentAttempts = retryCountRef.current;
+        console.warn(`Payment failed attempt ${currentAttempts}/${MAX_PAYMENT_RETRIES}:`, response.error);
+
+        if (currentAttempts >= MAX_PAYMENT_RETRIES && !hasExitedRef.current) {
+          hasExitedRef.current = true;
+
+          // Remove the Razorpay modal so the customer can't click retry again
+          forceCloseRazorpayModal();
+          try {
+            if (rzpInstance && typeof rzpInstance.close === "function") {
+              rzpInstance.close();
+            }
+          } catch {
+            /* modal already gone */
+          }
+
+          setIsSubmitting(true);
+          setStatusMessage("Maximum retries (3) reached. Payment failed.");
+
+          const reason = response.error?.description || "Payment failed 3 times (Max attempts exceeded)";
+          await markFailureOnServer(reason);
+
+          // Show the failure page (draft is kept so "Retry Payment" works)
+          goToFailed("failed");
         }
-        if (backStep) setStep(backStep);
+      });
+
+      rzpInstance.open();
+    } catch (err) {
+      stopSubmitting();
+      const apiErr = err as NormalizedApiError;
+
+      if (apiErr.code === "PRICE_CHANGED") {
+        const d = apiErr.details as { expectedTotal?: number; total?: number } | undefined;
+        setPriceNotice({ from: d?.expectedTotal ?? fresh.total, to: d?.total ?? fresh.total });
+        void requote().catch(() => undefined); // refresh the breakdown with the server's numbers
         return;
       }
 
-      // 2) Open Razorpay and verify the payment. Stay on this step if the customer cancels or it fails.
-      const paid = await collectPayment(created.booking._id, created.payment);
-      if (!paid) return;
+      if (COUPON_ERROR_CODES.includes(apiErr.code)) {
+        setCouponCode(null);
+        setCouponError(
+          apiErr.code === COUPON_ERROR.INVALID ? apiErr.message : couponErrorText(apiErr.code, minOrderOf(apiErr.details)),
+        );
+        return;
+      }
 
-      // 3) Leave the wizard FIRST. Clearing the draft while it is still mounted makes its step guard
-      // fall back to step 1 and rewrite the URL, cancelling this navigation. The confirmation page
-      // clears the draft once the wizard is gone. `replace` keeps Back from re-opening step 4.
-      leaving = true;
-      navigate(customerPath(`/bookings/${created.booking._id}`), { state: { justBooked: true }, replace: true });
-    } finally {
-      inFlight.current = false;
-      if (!leaving) setIsSubmitting(false);
+      // The saved idempotency key replays the OLD booking (e.g. one created during an earlier failed attempt).
+      // If that booking can't be paid any more, drop the key so the next click creates a fresh booking.
+      if (["HOLD_EXPIRED", "BOOKING_NOT_PAYABLE", "ALREADY_PAID"].includes(apiErr.code)) {
+        draft.resetIdempotency();
+        setError({
+          message:
+            apiErr.code === "ALREADY_PAID"
+              ? apiErr.message
+              : "Your earlier reservation is no longer valid. Please tap Confirm & Pay again to start a fresh one.",
+        });
+        return;
+      }
+
+      const backStep = ERROR_TO_STEP[apiErr.code];
+      if (backStep) {
+        if (SLOT_ERRORS.has(apiErr.code)) {
+          draft.setSlot(null);
+          draft.setNotice(apiErr.code === "INVALID_DATE" ? apiErr.message : SLOT_TAKEN_NOTICE);
+        } else {
+          draft.setNotice(apiErr.message);
+        }
+        setStep(backStep);
+        return;
+      }
+
+      if (apiErr.status === 401) {
+        setError({ ...apiErr, message: "Please log in to confirm your booking. Your details are saved." });
+        return;
+      }
+
+      setError(apiErr.message ? apiErr : { message: "An unexpected error occurred." });
     }
   };
 
@@ -393,7 +405,8 @@ export default function StepReview() {
   }
 
   const quoteReady = Boolean(quote) && !isPlaceholder && !isRefreshing && !isError;
-  const payDisabled = isSubmitting || !quoteReady || !online;
+  // While submitting the button stays clickable so a second tap shows "already processing" instead of nothing.
+  const payDisabled = !quoteReady || !online;
 
   return (
     <div className="min-w-0 space-y-3">
@@ -405,6 +418,31 @@ export default function StepReview() {
       {!online && (
         <div role="status" className="rounded border border-line bg-accent-soft px-3 py-2 text-sm text-ink">
           You're offline. Reconnect to see the latest price and pay.
+        </div>
+      )}
+
+      {isSubmitting && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`flex items-start gap-2.5 rounded border px-3 py-2 text-sm text-ink ${
+            clickedWhileProcessing ? "border-amber-300 bg-amber-50" : "border-line bg-canvas"
+          }`}
+        >
+          <span
+            aria-hidden="true"
+            className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-brand border-t-transparent"
+          />
+          <div>
+            <p className="font-semibold text-brand">
+              {clickedWhileProcessing ? "Your payment is processing" : statusMessage}
+            </p>
+            <p className="text-muted">
+              {clickedWhileProcessing
+                ? "Please wait a moment. You have not been charged twice."
+                : "Connecting to secure payment gateway. Please don't refresh or close."}
+            </p>
+          </div>
         </div>
       )}
 
@@ -491,9 +529,10 @@ export default function StepReview() {
                 type="button"
                 onClick={handlePay}
                 disabled={payDisabled}
+                aria-busy={isSubmitting}
                 className={`min-h-[44px] min-w-0 rounded bg-brand px-4 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 ${FOCUS_RING}`}
               >
-                {isSubmitting ? "Confirming…" : "Confirm & Pay"}
+                {isSubmitting ? "Processing…" : "Confirm & Pay"}
               </button>
             </div>
           </section>
