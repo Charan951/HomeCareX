@@ -10,9 +10,10 @@ import { earningsApi } from "@/services/earningsApi";
 import type { ApiError } from "@/lib/http";
 import type { EarningsSummary } from "@/types/earnings";
 import "./Earnings.css";
+import EarningsHistory from "./EarningsHistory";
+import { inr } from "./earningsFormat";
 
-const inr = (n: number) =>
-  `₹${n.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+
 
 /** Counts up from 0 to `target` once. Skipped if the user prefers reduced motion. */
 function useCountUp(target: number, durationMs = 800): number {
@@ -200,6 +201,7 @@ export default function PartnerEarningsPage() {
       <h1 className="earn-sr-only">Earnings</h1>
       <p className="earn-subtitle">Track what you have earned and what is waiting to be paid out</p>
       {body}
+      {data && <EarningsHistory />}
     </div>
   );
 }

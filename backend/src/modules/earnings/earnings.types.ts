@@ -31,3 +31,30 @@ export interface EarningsSummaryDto {
   /** Earned but not yet paid out (status = pending). */
   pending: number;
 }
+
+/** One ledger line: the earning plus the service it came from (null if the booking is gone). */
+export interface LedgerRowDto extends EarningDto {
+  serviceName: string | null;
+}
+
+export interface LedgerTotalsDto {
+  count: number;
+  gross: number;
+  commission: number;
+  net: number;
+}
+
+/** Net earned on one business day ("YYYY-MM-DD", business timezone). Days with no earnings are filled with 0. */
+export interface LedgerDayDto {
+  date: string;
+  net: number;
+}
+
+/** GET /partner/earnings. `totals` and `series` cover the whole filter, not just the current page. */
+export interface EarningsLedgerDto {
+  currency: 'INR';
+  items: LedgerRowDto[];
+  totals: LedgerTotalsDto;
+  series: LedgerDayDto[];
+  pagination: { page: number; limit: number; total: number; pages: number };
+}
