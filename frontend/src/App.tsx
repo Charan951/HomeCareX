@@ -11,6 +11,7 @@ export const App: React.FC = () => {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AppRoutes />
+        {/* {import.meta.env.DEV && <DevAuthSwitcher />} */}
       </AuthProvider>
     </QueryClientProvider>
   );

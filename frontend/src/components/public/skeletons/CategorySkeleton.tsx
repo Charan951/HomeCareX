@@ -1,27 +1,48 @@
-import React from "react";
+import React from 'react';
 
 const CategorySkeleton: React.FC = () => {
   return (
-    <div className="animate-pulse overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-      {/* Image */}
-      <div className="h-48 w-full bg-gray-200" />
+    <section className="w-full bg-white px-5 py-14 sm:px-6 lg:px-8 lg:py-20">
+      <div className="mx-auto max-w-7xl">
 
-      {/* Content */}
-      <div className="p-5">
-        {/* Category name */}
-        <div className="h-6 w-3/4 rounded bg-gray-200" />
+        {/* Section heading */}
+        <div className="mx-auto mb-10 max-w-2xl text-center">
+          <div className="mx-auto h-6 w-36 animate-pulse rounded-full bg-slate-200" />
 
-        {/* Description */}
-        <div className="mt-3 h-4 w-full rounded bg-gray-200" />
-        <div className="mt-2 h-4 w-5/6 rounded bg-gray-200" />
+          <div className="mx-auto mt-4 h-9 w-80 max-w-full animate-pulse rounded-lg bg-slate-200" />
 
-        {/* Service count */}
-        <div className="mt-4 h-4 w-1/3 rounded bg-gray-200" />
+          <div className="mx-auto mt-3 h-4 w-full max-w-xl animate-pulse rounded bg-slate-200" />
+        </div>
 
-        {/* Link */}
-        <div className="mt-5 h-10 w-32 rounded-lg bg-gray-300" />
+        {/* Cards */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div
+              key={index}
+              className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+            >
+              {/* Image */}
+              <div className="aspect-[4/3] w-full animate-pulse bg-slate-200" />
+
+              {/* Content */}
+              <div className="space-y-3 p-5">
+                <div className="h-5 w-3/4 animate-pulse rounded bg-slate-200" />
+
+                <div className="h-4 w-full animate-pulse rounded bg-slate-200" />
+
+                <div className="h-4 w-5/6 animate-pulse rounded bg-slate-200" />
+
+                <div className="pt-2">
+                  <div className="h-10 w-full animate-pulse rounded-lg bg-slate-200" />
+                </div>
+              </div>
+            </div>
+          ))}
+
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 

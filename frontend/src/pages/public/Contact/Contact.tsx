@@ -130,7 +130,11 @@ const Contact: React.FC = () => {
         </div>
       </section>
 
-      <section className="partner-band" aria-labelledby="partner-band-title">
+      <section
+  id="partner-interest"
+  className="partner-band"
+  aria-labelledby="partner-band-title"
+>
         <div className="contact-shell partner-band__layout">
           <div className="partner-band__copy">
             <p className="contact-eyebrow contact-eyebrow--light"><span />For home-service professionals</p>
