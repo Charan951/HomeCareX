@@ -1,5 +1,7 @@
 import { Routes, Route } from "react-router-dom";
+
 import CustomerLayout from "../layouts/CustomerLayout";
+
 import Dashboard from "../pages/customer/Dashboard";
 import Addresses from "../pages/customer/Addresses";
 import Bookings from "../pages/customer/Bookings";
@@ -14,24 +16,21 @@ import Services from "../pages/customer/Services";
 import Support from "../pages/customer/Support";
 import Tracking from "../pages/customer/Tracking";
 import Wallet from "../pages/customer/Wallet";
+
 import Tickets from "@/pages/customer/Tickets";
 import BookServiceShell from "../pages/customer/Book";
+import EditProfile from "@/pages/customer/Profile/EditProfile";
 
+import BookingSuccess from "../pages/customer/BookingSuccess";
+import BookingFailed from "../pages/customer/BookingFailed";
 /**
- * CustomerRoutes — every route the Customer Dashboard serves, nested inside
- * CustomerLayout (Sidebar/TopBar on desktop, MobileHeader/BottomTabBar on
- * mobile). Mounted once from App.tsx so App.tsx only owns the top-level
- * BrowserRouter, not the full route list — keeps App.tsx readable as the
- * project grows Partner/Admin route groups alongside this one.
+ * CustomerRoutes — every route the Customer Dashboard serves,
+ * nested inside CustomerLayout.
  */
 export default function CustomerRoutes() {
   return (
     <Routes>
-      <Route
-        element={
-<CustomerLayout />
-        }
-      >
+      <Route element={<CustomerLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/addresses" element={<Addresses />} />
         <Route path="/bookings" element={<Bookings />} />
@@ -41,15 +40,17 @@ export default function CustomerRoutes() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/profile" element={<Profile />} />
+         <Route path="/profile/edit" element={<EditProfile />} />
+
         <Route path="/referrals" element={<Referrals />} />
         <Route path="/reviews" element={<Reviews />} />
         <Route path="/services" element={<Services />} />
-
         <Route path="/support" element={<Support />} />
         <Route path="/support/tickets" element={<Tickets />} />
-
         <Route path="/tracking" element={<Tracking />} />
         <Route path="/wallet" element={<Wallet />} />
+          <Route path="/booking/success/:bookingId" element={<BookingSuccess />} />
+  <Route path="/booking/failed/:bookingId" element={<BookingFailed />} />
       </Route>
     </Routes>
   );

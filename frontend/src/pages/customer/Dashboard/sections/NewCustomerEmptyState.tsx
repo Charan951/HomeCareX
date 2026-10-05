@@ -2,10 +2,11 @@ import { Link } from "react-router-dom";
 import { PartyPopper } from "lucide-react";
 import { customerPath } from "@/routes/customerPath";
 import { FOCUS_RING } from "@/components/customer/focusRing";
-import type { Category } from "@/mocks/customerMockData";
+import type { DashboardCategoryDto } from "@/features/customer";
+import CategoryIcon from "./CategoryIcon";
 
 /** Shown instead of the booking-related sections when a customer has never booked. */
-export default function NewCustomerEmptyState({ categories }: { categories: Category[] }) {
+export default function NewCustomerEmptyState({ categories }: { categories: DashboardCategoryDto[] }) {
   return (
     <div className="rounded border border-dashed border-line bg-panel px-6 py-10 text-center">
       <PartyPopper className="mx-auto h-8 w-8 text-brand" aria-hidden="true" />
@@ -20,7 +21,9 @@ export default function NewCustomerEmptyState({ categories }: { categories: Cate
             to={customerPath("/services")}
             className={`rounded border border-line bg-canvas p-3 hover:border-brand ${FOCUS_RING}`}
           >
-            <div className="text-xl">{c.icon}</div>
+            <div className="text-xl">
+              <CategoryIcon icon={c.icon} />
+            </div>
             <div className="mt-1 truncate text-xs font-medium text-ink">{c.name}</div>
           </Link>
         ))}

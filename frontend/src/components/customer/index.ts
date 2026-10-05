@@ -1,9 +1,8 @@
 export { default as Sidebar } from "./Sidebar";
 export { default as SidebarNav } from "./SidebarNav";
-export { default as MobileDrawer } from "./MobileDrawer";
 export { default as TopBar } from "./TopBar";
 export { default as BottomNav } from "./BottomNav";
 export { default as ProfileMenu } from "./ProfileMenu";
 export { default as NotificationBell } from "./NotificationBell";
 export { default as RouteErrorBoundary } from "./RouteErrorBoundary";
-export { LoadingState, EmptyState, ErrorState, OfflineBanner } from "./StateViews";
+export { LoadingState, EmptyState, ErrorState, OfflineBanner, OfflineState } from "./StateViews";

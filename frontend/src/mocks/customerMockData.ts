@@ -24,7 +24,7 @@ export const CATEGORIES: Category[] = [
 
 export interface Service {
   id: string;
-  /** URL-safe identifier used by the booking flow: /customer/book/:serviceSlug */
+  /** Booking slug: matches /customer/book/:serviceSlug and the backend service catalog. */
   slug: string;
   categoryId: string;
   name: string;
@@ -39,9 +39,9 @@ export const SERVICES: Service[] = [
   { id: "svc-2", slug: "sofa-carpet-shampooing", categoryId: "cleaning", name: "Sofa & Carpet Shampooing", price: 899, duration: "1.5 hrs", rating: 4.7, reviewCount: 980 },
   { id: "svc-3", slug: "ac-service-gas-refill", categoryId: "appliance", name: "AC Service & Gas Refill", price: 599, duration: "1 hr", rating: 4.6, reviewCount: 3210 },
   { id: "svc-4", slug: "ro-water-purifier-service", categoryId: "appliance", name: "RO/Water Purifier Service", price: 399, duration: "45 min", rating: 4.5, reviewCount: 1120 },
-  { id: "svc-5", slug: "at-home-spa-for-women", categoryId: "salon", name: "At-Home Spa for Women", price: 1299, duration: "2 hrs", rating: 4.9, reviewCount: 1560 },
+  { id: "svc-5", slug: "at-home-spa-women", categoryId: "salon", name: "At-Home Spa for Women", price: 1299, duration: "2 hrs", rating: 4.9, reviewCount: 1560 },
   { id: "svc-6", slug: "electrician-visit-general", categoryId: "electrical", name: "Electrician Visit (General)", price: 249, duration: "30 min", rating: 4.4, reviewCount: 870 },
-  { id: "svc-7", slug: "room-painting-per-room", categoryId: "painting", name: "Room Painting (per room)", price: 3499, duration: "1 day", rating: 4.6, reviewCount: 430 },
+  { id: "svc-7", slug: "room-painting", categoryId: "painting", name: "Room Painting (per room)", price: 3499, duration: "1 day", rating: 4.6, reviewCount: 430 },
   { id: "svc-8", slug: "general-pest-control", categoryId: "pest", name: "General Pest Control", price: 799, duration: "1 hr", rating: 4.5, reviewCount: 1980 },
   { id: "svc-9", slug: "furniture-assembly", categoryId: "carpentry", name: "Furniture Assembly", price: 349, duration: "1 hr", rating: 4.7, reviewCount: 640 },
 ];
@@ -69,6 +69,7 @@ export interface Booking {
 
 export const BOOKINGS: Booking[] = [
   { id: "BK-10231", service: "Deep Home Cleaning", category: "Home Cleaning", status: "In Progress", scheduledAt: "Today, 2:00 PM", address: "Flat 302, Manjeera Trinity, Kukatpally", partner: { name: "Ramesh K.", rating: 4.8 }, price: 1499, paymentMethod: "UPI" },
+  { id: "BK-10233", service: "Plumbing – Tap & Leak Repair", category: "Electrical & Plumbing", status: "En Route", scheduledAt: "Today, 3:30 PM", address: "Flat 302, Manjeera Trinity, Kukatpally", partner: { name: "Kiran M.", rating: 4.6 }, price: 299, paymentMethod: "Cash on Service" },
   { id: "BK-10228", service: "AC Service & Gas Refill", category: "Appliance Repair & Service", status: "Confirmed", scheduledAt: "Tomorrow, 11:00 AM", address: "Flat 302, Manjeera Trinity, Kukatpally", partner: null, price: 599, paymentMethod: "Card" },
   { id: "BK-10214", service: "At-Home Spa for Women", category: "Salon & Spa", status: "Completed", scheduledAt: "18 Sep, 4:30 PM", address: "Office - WeWork, Hitech City", partner: { name: "Sandhya P.", rating: 4.9 }, price: 1299, paymentMethod: "Wallet" },
   { id: "BK-10201", service: "Electrician Visit (General)", category: "Electrical & Plumbing", status: "Completed", scheduledAt: "10 Sep, 10:00 AM", address: "Flat 302, Manjeera Trinity, Kukatpally", partner: { name: "Suresh N.", rating: 4.4 }, price: 249, paymentMethod: "Cash on Service" },

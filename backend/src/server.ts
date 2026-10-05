@@ -3,6 +3,7 @@ import http from 'http';
 import mongoose from 'mongoose';
 import app from './app';
 import { initSockets } from './sockets';
+import { registerEarningsListeners } from './modules/earnings/earnings.listener';
 import { seedDefaultSettings } from './modules/settings/settings.service';
 import { seedDefaultDesignations } from './modules/designations/designations.service';
 import { seedDefaultCategories } from './modules/categories/categories.service';
@@ -29,6 +30,7 @@ const connectDB = async () => {
 };
 
 connectDB().then(() => {
+  registerEarningsListeners();
   server.listen(PORT, () => {
     console.log(`HomeCareX server running on port ${PORT}`);
   });

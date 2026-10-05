@@ -1,16 +1,20 @@
 import { Routes, Route } from "react-router-dom";
 import PartnerLayout from "../layouts/PartnerLayout";
 import PartnerDashboard from "../pages/partner/Dashboard";
+import ProfileMenu from "../components/partner/ProfileMenu";
 import PartnerAvailabilityPage from "../pages/partner/Availability";
 import PartnerWorkingHoursPage from "../pages/partner/WorkingHours";
 import PartnerBlackoutDatesPage from "../pages/partner/BlackoutDates";
 import PartnerSchedulePage from "../pages/partner/Schedule";
+import PartnerEarningsPage from "../pages/partner/Earnings";
+import "../styles/calm-overrides.css";
+import "../styles/mobile-plain.css";
 
 // Placeholder for Devangam's pages – swap each `element` when the real page lands.
 const Placeholder = ({ title }: { title: string }) => (
-  <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-    <h2 className="text-lg font-semibold text-[#4338ca]">{title}</h2>
-    <p className="mt-1 text-sm text-slate-500">This page is coming soon.</p>
+  <div className="rounded border border-dashed border-line bg-panel p-8 text-center">
+    <h2 className="text-lg font-semibold text-brand">{title}</h2>
+    <p className="mt-1 text-sm text-muted">This page is coming soon.</p>
   </div>
 );
 
@@ -31,7 +35,7 @@ export const PARTNER_PAGES: { path: string; title: string }[] = [
   { path: "services/radius", title: "Service radius" },
   { path: "services/training", title: "Training & certifications" },
   // Earnings (5)
-  { path: "earnings", title: "Earnings" },
+  
   { path: "earnings/payouts", title: "Payout history" },
   { path: "earnings/incentives", title: "Incentives" },
   { path: "earnings/statements", title: "Earnings statements" },
@@ -70,10 +74,16 @@ export default function PartnerRoutes() {
         <Route path="blackout-dates" element={<PartnerBlackoutDatesPage />} />
         <Route path="availability/blackout-dates" element={<PartnerBlackoutDatesPage />} />
         <Route path="schedule" element={<PartnerSchedulePage />} />
+         <Route path="earnings" element={<PartnerEarningsPage />} />
         {PARTNER_PAGES.map(({ path, title }) => (
-          <Route key={path} path={path} element={<Placeholder title={title} />} />
+          <Route
+            key={path}
+            path={path}
+            element={path === "profile" ? <ProfileMenu /> : <Placeholder title={title} />}
+          />
         ))}
         <Route path="*" element={<Placeholder title="Page not found" />} />
+        
       </Route>
     </Routes>
   );
