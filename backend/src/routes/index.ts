@@ -16,6 +16,7 @@ import { notificationsRoutes } from '../modules/notifications/notifications.rout
 import { categoriesRoutes } from '../modules/categories/categories.routes';
 import { servicesRoutes } from '../modules/services/services.routes';
 import { catalogRoutes } from '../modules/catalog/catalog.routes';
+import { incentivesRoutes } from '../modules/incentives/incentives.routes';
 
 import leadsRoutes from '../modules/leads/leads.routes';
 
@@ -57,5 +58,5 @@ rootRouter.use('/partner/earnings', earningsRoutes); // GET /partner/earnings/su
 rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, GET /addresses/serviceability
 rootRouter.use('/payments', paymentRoutes); // POST /payments/create-order, /verify, /attempt
 rootRouter.use(reviewsRoutes); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
-
+rootRouter.use('/partner/incentives', incentivesRoutes); // GET /partner/incentives, GET /partner/incentives/:id
 export default rootRouter;
