@@ -220,6 +220,15 @@ const contact = {
 
 /* =========================================================
    NAVIGATION
+========================================================= */
+
+const navItems = [
+  { to: "/", label: "Home", end: true },
+  { to: "/services", label: "Services", end: false },
+  { to: "/about", label: "About", end: true },
+  { to: "/contact", label: "Contact", end: true },
+];
+
 const PhoneIcon: React.FC = () => (
   <svg
     width="15"
@@ -272,6 +281,7 @@ const ClockIcon: React.FC = () => (
 
 /* =========================================================
    HEADER COMPONENT
+========================================================= */
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -289,6 +299,22 @@ const Header: React.FC = () => {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+
+  const getLinkClass = (itemTo: string, end?: boolean) => {
+    const currentPath = location.pathname;
+
+    // Strict check: About is only active when on /about, never on /faq
+    if (itemTo === "/about") {
+      return `hd-link ${currentPath === "/about" ? "is-active" : ""}`;
+    }
+
+    if (itemTo === "/" || end) {
+      return `hd-link ${currentPath === itemTo ? "is-active" : ""}`;
+    }
+
+    const isActive = currentPath === itemTo || currentPath.startsWith(`${itemTo}/`);
+    return `hd-link ${isActive ? "is-active" : ""}`;
   };
 
   /* =======================================================
