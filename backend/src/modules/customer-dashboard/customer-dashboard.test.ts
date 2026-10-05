@@ -80,7 +80,7 @@ const categories = [
   { _id: CAT_CLEAN, name: 'Home Cleaning', slug: 'home-cleaning', icon: '🧹', sortOrder: 1, active: true },
   { _id: CAT_OFF, name: 'Hidden', slug: 'hidden', icon: '🙈', sortOrder: 0, active: false },
 ];
-const svc = (name: string, categoryId: Types.ObjectId, bookingsCount: number, ratingAvg: number, isActive = true) => ({
+const svc = (name: string, categoryId: Types.ObjectId, bookingsCount: number, ratingAvg: number, active = true) => ({
   _id: oid(),
   name,
   slug: name.toLowerCase().replace(/\W+/g, '-'),
@@ -91,7 +91,7 @@ const svc = (name: string, categoryId: Types.ObjectId, bookingsCount: number, ra
   ratingAvg,
   ratingCount: 10,
   bookingsCount,
-  isActive,
+  active,
   internalCostPrice: 123, // must never be returned
 });
 const services = [

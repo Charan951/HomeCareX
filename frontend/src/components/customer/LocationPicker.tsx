@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { Pin3D } from "./TopBarIcons";
 import { Briefcase, Check, ChevronDown, Home, MapPin, Plus, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
 import { customerPath } from "@/routes/customerPath";
@@ -64,9 +65,9 @@ export default function LocationPicker() {
         aria-expanded={open}
         aria-controls="topbar-address-menu"
         aria-label={current ? `Service address: ${current.label}, ${line}. Change address` : "Choose a service address"}
-        className={clsx("location-picker-trigger flex min-w-0 max-w-[380px] items-center gap-2 rounded-xl px-1.5 py-1.5 text-left transition-all duration-200 hover:bg-canvas active:scale-[.98]", FOCUS_RING)}
+        className={clsx("location-picker-trigger flex min-w-0 max-w-[380px] items-center gap-2.5 rounded-full border border-line bg-white py-1 pl-1 pr-3.5 text-left transition-colors duration-200 hover:border-brand/30 hover:bg-brand-soft/40", FOCUS_RING)}
       >
-        <span className="location-picker-pin flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand shadow-sm"><MapPin className="h-4 w-4" aria-hidden="true" /></span>
+        <span className="location-picker-pin flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand"><Pin3D className="h-[22px] w-[22px]" /></span>
         <span className="min-w-0 flex-1">
           <span className="mb-0.5 flex min-w-0 items-center gap-1 text-xs font-medium leading-tight text-muted">
             <span className="shrink-0">Deliver to</span>

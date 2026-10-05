@@ -5,9 +5,9 @@ import UpcomingBookingCard from "./UpcomingBookingCard";
 export default function UpcomingBookings({ bookings }: { bookings: DashboardBookingDto[] }) {
   return (
     <ul className="divide-y divide-line">
-      {bookings.map((b) => (
+      {bookings.map((b, i) => (
         <li key={b.id}>
-          <UpcomingBookingCard booking={b} />
+          <UpcomingBookingCard booking={b} index={i} />
         </li>
       ))}
     </ul>

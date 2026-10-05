@@ -13,8 +13,9 @@ import { adminDashboardRoutes } from '../modules/admin-dashboard/admin-dashboard
 import { settingsRoutes } from '../modules/settings/settings.routes';
 import { designationsRoutes } from '../modules/designations/designations.routes';
 import { notificationsRoutes } from '../modules/notifications/notifications.routes';
-import { categoriesRoutes, categoriesPublicRoutes } from '../modules/categories/categories.routes';
-import { servicesRoutes, servicesPublicRoutes } from '../modules/services/services.routes';
+import { categoriesRoutes } from '../modules/categories/categories.routes';
+import { servicesRoutes } from '../modules/services/services.routes';
+import { catalogRoutes } from '../modules/catalog/catalog.routes';
 
 import leadsRoutes from '../modules/leads/leads.routes';
 
@@ -33,8 +34,7 @@ rootRouter.use('/admin/settings', settingsRoutes); // GET /admin/settings, PUT /
 rootRouter.use('/admin/designations', designationsRoutes); // GET, POST, PATCH /:id, DELETE /:id
 rootRouter.use('/admin/categories', categoriesRoutes); // GET, POST, PATCH /:id, DELETE /:id
 rootRouter.use('/admin/services', servicesRoutes); // GET, GET /:id, POST, PATCH /:id, DELETE /:id
-rootRouter.use('/categories', categoriesPublicRoutes); // GET /categories (active only)
-rootRouter.use('/services', servicesPublicRoutes); // GET /services?category=&q=, GET /services/:idOrSlug
+rootRouter.use(catalogRoutes); // PUBLIC: GET /categories, GET /services?q&category&rating&minPrice&maxPrice&duration&availability&sort&page&limit, GET /services/:idOrSlug
 rootRouter.use('/notifications', notificationsRoutes); // GET /notifications, PATCH /:id/read, PATCH /read-all
 rootRouter.use('/admin', auditRoutes); // GET /admin/audit-logs
 

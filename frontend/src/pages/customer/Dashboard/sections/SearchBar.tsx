@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Mic, Search } from "lucide-react";
 import clsx from "clsx";
 import { customerPath } from "@/routes/customerPath";
 import { FOCUS_RING } from "@/components/customer/focusRing";
+import { useVoiceSearch } from "@/hooks/useVoiceSearch";
 import type { DashboardServiceDto } from "@/features/customer";
 import CategoryIcon from "./CategoryIcon";
 
@@ -56,6 +57,16 @@ export default function SearchBar({ services }: { services: DashboardServiceDto[
     navigate(q ? `${customerPath("/services")}?q=${encodeURIComponent(q)}` : customerPath("/services"));
   }
 
+  // Voice: words appear in the box as you speak; when you stop, we open the full results for them.
+  const voice = useVoiceSearch({
+    onTranscript: (text) => setQuery(text),
+    onFinal: (text) => {
+      setQuery(text);
+      setOpen(false);
+      navigate(`${customerPath("/services")}?q=${encodeURIComponent(text)}`);
+    },
+  });
+
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     goToResults();
@@ -79,12 +90,12 @@ export default function SearchBar({ services }: { services: DashboardServiceDto[
   }
 
   return (
-    <div ref={wrapperRef} className="relative mt-3">
-      <form onSubmit={onSubmit} role="search">
+    <div ref={wrapperRef} className="relative mt-4">
+      <form onSubmit={onSubmit} role="search" className="relative">
         <label htmlFor={inputId} className="sr-only">
           Search for a service
         </label>
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
         <input
           id={inputId}
           type="search"
@@ -101,9 +112,30 @@ export default function SearchBar({ services }: { services: DashboardServiceDto[
           }}
           onFocus={() => setOpen(true)}
           onKeyDown={onKeyDown}
-          placeholder="Search for a service, e.g. AC repair"
-          className={`w-full rounded border border-line bg-panel py-2.5 pl-9 pr-3 text-sm text-ink placeholder:text-muted ${FOCUS_RING}`}
+          placeholder={voice.listening ? "Listening…" : (voice.error ?? "Search for a service, e.g. AC repair")}
+          className={`w-full rounded-2xl border border-white/20 bg-white py-3.5 pl-11 text-sm text-ink shadow-[0_10px_28px_rgba(20,15,80,.25)] ${voice.error && !voice.listening ? "placeholder:text-danger" : "placeholder:text-muted"} ${voice.supported ? "pr-40" : "pr-24 sm:pr-28"} ${FOCUS_RING}`}
         />
+        {voice.supported && (
+          <button
+            type="button"
+            onClick={voice.toggle}
+            aria-pressed={voice.listening}
+            aria-label={voice.listening ? "Stop voice search" : "Search by voice"}
+            className={clsx(
+              "absolute right-[6.3rem] top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full transition-colors",
+              voice.listening ? "bg-danger text-white ring-4 ring-danger/25" : "bg-brand-soft text-brand hover:bg-brand/10",
+              FOCUS_RING,
+            )}
+          >
+            <Mic className={clsx("h-[18px] w-[18px]", voice.listening && "motion-safe:animate-pulse")} aria-hidden="true" />
+          </button>
+        )}
+        <button
+          type="submit"
+          className="absolute right-1.5 top-1/2 min-h-[40px] -translate-y-1/2 rounded-xl bg-accent px-4 text-sm font-semibold text-ink transition-transform hover:scale-[1.03] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white active:scale-95"
+        >
+          Search
+        </button>
       </form>
 
       {open && q && (
@@ -111,7 +143,7 @@ export default function SearchBar({ services }: { services: DashboardServiceDto[
           id={listId}
           role="listbox"
           aria-label="Matching services"
-          className="absolute z-20 mt-1 w-full overflow-hidden rounded border border-line bg-panel shadow-lg"
+          className="absolute z-20 mt-2 w-full overflow-hidden rounded-2xl border border-line bg-panel text-ink shadow-xl"
         >
           {results.map((s, i) => (
             <li key={s.id} id={`${listId}-${i}`} role="option" aria-selected={i === activeIndex}>
@@ -148,6 +180,11 @@ export default function SearchBar({ services }: { services: DashboardServiceDto[
           </li>
         </ul>
       )}
+
+      {/* Spoken status for screen readers only: nothing is added to the layout while listening. */}
+      <p role="status" aria-live="polite" className="sr-only">
+        {voice.listening ? "Listening, speak now" : (voice.error ?? "")}
+      </p>
     </div>
   );
 }

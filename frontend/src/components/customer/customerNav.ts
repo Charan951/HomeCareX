@@ -37,7 +37,7 @@ export const SIDEBAR_GROUPS: CustomerNavGroup[] = [
   {
     heading: "Home",
     items: [
-      { label: "Dashboard", to: customerPath(), icon: LayoutDashboard, end: true },
+      { label: "Overview", to: customerPath(), icon: LayoutDashboard, end: true },
       { label: "Categories", to: customerPath("/categories"), icon: LayoutGrid },
       { label: "Services", to: customerPath("/services"), icon: Wrench },
     ],

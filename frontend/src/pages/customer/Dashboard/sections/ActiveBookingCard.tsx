@@ -1,9 +1,10 @@
 import { Link } from "react-router-dom";
-import { ChevronRight, Navigation } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import clsx from "clsx";
 import { customerPath } from "@/routes/customerPath";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import { statusBadgeClass } from "@/utils/statusBadge";
+import BookingThumb from "./BookingThumb";
 import { bookingStatusLabel, formatScheduled, type DashboardBookingDto } from "@/features/customer";
 
 const TOTAL_STEPS = 4;
@@ -23,7 +24,7 @@ function statusHint(b: DashboardBookingDto): string {
  */
 export default function ActiveBookingCard({ bookings }: { bookings: DashboardBookingDto[] }) {
   return (
-    <section aria-labelledby="active-bookings-title" className="rounded-lg border border-line bg-panel shadow-sm">
+    <section aria-labelledby="active-bookings-title" className="rounded-[20px] border border-white bg-white shadow-[0_9px_26px_rgba(30,27,46,.07)]">
       <div className="flex items-center justify-between px-3 pb-2 pt-4 sm:px-5">
         <h2 id="active-bookings-title" className="flex items-center gap-2 text-base font-semibold text-ink">
           <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
@@ -39,7 +40,7 @@ export default function ActiveBookingCard({ bookings }: { bookings: DashboardBoo
       </div>
 
       <ul className="divide-y divide-line">
-        {bookings.map((b) => {
+        {bookings.map((b, bi) => {
           const label = bookingStatusLabel(b.status);
           return (
             <li key={b.id}>
@@ -47,12 +48,7 @@ export default function ActiveBookingCard({ bookings }: { bookings: DashboardBoo
                 to={`${customerPath("/tracking")}?booking=${encodeURIComponent(b.id)}`}
                 className={clsx("flex items-center gap-3 px-3 py-3.5 transition-colors hover:bg-canvas sm:px-5 sm:py-4", FOCUS_RING)}
               >
-                <span
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-soft sm:h-11 sm:w-11"
-                  aria-hidden="true"
-                >
-                  <Navigation className="h-5 w-5 text-brand" />
-                </span>
+                <BookingThumb serviceName={b.serviceName} index={bi} className="h-12 w-12 rounded-2xl sm:h-14 sm:w-14" />
 
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-col items-start gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
@@ -69,7 +65,11 @@ export default function ActiveBookingCard({ bookings }: { bookings: DashboardBoo
                     className="mt-2.5 flex gap-1"
                   >
                     {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-                      <span key={i} className={clsx("h-1.5 flex-1 rounded-full", i < b.progressStep ? "bg-brand" : "bg-line")} />
+                      <span
+                        key={i}
+                        style={{ "--i": i } as React.CSSProperties}
+                        className={clsx("h-1.5 flex-1 rounded-full", i < b.progressStep ? "bar-fill bg-brand" : "bg-line")}
+                      />
                     ))}
                   </span>
                 </span>
