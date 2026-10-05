@@ -20,6 +20,8 @@ export default function BookServiceShell() {
   const slot = useBookingDraftStore((s) => s.slot);
   const setStep = useBookingDraftStore((s) => s.setStep);
   const clearDraft = useBookingDraftStore((s) => s.clearDraft);
+  const notice = useBookingDraftStore((s) => s.notice);
+  const setNotice = useBookingDraftStore((s) => s.setNotice);
 
   // A draft belongs to one service. Opening a different service's wizard starts clean.
   const draftIsForOtherService = draftSlug !== null && draftSlug !== serviceSlug;

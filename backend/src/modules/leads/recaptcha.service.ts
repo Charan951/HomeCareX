@@ -44,6 +44,11 @@ const verifyToken = (secret: string, token: string, remoteIp?: string) =>
 export const verifyLeadCaptcha = async (token: string | undefined, remoteIp?: string): Promise<void> => {
   const secret = process.env.RECAPTCHA_SECRET_KEY;
   if (!secret) {
+    // Local development without keys: allow the lead through (production must set the key).
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('RECAPTCHA_SECRET_KEY is not set; skipping CAPTCHA check (development only).');
+      return;
+    }
     console.error('RECAPTCHA_SECRET_KEY is not configured.');
     throw new HttpError(503, 'Enquiry validation is temporarily unavailable. Please try again later.', 'CAPTCHA_UNAVAILABLE');
   }

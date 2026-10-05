@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAvailableCoupons, useBookingDraftStore, useQuote, useValidateCoupon } from "@/features/booking";
 import { FOCUS_RING } from "@/components/customer/focusRing";
@@ -16,9 +16,11 @@ import { formatINR } from "./formatMoney";
 
 const ERROR_TO_STEP: Record<string, number> = {
   SERVICE_NOT_FOUND: 1,
+  ADDON_NOT_FOUND: 1,
   ADDRESS_NOT_SERVICEABLE: 2,
   ADDRESS_NOT_FOUND: 2,
   SLOT_UNAVAILABLE: 3,
+  SLOT_BUSY: 3,
   INVALID_DATE: 3,
 };
 
@@ -296,10 +298,17 @@ export default function StepReview() {
     if (!draft.serviceId || !draft.addressId || !draft.date || !draft.slot) return;
 
     inFlight.current = true;
+    hasExitedRef.current = false;
+    retryCountRef.current = 0;
+    const startedAt = Date.now();
     setIsSubmitting(true);
+    setStatusMessage("Processing your payment. Please wait a moment…");
+    setClickedWhileProcessing(false);
     setError(null);
     setPriceNotice(null);
     let leaving = false;
+
+    const idempotencyKey = draft.getIdempotencyKey(JSON.stringify(payload));
 
     try {
       // Re-quote right before paying, straight from the server (cache bypassed).

@@ -10,6 +10,14 @@ export interface BookingAddOn {
   name?: string;
 }
 
+/** The Idempotency-Key for one exact booking request. Kept in the (persisted) draft so a page
+ *  refresh or a dropped connection re-sends the SAME key and the server replays the first booking. */
+export interface DraftIdempotency {
+  /** JSON of the request body the key belongs to. A different body needs a different key. */
+  signature: string;
+  key: string;
+}
+
 export interface BookingDraftState {
   serviceId: string | null;
   serviceSlug: string | null;
@@ -26,6 +34,13 @@ export interface BookingDraftState {
   slot: string | null;
   couponCode: string | null;
   currentStep: number;
+  /** One-off message shown above the stepper after Step 4 sends the customer back (not persisted). */
+  idempotency: DraftIdempotency | null;
+  notice: string | null;
+  setNotice: (notice: string | null) => void;
+  /** Returns the key for this request body, creating and saving a new one only if the body changed. */
+  getIdempotencyKey: (signature: string) => string;
+  resetIdempotency: () => void;
   setServiceDetails: (
     serviceId: string,
     serviceSlug: string,
@@ -58,6 +73,8 @@ const initialState = {
   slot: null as string | null,
   couponCode: null as string | null,
   currentStep: 1,
+  idempotency: null as DraftIdempotency | null,
+  notice: null as string | null,
 };
 
 export const useBookingDraftStore = create<BookingDraftState>()(
@@ -82,6 +99,15 @@ export const useBookingDraftStore = create<BookingDraftState>()(
       setSlot: (slot) => set({ slot }),
       setCouponCode: (couponCode) => set({ couponCode }),
       setStep: (step) => set({ currentStep: Math.min(4, Math.max(1, step)) }),
+      setNotice: (notice) => set({ notice }),
+      getIdempotencyKey: (signature) => {
+        const existing = get().idempotency;
+        if (existing && existing.signature === signature) return existing.key;
+        const key = crypto.randomUUID();
+        set({ idempotency: { signature, key } });
+        return key;
+      },
+      resetIdempotency: () => set({ idempotency: null }),
       clearDraft: () => set({ ...initialState }),
       getFirstIncompleteStep: () => {
         const s = get();
@@ -109,6 +135,7 @@ export const useBookingDraftStore = create<BookingDraftState>()(
         slot: state.slot,
         couponCode: state.couponCode,
         currentStep: state.currentStep,
+        idempotency: state.idempotency,
       }),
     }
   )

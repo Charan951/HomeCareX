@@ -4,6 +4,7 @@ import AdminLayout from '@/layouts/AdminLayout';
 import { RequirePermission } from '@/components/admin/PermissionGate';
 
 import AdminDashboardPage from '@/pages/admin/Dashboard';
+import AdminLeadsPage from '@/pages/admin/Leads';
 import AdminBookingsPage from '@/pages/admin/Bookings';
 import AdminCustomersPage from '@/pages/admin/Customers';
 import AdminPartnersPage from '@/pages/admin/Partners';
@@ -40,6 +41,7 @@ interface AdminRoute {
 export const adminRoutes: AdminRoute[] = [
   { path: '', element: <AdminDashboardPage /> },
   // Operations
+  { path: 'leads', element: <AdminLeadsPage /> },
   { path: 'bookings', element: <AdminBookingsPage /> },
   { path: 'customers', element: <AdminCustomersPage /> },
   { path: 'partners', element: <AdminPartnersPage /> },

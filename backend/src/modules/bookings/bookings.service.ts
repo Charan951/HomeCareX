@@ -94,6 +94,25 @@ export const BookingService = {
     return { serviceId, date, slots };
   },
 
+  /**
+   * Fast real-time slot pre-check before advancing steps or paying
+   */
+  async checkSlotAvailability(serviceId: string, date: string, slot: string): Promise<SlotAvailability> {
+    assertBookableDate(date);
+    if (hasSlotStarted(date, slot)) {
+      throw new AppError(409, 'SLOT_UNAVAILABLE', 'Selected slot is no longer available');
+    }
+    const capacity = await bookingSettings.getSlotCapacity(serviceId);
+    const taken = await bookingsRepository.countActiveForSlot(serviceId, date, slot);
+    const remaining = Math.max(capacity - taken, 0);
+
+    if (remaining <= 0) {
+      throw new AppError(409, 'SLOT_UNAVAILABLE', 'Selected slot is no longer available');
+    }
+
+    return { slot, available: true, remaining };
+  },
+
   async createBooking(customerId: string, input: CreateBookingInput, idempotencyKey: string | undefined) {
     if (!idempotencyKey || idempotencyKey.length > 200) {
       throw new AppError(400, 'IDEMPOTENCY_KEY_REQUIRED', 'An Idempotency-Key header is required to create a booking');
@@ -138,7 +157,7 @@ export const BookingService = {
 
     assertBookableDate(input.date);
     if (hasSlotStarted(input.date, input.slot)) {
-      throw new AppError(409, 'SLOT_UNAVAILABLE', 'That time slot has already started. Please pick another slot.');
+      throw new AppError(409, 'SLOT_UNAVAILABLE', 'Selected slot is no longer available');
     }
 
     let addressSnapshot: ResolvedAddress;
@@ -195,7 +214,7 @@ export const BookingService = {
         await bookingsRepository.releaseStaleHolds(input.serviceId, input.date, input.slot, now);
         const seat = await bookingsRepository.findFreeSeat(input.serviceId, input.date, input.slot, capacity);
         if (seat === null) {
-          throw new AppError(409, 'SLOT_UNAVAILABLE', 'That slot has just been booked. Please pick another time.');
+          throw new AppError(409, 'SLOT_UNAVAILABLE', 'Selected slot is no longer available');
         }
         return bookingsRepository.create({
           customerId: new Types.ObjectId(customerId),
@@ -254,7 +273,7 @@ export const BookingService = {
         if (raced) return raced;
       }
       if (isDuplicateKey(err, 'uniq_active_slot_seat')) {
-        throw new AppError(409, 'SLOT_UNAVAILABLE', 'That slot has just been booked. Please pick another time.');
+        throw new AppError(409, 'SLOT_UNAVAILABLE', 'Selected slot is no longer available');
       }
       throw err;
     }

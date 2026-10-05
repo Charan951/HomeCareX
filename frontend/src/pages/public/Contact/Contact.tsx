@@ -95,7 +95,7 @@ const Contact: React.FC = () => {
             <p className="contact-eyebrow"><span />Frequently asked questions</p>
             <h2 id="contact-faq-title">Still have questions?</h2>
             <p>Find answers about HomeCareX services and getting started.</p>
-            <Link to="/#faqs" className="contact-faq__link">View FAQs <ArrowRight aria-hidden="true" size={16} /></Link>
+            <Link to="/faq" className="contact-faq__link">View FAQs <ArrowRight aria-hidden="true" size={16} /></Link>
           </div>
         </div>
       </section>
@@ -130,7 +130,11 @@ const Contact: React.FC = () => {
         </div>
       </section>
 
-      <section className="partner-band" aria-labelledby="partner-band-title">
+      <section
+  id="partner-interest"
+  className="partner-band"
+  aria-labelledby="partner-band-title"
+>
         <div className="contact-shell partner-band__layout">
           <div className="partner-band__copy">
             <p className="contact-eyebrow contact-eyebrow--light"><span />For home-service professionals</p>

@@ -71,6 +71,34 @@ export function ErrorState({
   );
 }
 
+interface OfflineStateProps {
+  message?: string;
+  onRetry?: () => void;
+}
+
+/** Full-block state for "no connection and nothing cached to show". */
+export function OfflineState({
+  message = "Check your internet connection and try again.",
+  onRetry,
+}: OfflineStateProps) {
+  return (
+    <div role="alert" className="flex flex-col items-center gap-2 rounded border border-line bg-panel px-6 py-12 text-center">
+      <WifiOff className="h-8 w-8 text-muted" aria-hidden="true" />
+      <p className="font-medium text-ink">You're offline</p>
+      <p className="max-w-sm text-sm text-muted">{message}</p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className={`mt-2 min-h-[44px] rounded bg-brand px-4 text-sm font-medium text-white hover:opacity-90 ${FOCUS_RING}`}
+        >
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** Slim banner shown under the top bar while the browser is offline. */
 export function OfflineBanner() {
   const online = useOnlineStatus();

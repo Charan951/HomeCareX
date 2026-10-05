@@ -25,10 +25,19 @@ export const contactLeadSchema = z.object({
     .max(1000, 'Message must be 1000 characters or fewer'),
   source: z.literal('contact'),
   honeypot: z.string().trim().optional(),
+  recaptchaToken: z.string().max(4096).optional(),
 });
 
 export const partnerLeadSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address')
+    .refine((value) => value.toLowerCase().endsWith('@gmail.com'), {
+      message: 'Please use a Gmail address ending in @gmail.com',
+    }),
   phone: z
     .string()
     .trim()
@@ -40,6 +49,7 @@ export const partnerLeadSchema = z.object({
   skills: z.string().trim().min(1, 'Skills are required'),
   source: z.literal('partner'),
   honeypot: z.string().trim().optional(),
+  recaptchaToken: z.string().max(4096).optional(),
 });
 
 export const publicLeadSchema = z.union([contactLeadSchema, partnerLeadSchema]);

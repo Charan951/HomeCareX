@@ -10,6 +10,18 @@ export const bookingsController = {
     res.json({ success: true, data: result });
   },
 
+  async checkSlot(req: Request, res: Response) {
+    const serviceId = (req.params.id || req.body.serviceId || req.query.serviceId) as string;
+    const date = (req.query.date || req.body.date) as string;
+    const slot = (req.query.slot || req.body.slot) as string;
+    const result = await BookingService.checkSlotAvailability(serviceId, date, slot);
+    res.status(200).json({
+      success: true,
+      message: 'Slot is available',
+      data: result,
+    });
+  },
+
   async createBooking(req: Request, res: Response) {
     const customerId = (req as any).user.id || (req as any).user._id;
     const idempotencyKey = req.header('Idempotency-Key');

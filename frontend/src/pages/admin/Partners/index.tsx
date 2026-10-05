@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-
+import { useUIStore } from "@/store/useUIStore";
 import DataTable, {
   Column,
 } from "../../../components/tables/DataTable";
@@ -13,7 +13,9 @@ import {
 import "./index.css";
 
 const AdminPartnersPage: React.FC = () => {
-  const [search, setSearch] = useState("");
+   // Search text comes from the navbar search bar
+  const search = useUIStore((state) => state.pageSearch);
+  const setSearch = useUIStore((state) => state.setPageSearch);
   const [kycStatus, setKycStatus] = useState("");
   const [accountStatus, setAccountStatus] = useState("");
   const [category, setCategory] = useState("");
@@ -272,21 +274,7 @@ const AdminPartnersPage: React.FC = () => {
         className="partners-filters"
         aria-label="Partner filters"
       >
-        <div className="partners-search">
-          <label htmlFor="partner-search">
-            Search partners
-          </label>
-
-          <input
-            id="partner-search"
-            type="search"
-            value={search}
-            placeholder="Search name, email, phone or city"
-            onChange={(event) =>
-              setSearch(event.target.value)
-            }
-          />
-        </div>
+        
 
         <div className="partners-filter-grid">
           <div className="partner-filter">

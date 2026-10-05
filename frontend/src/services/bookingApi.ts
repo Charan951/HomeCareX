@@ -4,6 +4,7 @@ import type {
   BookingView,
   CreateBookingRequest,
   CreateBookingResponse,
+  SlotAvailability,
   SlotsResponse,
 } from "@/types/booking";
 
