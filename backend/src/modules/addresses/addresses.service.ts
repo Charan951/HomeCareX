@@ -44,6 +44,12 @@ class AddressesService {
     return rows.map((r) => this.toView(r));
   }
 
+  /** The customer's default address, else their newest one (null when they have none). */
+  async getDefault(customerId: string): Promise<AddressView | null> {
+    const [first] = await addressesRepository.listByCustomer(customerId);
+    return first ? this.toView(first) : null;
+  }
+
   async create(customerId: string, input: CreateAddressInput): Promise<AddressView> {
     if ((await addressesRepository.countByCustomer(customerId)) >= MAX_SAVED_ADDRESSES) {
       throw new AppError(409, 'ADDRESS_LIMIT_REACHED', `You can save up to ${MAX_SAVED_ADDRESSES} addresses.`);

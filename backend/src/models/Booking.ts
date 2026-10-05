@@ -69,6 +69,9 @@ export interface IBooking extends Document {
   status: BookingStatus;
   statusHistory: StatusHistoryItem[];
   paymentStatus: BookingPaymentStatus;
+  /** Razorpay order/payment refs for the customer checkout; signature is never sent to clients. */
+  paymentDetails?: { orderId?: string; paymentId?: string; signature?: string; status?: string; paidAt?: Date };
+  cancellationReason?: string;
   offers: Array<{ partnerId: Types.ObjectId; offeredAt: Date; expiresAt: Date; response: 'pending' | 'accepted' | 'rejected' | 'expired' }>;
   otpCodes?: { start?: string; end?: string };
   slotSeat?: number;
@@ -160,6 +163,14 @@ const BookingSchema = new Schema<IBooking>(
       default: BOOKING_PAYMENT_STATUS.PENDING,
       index: true,
     },
+    paymentDetails: {
+      orderId: { type: String, trim: true },
+      paymentId: { type: String, trim: true },
+      signature: { type: String, trim: true },
+      status: { type: String, trim: true },
+      paidAt: { type: Date },
+    },
+    cancellationReason: { type: String, trim: true },
     offers: { type: [OfferSchema], default: [] },
     /** Start/end verification codes; never returned to clients by default. */
     otpCodes: {

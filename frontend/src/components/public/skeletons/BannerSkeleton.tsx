@@ -1,27 +1,29 @@
-import React from "react";
+import React from 'react';
 
 const BannerSkeleton: React.FC = () => {
   return (
-    <section className="bg-white py-16">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="animate-pulse overflow-hidden rounded-3xl bg-gray-200">
-          <div className="min-h-[320px] p-8 sm:p-12 lg:p-16">
+    <section className="w-full bg-white px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
+      <div className="mx-auto max-w-7xl">
+        <div className="rounded-3xl border border-slate-200 bg-slate-50 px-6 py-12 sm:px-10 lg:px-16">
+
+          <div className="mx-auto max-w-3xl text-center">
 
             {/* Small label */}
-            <div className="h-4 w-28 rounded bg-gray-300" />
+            <div className="mx-auto h-5 w-28 animate-pulse rounded-full bg-slate-200" />
 
             {/* Heading */}
-            <div className="mt-5 h-10 w-full max-w-xl rounded bg-gray-300" />
-            <div className="mt-3 h-10 w-3/4 max-w-lg rounded bg-gray-300" />
+            <div className="mx-auto mt-5 h-10 w-full max-w-2xl animate-pulse rounded-lg bg-slate-200" />
 
             {/* Description */}
-            <div className="mt-6 h-4 w-full max-w-lg rounded bg-gray-300" />
-            <div className="mt-2 h-4 w-4/5 max-w-md rounded bg-gray-300" />
+            <div className="mx-auto mt-4 h-4 w-full max-w-xl animate-pulse rounded bg-slate-200" />
+
+            <div className="mx-auto mt-2 h-4 w-4/5 max-w-lg animate-pulse rounded bg-slate-200" />
 
             {/* Button */}
-            <div className="mt-7 h-12 w-40 rounded-lg bg-gray-300" />
+            <div className="mx-auto mt-7 h-12 w-40 animate-pulse rounded-lg bg-slate-200" />
 
           </div>
+
         </div>
       </div>
     </section>

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import clsx from "clsx";
 import { customerPath } from "@/routes/customerPath";
+import SidebarAccount from "./SidebarAccount";
 import SidebarNav from "./SidebarNav";
 import { FOCUS_RING } from "./focusRing";
 import { NO_SCROLLBAR } from "./noScrollbar";
@@ -13,7 +14,7 @@ interface SidebarProps {
 }
 
 /**
- * Desktop sidebar (md and up). On mobile the MobileDrawer + BottomNav take over.
+ * Desktop sidebar (md and up). On mobile the BottomNav + Profile page take over.
  * When collapsed it is `invisible`, so its links are skipped by Tab and screen readers.
  * The inner panel keeps a fixed width so the links don't reflow while the width animates.
  */
@@ -28,13 +29,15 @@ export default function Sidebar({ open = true }: SidebarProps) {
         open ? "visible w-60" : "invisible w-0 border-r-0",
       )}
     >
-      <div className="w-60">
-        <div className="px-5 py-5">
+      <div className="flex min-h-full w-60 flex-col">
+        <div className="px-5 pb-4 pt-5">
           <Link to={customerPath()} className={clsx("rounded text-lg font-semibold tracking-tight text-brand", FOCUS_RING)}>
             HomeCareX
           </Link>
+          <p className="mt-0.5 text-xs text-muted">Customer Dashboard</p>
         </div>
         <SidebarNav idPrefix="sidebar" />
+        <SidebarAccount />
       </div>
     </aside>
   );

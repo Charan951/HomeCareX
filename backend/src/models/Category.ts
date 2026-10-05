@@ -1,10 +1,13 @@
 import { Schema, model } from 'mongoose';
 
-/** Minimal shape needed by dashboards. The Categories module can extend it (icon, order, ...). */
+/** Service category (Home Cleaning, Appliance Repair...). Managed by admins; services and partners reference it. */
 const CategorySchema = new Schema(
   {
-    name: { type: String, trim: true },
-    slug: { type: String, trim: true, index: true },
+    name: { type: String, required: true, trim: true, unique: true, collation: { locale: 'en', strength: 2 } },
+    slug: { type: String, required: true, trim: true, unique: true, index: true },
+    description: { type: String, trim: true, default: '' },
+    icon: { type: String, trim: true, default: '' },
+    sortOrder: { type: Number, default: 0 },
     active: { type: Boolean, default: true },
   },
   { timestamps: true },

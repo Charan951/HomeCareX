@@ -51,3 +51,9 @@ export const getSlotsParamsSchema = z.object({
 export const getBookingParamsSchema = z.object({
   id: objectIdString,
 });
+
+export const checkSlotBodySchema = z.object({
+  serviceId: z.string().min(1, 'Service ID is required'),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
+  slot: z.string().min(1, 'Slot is required'),
+});

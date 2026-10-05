@@ -69,6 +69,7 @@ export interface Booking {
 
 export const BOOKINGS: Booking[] = [
   { id: "BK-10231", service: "Deep Home Cleaning", category: "Home Cleaning", status: "In Progress", scheduledAt: "Today, 2:00 PM", address: "Flat 302, Manjeera Trinity, Kukatpally", partner: { name: "Ramesh K.", rating: 4.8 }, price: 1499, paymentMethod: "UPI" },
+  { id: "BK-10233", service: "Plumbing – Tap & Leak Repair", category: "Electrical & Plumbing", status: "En Route", scheduledAt: "Today, 3:30 PM", address: "Flat 302, Manjeera Trinity, Kukatpally", partner: { name: "Kiran M.", rating: 4.6 }, price: 299, paymentMethod: "Cash on Service" },
   { id: "BK-10228", service: "AC Service & Gas Refill", category: "Appliance Repair & Service", status: "Confirmed", scheduledAt: "Tomorrow, 11:00 AM", address: "Flat 302, Manjeera Trinity, Kukatpally", partner: null, price: 599, paymentMethod: "Card" },
   { id: "BK-10214", service: "At-Home Spa for Women", category: "Salon & Spa", status: "Completed", scheduledAt: "18 Sep, 4:30 PM", address: "Office - WeWork, Hitech City", partner: { name: "Sandhya P.", rating: 4.9 }, price: 1299, paymentMethod: "Wallet" },
   { id: "BK-10201", service: "Electrician Visit (General)", category: "Electrical & Plumbing", status: "Completed", scheduledAt: "10 Sep, 10:00 AM", address: "Flat 302, Manjeera Trinity, Kukatpally", partner: { name: "Suresh N.", rating: 4.4 }, price: 249, paymentMethod: "Cash on Service" },
