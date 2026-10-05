@@ -220,6 +220,8 @@ const contact = {
 
 /* =========================================================
    NAVIGATION
+   
+  ======================================================= */
 const PhoneIcon: React.FC = () => (
   <svg
     width="15"
@@ -272,6 +274,8 @@ const ClockIcon: React.FC = () => (
 
 /* =========================================================
    HEADER COMPONENT
+   
+  ======================================================= */
 
 const Header: React.FC = () => {
   const location = useLocation();
@@ -570,16 +574,43 @@ const Header: React.FC = () => {
             "
             aria-label="Main navigation"
           >
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={() => getLinkClass(item.to, item.end)}
-              >
-                {item.label}
-              </NavLink>
-            ))}
+          <NavLink
+  to="/"
+  end
+  className={({ isActive }) =>
+    `hcx-nav-link ${isActive ? "active" : ""}`
+  }
+>
+  Home
+</NavLink>
+
+<NavLink
+  to="/services"
+  className={({ isActive }) =>
+    `hcx-nav-link ${isActive ? "active" : ""}`
+  }
+>
+  Services
+</NavLink>
+
+<NavLink
+  to="/about"
+  end
+  className={({ isActive }) =>
+    `hcx-nav-link ${isActive ? "active" : ""}`
+  }
+>
+  About
+</NavLink>
+
+<NavLink
+  to="/contact"
+  className={({ isActive }) =>
+    `hcx-nav-link ${isActive ? "active" : ""}`
+  }
+>
+  Contact
+</NavLink>
           </nav>
 
           {/* =================================================

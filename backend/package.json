@@ -8,7 +8,8 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "seed:users": "ts-node --transpile-only src/scripts/seed-users.ts",
-       "seed:dashboard": "ts-node --transpile-only src/scripts/seed-dashboard.ts",
+    "seed:dashboard": "ts-node --transpile-only src/scripts/seed-dashboard.ts",
+    "seed:customers": "ts-node --transpile-only src/scripts/seed-admin-customers.ts",
     "create:admin": "ts-node --transpile-only src/scripts/create-admin.ts",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
@@ -25,6 +26,7 @@
     "mongoose": "^8.2.3",
     "morgan": "^1.10.0",
     "nodemailer": "^10.0.13",
+    "razorpay": "^2.9.8",
     "redis": "^4.6.13",
     "socket.io": "^4.7.5",
     "zod": "^3.22.4"

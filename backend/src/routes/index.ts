@@ -15,7 +15,7 @@ import { designationsRoutes } from '../modules/designations/designations.routes'
 import { notificationsRoutes } from '../modules/notifications/notifications.routes';
 import { categoriesRoutes, categoriesPublicRoutes } from '../modules/categories/categories.routes';
 import { servicesRoutes, servicesPublicRoutes } from '../modules/services/services.routes';
-
+import { adminCustomersRoutes } from '../modules/admin-customers/admin-customers.routes';
 import leadsRoutes from '../modules/leads/leads.routes';
 
 import { bookingsRoutes } from '../modules/bookings/bookings.routes';
@@ -58,4 +58,5 @@ rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, GET /addr
 rootRouter.use('/payments', paymentRoutes); // POST /payments/create-order, /verify, /attempt
 rootRouter.use(reviewsRoutes); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
 
+rootRouter.use('/admin/customers', adminCustomersRoutes);
 export default rootRouter;
