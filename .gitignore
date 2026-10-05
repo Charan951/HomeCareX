@@ -45,3 +45,6 @@ package-lock.json
 .postman/
 postman/
 
+# Package files
+package.json
+

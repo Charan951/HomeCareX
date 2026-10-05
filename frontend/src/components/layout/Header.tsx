@@ -416,82 +416,14 @@ const Header: React.FC = () => {
           ${scrolled ? "collapsed" : ""}
         `}
       >
-        <div>
-          <div
-            className="
-              relative
-              bg-gradient-to-r
-              from-[#1e1b6e]
-              via-[#302b9e]
-              to-[#1e1b6e]
-              text-sm
-            "
-          >
-            {/* Orange top accent */}
-            <div
-              className="
-                absolute
-                inset-x-0
-                top-0
-                h-[3px]
-                bg-gradient-to-r
-                from-[#4338ca]
-                via-[#ff8a3d]
-                to-[#4338ca]
-              "
-              aria-hidden="true"
-            />
-
-            <div
-              className="
-                mx-auto
-                flex
-                h-11
-                max-w-7xl
-                items-center
-                justify-between
-                px-6
-                pt-[3px]
-              "
-            >
-              {/* Contact details */}
-              <div className="flex items-center gap-7">
-                <a href={contact.phoneHref} className="hcx-top-link">
-                  <PhoneIcon />
-                  <span>{contact.phone}</span>
-                </a>
-
-                <a href={`mailto:${contact.email}`} className="hcx-top-link">
-                  <MailIcon />
-                  <span>{contact.email}</span>
-                </a>
-
-                <span
-                  className="
-                    hidden
-                    items-center
-                    gap-2
-                    text-[#dfe1ff]
-                    lg:inline-flex
-                  "
-                >
-                  <ClockIcon />
-                  {contact.hours}
-                </span>
-              </div>
-
-              {/* Professional CTA */}
-              <NavLink
-                to="/contact#partner-interest"
-                onClick={closeMenu}
-                className="hcx-top-link font-medium"
-              >
-                <span>Are you a service professional?</span>
-
-                <span className="font-bold text-[#ff8a3d]">Join us →</span>
-              </NavLink>
-            </div>
-          </div>
+        <div className="flex min-h-10 items-center justify-between bg-[#242064] px-6 text-xs">
+          <span className="hidden items-center gap-2 text-[#dfe1ff] lg:inline-flex">
+            {contact.hours}
+          </span>
+          <NavLink to="/register" className="hd-top-link font-medium">
+            Are you a service professional?
+            <span className="font-bold text-[#ff8a3d]">Join us</span>
+          </NavLink>
         </div>
       </div>
 
@@ -643,9 +575,7 @@ const Header: React.FC = () => {
                 key={item.to}
                 to={item.to}
                 end={item.end}
-                className={({ isActive }) =>
-                  `hcx-nav-link ${isActive ? "active" : ""}`
-                }
+                className={() => getLinkClass(item.to, item.end)}
               >
                 {item.label}
               </NavLink>
