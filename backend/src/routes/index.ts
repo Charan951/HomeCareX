@@ -1,30 +1,57 @@
 import { Router } from 'express';
+
 import { authRoutes } from '../modules/auth/auth.routes';
 import { auditRoutes } from '../modules/audit/audit.routes';
+import { adminRoutes } from '../modules/admin/admin.routes';
 import { partnersRoutes } from '../modules/partners/partners.routes';
 import { availabilityRoutes } from '../modules/availability/availability.routes';
 import { blackoutRoutes } from '../modules/availability/blackout.routes';
 import { scheduleRoutes } from '../modules/availability/schedule.routes';
 import { partnerDashboardRoutes } from '../modules/partners/partner-dashboard.routes';
+import { customerDashboardRoutes } from '../modules/customer-dashboard/customer-dashboard.routes';
+
+import { notificationsRoutes } from '../modules/notifications/notifications.routes';
+import { categoriesRoutes } from '../modules/categories/categories.routes';
+import { servicesRoutes } from '../modules/services/services.routes';
+import { catalogRoutes } from '../modules/catalog/catalog.routes';
 
 import leadsRoutes from '../modules/leads/leads.routes';
+
 import { bookingsRoutes } from '../modules/bookings/bookings.routes';
-import customerDashboardRoutes from '../modules/customer-dashboard/customer-dashboard.routes';
 import { addressesRoutes } from '../modules/addresses/addresses.routes';
+import { reviewsRoutes } from '../modules/reviews/reviews.routes';
 
 export const rootRouter = Router();
 
 // Routes are registered under /api/v1. Add new modules here; don't replace the list.
-rootRouter.use('/auth', authRoutes);
-rootRouter.use('/admin', auditRoutes); // GET /admin/audit-logs
-rootRouter.use('/admin/partners', partnersRoutes); // GET /admin/partners, GET /admin/partners/stats, POST /admin/partners
-rootRouter.use('/partner/dashboard', partnerDashboardRoutes);
-rootRouter.use('/customer/dashboard', customerDashboardRoutes); // GET /customer/dashboard
-rootRouter.use('/partner/availability', availabilityRoutes);
-rootRouter.use('/partner/blackout-dates', blackoutRoutes); // GET, POST, PATCH, DELETE /partner/blackout-dates
-rootRouter.use('/partner/schedule', scheduleRoutes); // GET /partner/schedule
-rootRouter.use(leadsRoutes); // POST /public/leads
-rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings, GET /bookings/:id
 
+rootRouter.use('/auth', authRoutes);
+
+rootRouter.use('/admin/categories', categoriesRoutes); // GET, POST, PATCH /:id, DELETE /:id
+rootRouter.use('/admin/services', servicesRoutes); // GET, GET /:id, POST, PATCH /:id, DELETE /:id
+rootRouter.use(catalogRoutes); // PUBLIC: GET /categories, GET /services?q&category&rating&minPrice&maxPrice&duration&availability&sort&page&limit, GET /services/:idOrSlug
+rootRouter.use('/notifications', notificationsRoutes); // GET /notifications, PATCH /:id/read, PATCH /read-all
+rootRouter.use('/admin', auditRoutes); // GET /admin/audit-logs
+
+rootRouter.use('/admin', adminRoutes); // GET /admin/bookings
+
+rootRouter.use('/admin/partners', partnersRoutes); // GET /admin/partners, GET /admin/partners/stats, POST /admin/partners
+
+rootRouter.use('/partner/dashboard', partnerDashboardRoutes);
+
+rootRouter.use('/customer/dashboard', customerDashboardRoutes); // GET /customer/dashboard
 rootRouter.use('/customer/addresses', addressesRoutes);
+
+rootRouter.use('/partner/availability', availabilityRoutes);
+
+rootRouter.use('/partner/blackout-dates', blackoutRoutes); // GET, POST, PATCH, DELETE /partner/blackout-dates
+
+rootRouter.use('/partner/schedule', scheduleRoutes); // GET /partner/schedule
+
+rootRouter.use(leadsRoutes); // POST /public/leads
+
+rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings, GET /bookings/:id
+rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, GET /addresses/serviceability
+rootRouter.use(reviewsRoutes); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
+
 export default rootRouter;

@@ -1,12 +1,13 @@
 import { Link } from "react-router-dom";
-import { CalendarClock, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { customerPath } from "@/routes/customerPath";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import { statusBadgeClass } from "@/utils/statusBadge";
+import BookingThumb from "./BookingThumb";
 import { bookingStatusLabel, formatScheduled, type DashboardBookingDto } from "@/features/customer";
 
 /** One scheduled (not yet started) booking row. */
-export default function UpcomingBookingCard({ booking: b }: { booking: DashboardBookingDto }) {
+export default function UpcomingBookingCard({ booking: b, index = 0 }: { booking: DashboardBookingDto; index?: number }) {
   const label = bookingStatusLabel(b.status);
   const address = [b.address.line1, b.address.area].filter(Boolean).join(", ");
   return (
@@ -14,9 +15,7 @@ export default function UpcomingBookingCard({ booking: b }: { booking: Dashboard
       to={customerPath(`/bookings/${b.id}`)}
       className={`flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:opacity-90 ${FOCUS_RING}`}
     >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-canvas text-brand" aria-hidden="true">
-        <CalendarClock className="h-5 w-5" />
-      </span>
+      <BookingThumb serviceName={b.serviceName} index={index} className="h-12 w-12 rounded-xl" />
       <span className="min-w-0 flex-1">
         <span className="block break-words text-sm font-semibold leading-snug text-ink">{b.serviceName}</span>
         <span className="block truncate text-xs text-muted">{formatScheduled(b.scheduledAt)}</span>

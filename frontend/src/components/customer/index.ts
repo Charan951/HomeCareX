@@ -6,3 +6,5 @@ export { default as ProfileMenu } from "./ProfileMenu";
 export { default as NotificationBell } from "./NotificationBell";
 export { default as RouteErrorBoundary } from "./RouteErrorBoundary";
 export { LoadingState, EmptyState, ErrorState, OfflineBanner, OfflineState } from "./StateViews";
+export { default as Icon3D } from "./Icon3D";
+export { resolveIcon3D, tintAt, ICON_TINTS, type Icon3DName } from "./icons3d";

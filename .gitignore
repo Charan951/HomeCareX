@@ -37,4 +37,8 @@ docs/
 *.pdf
 MEMORY.md
 
-package.json
+frontend/package.json
+frontend/package-lock.json
+backend/package-lock.json
+backend/package.json
+**/package.json
