@@ -17,7 +17,9 @@ export interface IPayment extends Document {
   razorpaySignature?: string;
   amount: number; // in INR
   currency: string;
-  method?: string; // card, upi, netbanking, wallet
+  method?: string; // card, upi, netbanking, wallet, cod
+  /** Checkout attempts made against this order (create/reuse). Capped by PAYMENT_MAX_ATTEMPTS. */
+  attempts: number;
   status: PaymentStatus;
   errorReason?: string;
   paidAt?: Date;
@@ -36,6 +38,7 @@ const PaymentSchema = new Schema<IPayment>(
     amount: { type: Number, required: true, min: [0, 'Payment amount must be greater than or equal to 0'] },
     currency: { type: String, default: 'INR', uppercase: true, trim: true },
     method: { type: String, trim: true },
+    attempts: { type: Number, default: 0, min: 0 },
     status: { type: String, enum: PAYMENT_STATUSES, default: 'PENDING', index: true },
     errorReason: { type: String, trim: true },
     paidAt: { type: Date },
