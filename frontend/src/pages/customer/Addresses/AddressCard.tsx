@@ -24,7 +24,7 @@ interface AddressCardProps {
 export default function AddressCard({ address: a, busy, onSelect, onEdit, onDelete }: AddressCardProps) {
   const [confirming, setConfirming] = useState(false);
   const Icon = addressIcon(a.label);
-  const line = [a.line1, a.area].filter(Boolean).join(", ");
+  const line = [a.line1, a.line2].filter(Boolean).join(", ");
   const cityLine = [a.city, a.pincode].filter(Boolean).join(" ");
   const btn = clsx("min-h-[44px] rounded-lg px-3 text-sm font-medium", FOCUS_RING);
   const iconBtn = clsx("flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors disabled:opacity-60", FOCUS_RING);

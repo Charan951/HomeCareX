@@ -1,4 +1,4 @@
-import type { AddressDto } from '../addresses/addresses.types';
+import type { AddressView } from '../addresses/addresses.types';
 import type { BookingStatus } from '../bookings/bookings.constants';
 
 export interface DashboardBookingDto {
@@ -39,7 +39,7 @@ export interface CustomerDashboardDto {
   greeting: { name: string; firstName: string };
   /** True when the customer has never made a booking → show the welcome state. */
   isNewCustomer: boolean;
-  defaultAddress: AddressDto | null;
+  defaultAddress: AddressView | null;
   activeBookings: DashboardBookingDto[];
   upcomingBookings: DashboardBookingDto[];
   categories: DashboardCategoryDto[];
@@ -84,12 +84,3 @@ export interface ServiceRow {
   ratingCount?: number | null;
 }
 
-export interface AddressRow {
-  _id: { toString(): string };
-  label: string;
-  line1: string;
-  area?: string | null;
-  city: string;
-  pincode?: string | null;
-  isDefault?: boolean | null;
-}

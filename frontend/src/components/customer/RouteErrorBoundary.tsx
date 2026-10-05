@@ -33,6 +33,7 @@ export default class RouteErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return <ErrorState onRetry={() => this.setState({ error: null })} />;
     }
+
     return this.props.children;
   }
 }

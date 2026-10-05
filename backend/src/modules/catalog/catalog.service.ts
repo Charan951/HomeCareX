@@ -1,5 +1,5 @@
 import { Types } from 'mongoose';
-import { ERROR_CODES } from '../../constants/ErrorCodes';
+import { ERROR_CODES } from '../../constants/errorCodes';
 import { HttpError } from '../auth/auth.types';
 import { buildServiceQuery } from './catalog.query';
 import { catalogRepository as repo, type CategoryRow, type ServiceRow } from './catalog.repository';

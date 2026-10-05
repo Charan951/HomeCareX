@@ -24,8 +24,20 @@ const About = lazy(
   () => import("../pages/public/About/About")
 );
 
+const FAQ = lazy(
+  () => import("../pages/public/FAQ")
+);
+
 const Contact = lazy(
-  () => import("../pages/public/Contact")
+  () => import("../pages/public/Contact/Contact")
+);
+
+const Terms = lazy(
+  () => import("../pages/public/Terms")
+);
+
+const Privacy = lazy(
+  () => import("../pages/public/Privacy")
 );
 
 const NotFound = lazy(
@@ -46,7 +58,10 @@ const PublicRoutes: React.FC = () => {
           <Route path={ROUTES.HOME} element={<Home />} />
           <Route path={ROUTES.SERVICES} element={<Services />} />
           <Route path={ROUTES.ABOUT} element={<About />} />
+          <Route path={ROUTES.FAQ} element={<FAQ />} />
           <Route path={ROUTES.CONTACT} element={<Contact />} />
+          <Route path={ROUTES.TERMS} element={<Terms />} />
+          <Route path={ROUTES.PRIVACY} element={<Privacy />} />
 
           {/* 404 - Any unknown URL */}
           <Route path="*" element={<NotFound />} />

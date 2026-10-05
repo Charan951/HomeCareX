@@ -35,6 +35,48 @@ export const MOCK_SERVICE_CATALOG: MockService[] = [
     basePrice: 249,
     addOns: [{ id: "650000000000000000000301", name: "Fixture Installation", price: 199 }],
   },
+  {
+    id: "650000000000000000000004",
+    slug: "sofa-carpet-shampooing",
+    name: "Sofa & Carpet Shampooing",
+    basePrice: 899,
+    addOns: [{ id: "650000000000000000000401", name: "Stain Treatment", price: 120 }],
+  },
+  {
+    id: "650000000000000000000005",
+    slug: "ro-water-purifier-service",
+    name: "RO/Water Purifier Service",
+    basePrice: 399,
+    addOns: [{ id: "650000000000000000000501", name: "Filter Change", price: 300 }],
+  },
+  {
+    id: "650000000000000000000006",
+    slug: "at-home-spa-women",
+    name: "At-Home Spa for Women",
+    basePrice: 1299,
+    addOns: [{ id: "650000000000000000000601", name: "Aromatherapy Oils", price: 200 }],
+  },
+  {
+    id: "650000000000000000000007",
+    slug: "room-painting",
+    name: "Room Painting (per room)",
+    basePrice: 3499,
+    addOns: [{ id: "650000000000000000000701", name: "Wall Putty & Primer", price: 800 }],
+  },
+  {
+    id: "650000000000000000000008",
+    slug: "general-pest-control",
+    name: "General Pest Control",
+    basePrice: 799,
+    addOns: [{ id: "650000000000000000000801", name: "Termite Treatment", price: 600 }],
+  },
+  {
+    id: "650000000000000000000009",
+    slug: "furniture-assembly",
+    name: "Furniture Assembly",
+    basePrice: 349,
+    addOns: [{ id: "650000000000000000000901", name: "Wall Mounting", price: 150 }],
+  },
 ];
 
 export function findMockServiceBySlug(slug: string | undefined): MockService | undefined {

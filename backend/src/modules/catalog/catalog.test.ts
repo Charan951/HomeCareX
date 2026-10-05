@@ -13,27 +13,27 @@ import { serviceQuerySchema } from './catalog.validation';
 /* ---------- in-memory stand-in for the repository (same filter/sort/skip/limit semantics via mingo) ---------- */
 const oid = () => new Types.ObjectId();
 const CLEAN = oid(), REPAIR = oid(), HIDDEN = oid();
-const categories: (CategoryRow & { isActive: boolean })[] = [
-  { _id: REPAIR, name: 'Appliance Repair', slug: 'appliance-repair', sortOrder: 2, isActive: true },
-  { _id: CLEAN, name: 'Home Cleaning', slug: 'home-cleaning', sortOrder: 1, isActive: true },
-  { _id: HIDDEN, name: 'Hidden', slug: 'hidden', sortOrder: 0, isActive: false },
+const categories: (CategoryRow & { active: boolean })[] = [
+  { _id: REPAIR, name: 'Appliance Repair', slug: 'appliance-repair', sortOrder: 2, active: true },
+  { _id: CLEAN, name: 'Home Cleaning', slug: 'home-cleaning', sortOrder: 1, active: true },
+  { _id: HIDDEN, name: 'Hidden', slug: 'hidden', sortOrder: 0, active: false },
 ];
-type Doc = ServiceRow & { isActive: boolean; bookingsCount: number; createdAt: Date; __v: number };
+type Doc = ServiceRow & { active: boolean; bookingsCount: number; createdAt: Date; __v: number };
 const docs: Doc[] = [];
 for (let i = 1; i <= 30; i++) {
   docs.push({
     _id: oid(), slug: `svc-${i}`, name: i === 5 ? 'AC Repair Special' : `Service ${i}`, description: i === 5 ? 'Fix any AC' : `Description ${i}`,
     categoryId: i <= 12 ? CLEAN : i <= 28 ? REPAIR : HIDDEN, basePrice: 100 * i, durationMinutes: 30 + (i % 4) * 30,
-    ratingAvg: 3 + (i % 5) / 2, ratingCount: 10 * i, bookingsCount: i * 3, isActive: i !== 7, availability: i % 3 === 0 ? 'today' : i % 3 === 1 ? 'tomorrow' : 'scheduled',
+    ratingAvg: 3 + (i % 5) / 2, ratingCount: 10 * i, bookingsCount: i * 3, active: i !== 7, availability: i % 3 === 0 ? 'today' : i % 3 === 1 ? 'tomorrow' : 'scheduled',
     createdAt: new Date(2026, 0, i), __v: 0,
   });
 }
 
 function install() {
-  repo.activeCategories = (async () => categories.filter((c) => c.isActive).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))) as never;
+  repo.activeCategories = (async () => categories.filter((c) => c.active).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))) as never;
   repo.activeServiceStats = (async () => {
     const m = new Map<string, { count: number; fromPrice: number; bookings: number }>();
-    for (const d of docs.filter((x) => x.isActive)) {
+    for (const d of docs.filter((x) => x.active)) {
       const k = String(d.categoryId);
       const cur = m.get(k) ?? { count: 0, fromPrice: Infinity, bookings: 0 };
       m.set(k, { count: cur.count + 1, fromPrice: Math.min(cur.fromPrice, d.basePrice), bookings: cur.bookings + d.bookingsCount });
@@ -52,10 +52,10 @@ function install() {
   repo.findServices = (async (built: { filter: Record<string, unknown>; sort: Record<string, 1 | -1> }, skip: number, limit: number) => {
     const rows = match(built.filter);
     const sorted = new Aggregator([{ $sort: built.sort }, { $skip: skip }, { $limit: limit }]).run(rows) as unknown as Doc[];
-    return sorted; // intentionally still carries isActive/bookingsCount/__v: the service layer must strip them
+    return sorted; // intentionally still carries active/bookingsCount/__v: the service layer must strip them
   }) as never;
   repo.countServices = (async (built: { filter: Record<string, unknown> }) => match(built.filter).length) as never;
-  repo.findService = (async (idOrSlug: string) => docs.find((d) => d.isActive && (String(d._id) === idOrSlug || d.slug === idOrSlug)) ?? null) as never;
+  repo.findService = (async (idOrSlug: string) => docs.find((d) => d.active && (String(d._id) === idOrSlug || d.slug === idOrSlug)) ?? null) as never;
 }
 
 const app = express();
@@ -225,7 +225,7 @@ test('service list items expose public fields only', async () => {
     assert.deepEqual(Object.keys(s.category).sort(), ['id', 'name', 'slug']);
   }
   const raw = JSON.stringify(r.body);
-  for (const secret of ['isActive', 'bookingsCount', '__v', 'createdAt', 'categoryId', '_id']) assert.ok(!raw.includes(`"${secret}"`), `${secret} leaked`);
+  for (const secret of ['isActive', 'active', 'bookingsCount', '__v', 'createdAt', 'categoryId', '_id']) assert.ok(!raw.includes(`"${secret}"`), `${secret} leaked`);
 });
 
 test('GET /categories: active only, admin order, public fields, service counts', async () => {
@@ -238,7 +238,7 @@ test('GET /categories: active only, admin order, public fields, service counts',
   assert.equal(r.body.data.filter((c) => c.popular).length, 1, 'exactly one most-booked category');
   assert.equal(r.body.data.find((c) => c.popular)?.slug, 'appliance-repair'); // higher bookings than Home Cleaning
   assert.ok(!JSON.stringify(r.body).includes('bookings'), 'raw booking counts must not be exposed');
-  assert.ok(!JSON.stringify(r.body).includes('isActive'));
+  assert.ok(!JSON.stringify(r.body).includes('active'));
 });
 
 test('GET /services/:idOrSlug: found by slug, 404 for inactive, 400 for malformed', async () => {

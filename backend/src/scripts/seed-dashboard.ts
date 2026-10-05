@@ -88,7 +88,7 @@ async function main() {
   // ---- catalog ----
   const catId = new Map<string, Types.ObjectId>();
   for (const c of CATEGORIES) {
-    await CategoryModel.updateOne({ slug: c.slug }, { $set: { ...c, isActive: true } }, { upsert: true });
+    await CategoryModel.updateOne({ slug: c.slug }, { $set: { ...c, active: true } }, { upsert: true });
     const doc = await CategoryModel.findOne({ slug: c.slug }).select('_id').lean();
     if (doc) catId.set(c.slug, doc._id);
   }
@@ -116,15 +116,15 @@ async function main() {
   // ---- wipe + recreate the demo customers' own data ----
   const demoIds = [A._id, B._id];
   await Promise.all([
-    AddressModel.deleteMany({ userId: { $in: demoIds } }),
+    AddressModel.deleteMany({ customerId: { $in: demoIds } }),
     BookingModel.deleteMany({ customerId: { $in: demoIds } }),
     NotificationModel.deleteMany({ userId: { $in: demoIds } }),
   ]);
 
   await AddressModel.insertMany([
-    { userId: A._id, label: 'Home', line1: 'Flat 302, Manjeera Trinity', area: 'Kukatpally', city: 'Hyderabad', pincode: '500072', isDefault: true },
-    { userId: A._id, label: 'Office', line1: 'WeWork, Prestige Tech Park', area: 'Hitech City', city: 'Hyderabad', pincode: '500081', isDefault: false },
-    { userId: B._id, label: 'Home', line1: '14, Road No. 5, Jubilee Hills', area: 'Jubilee Hills', city: 'Hyderabad', pincode: '500033', isDefault: true },
+    { customerId: A._id, label: 'Home', line1: 'Flat 302, Manjeera Trinity', line2: 'Kukatpally', state: 'Telangana', city: 'Hyderabad', pincode: '500072', isDefault: true },
+    { customerId: A._id, label: 'Office', line1: 'WeWork, Prestige Tech Park', line2: 'Hitech City', state: 'Telangana', city: 'Hyderabad', pincode: '500081', isDefault: false },
+    { customerId: B._id, label: 'Home', line1: '14, Road No. 5, Jubilee Hills', line2: 'Jubilee Hills', state: 'Telangana', city: 'Hyderabad', pincode: '500033', isDefault: true },
   ]);
 
   const homeA = { line1: 'Flat 302, Manjeera Trinity', area: 'Kukatpally', city: 'Hyderabad', pincode: '500072' };
@@ -165,8 +165,8 @@ async function main() {
   ]);
 
   await NotificationModel.insertMany([
-    { userId: A._id, type: 'booking', title: 'Kiran is on the way', body: 'Your plumbing visit starts soon.', readAt: null },
-    { userId: A._id, type: 'offer', title: '20% off Salon & Spa', body: 'Use code SPA20 this month.', readAt: null },
+    { userId: A._id, type: 'booking', payload: { title: 'Kiran is on the way', body: 'Your plumbing visit starts soon.' }, readAt: null },
+    { userId: A._id, type: 'offer', payload: { title: '20% off Salon & Spa', body: 'Use code SPA20 this month.' }, readAt: null },
   ]);
 
   console.log('Seeded dashboard demo data.');

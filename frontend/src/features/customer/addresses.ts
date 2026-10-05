@@ -1,28 +1,22 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import http, { type ApiResponse } from "@/lib/http";
 import { useAuth } from "@/hooks/useAuth";
-import { normalizeApiError, type NormalizedApiError } from "@/services/bookingApi";
+import { addressApi } from "@/services/addressApi";
+import type { NormalizedApiError } from "@/services/bookingApi";
+import { ADDRESSES_QUERY_KEY } from "@/features/booking/useAddresses";
 import { customerKeys } from "./api";
 import type { AddressDto, AddressInput, AddressPatch } from "./types";
 
-/** /customer/addresses — the server scopes everything to the signed-in customer (from the token). */
-const BASE = "/customer/addresses";
-
-async function call<T>(run: () => Promise<{ data: ApiResponse<T> }>): Promise<T> {
-  try {
-    return (await run()).data.data;
-  } catch (err) {
-    throw normalizeApiError(err);
-  }
-}
-
+/** /addresses — the server scopes everything to the signed-in customer (from the token). */
 export const addressesApi = {
-  list: () => call<AddressDto[]>(() => http.get(BASE)),
-  create: (input: AddressInput) => call<AddressDto>(() => http.post(BASE, input)),
-  update: (id: string, patch: AddressPatch) => call<AddressDto>(() => http.patch(`${BASE}/${id}`, patch)),
+  list: () => addressApi.list(),
+  create: (input: AddressInput) => addressApi.create(input),
+  update: (id: string, patch: AddressPatch) => addressApi.update(id, patch),
   /** "Deliver here": makes this the default, which is the address the dashboard shows. */
-  setDefault: (id: string) => call<AddressDto>(() => http.put(`${BASE}/${id}/default`)),
-  remove: (id: string) => call<{ id: string }>(() => http.delete(`${BASE}/${id}`)),
+  setDefault: (id: string) => addressApi.update(id, { isDefault: true }),
+  remove: async (id: string) => {
+    await addressApi.delete(id);
+    return { id };
+  },
 };
 
 export function useAddresses() {
@@ -35,10 +29,14 @@ export function useAddresses() {
   });
 }
 
-/** After any change, refresh the address list AND the dashboard (which shows the default address). */
+/** After any change, refresh the address list, the dashboard (default address) and the booking flow's list. */
 function useRefreshAfterChange() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: ["customer"] });
+  return () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["customer"] }),
+      qc.invalidateQueries({ queryKey: ADDRESSES_QUERY_KEY }),
+    ]);
 }
 
 export function useCreateAddress() {

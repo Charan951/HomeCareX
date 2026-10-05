@@ -5,6 +5,10 @@ import { asyncHandler } from '../../utils/asyncHandler';
 import { sendSuccess } from '../../utils/response';
 import { categoriesService } from './categories.service';
 
+/** Public, mounted at /api/v1/categories: active categories only. */
+export const categoriesPublicRoutes = Router();
+categoriesPublicRoutes.get('/', asyncHandler(async (_req, res) => sendSuccess(res, await categoriesService.list({ onlyActive: true }))));
+
 /** Admin, mounted at /api/v1/admin/categories. */
 export const categoriesRoutes = Router();
 categoriesRoutes.use(authenticate, requireAdmin);

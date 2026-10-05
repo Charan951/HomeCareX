@@ -1,64 +1,37 @@
-import type { ServiceAvailability } from '../../models/Service';
+/**
+ * Seed catalog. Service + add-on ids are identical to the placeholder in bookings.constants.ts
+ * (BOOKINGS_SERVICE_CATALOG), so existing bookings and the booking flow keep resolving.
+ */
+const C = (n: number) => `650000000000000000000a0${n}`;
 
-export interface SeedService {
-  category: string; // category slug
-  slug: string;
-  name: string;
-  basePrice: number;
-  durationMinutes: number;
-  ratingAvg: number;
-  ratingCount: number;
-  bookingsCount: number;
-  availability: ServiceAvailability;
-  description: string;
-  addOns?: { name: string; price: number }[];
-}
-
-const s = (
-  category: string, slug: string, name: string, basePrice: number, durationMinutes: number,
-  ratingAvg: number, ratingCount: number, bookingsCount: number, availability: ServiceAvailability,
-  description: string, addOns?: SeedService['addOns'],
-): SeedService => ({ category, slug, name, basePrice, durationMinutes, ratingAvg, ratingCount, bookingsCount, availability, description, addOns });
-
-/** 30 launch services, 4-5 per category. Slugs for the first ten match scripts/seed-dashboard.ts. */
-export const SEED_SERVICES: SeedService[] = [
-  // Home Cleaning
-  s('home-cleaning', 'deep-home-cleaning', 'Deep Home Cleaning', 1499, 180, 4.8, 2140, 900, 'tomorrow', 'Top-to-bottom cleaning of floors, kitchen, bathrooms, windows and fittings.', [{ name: 'Eco-friendly Chemicals', price: 50 }, { name: 'Post-service Sanitization', price: 100 }]),
-  s('home-cleaning', 'sofa-carpet-shampooing', 'Sofa & Carpet Shampooing', 899, 90, 4.7, 980, 400, 'today', 'Machine shampooing and vacuuming for sofas and carpets.', [{ name: 'Stain Treatment', price: 120 }]),
-  s('home-cleaning', 'bathroom-deep-cleaning', 'Bathroom Deep Cleaning', 599, 60, 4.6, 1320, 650, 'today', 'Descaling of tiles, taps and fittings with disinfectant finish.'),
-  s('home-cleaning', 'kitchen-deep-cleaning', 'Kitchen Deep Cleaning', 1199, 120, 4.7, 1050, 520, 'tomorrow', 'Chimney, hob, cabinets and tiles degreased and sanitised.'),
-  s('home-cleaning', 'full-home-sanitization', 'Full Home Sanitization', 999, 75, 4.5, 610, 240, 'scheduled', 'Odourless disinfectant spray across rooms, handles and furniture.'),
-  // Appliance Repair & Service
-  s('appliance-repair', 'ac-service-gas-refill', 'AC Service & Gas Refill', 599, 60, 4.6, 3210, 1200, 'today', 'Jet-wash service of indoor and outdoor units with a cooling check.', [{ name: 'Gas Top-up', price: 400 }, { name: 'Filter Replacement', price: 250 }]),
-  s('appliance-repair', 'ro-water-purifier-service', 'RO/Water Purifier Service', 399, 45, 4.5, 1120, 500, 'today', 'Filter check, membrane flush and TDS test for RO purifiers.', [{ name: 'Filter Change', price: 300 }]),
-  s('appliance-repair', 'washing-machine-repair', 'Washing Machine Repair', 349, 60, 4.4, 890, 380, 'tomorrow', 'Diagnosis and repair for front-load and top-load machines.'),
-  s('appliance-repair', 'refrigerator-repair', 'Refrigerator Repair', 449, 60, 4.5, 760, 310, 'tomorrow', 'Cooling, compressor and door-seal checks with on-spot repair.'),
-  s('appliance-repair', 'microwave-oven-repair', 'Microwave Oven Repair', 299, 45, 4.3, 340, 120, 'scheduled', 'Fault diagnosis and repair for solo, grill and convection ovens.'),
-  // Salon & Spa
-  s('salon-spa', 'at-home-spa-for-women', 'At-Home Spa for Women', 1299, 120, 4.9, 1560, 700, 'tomorrow', 'Relaxing spa session by a trained therapist, at home.', [{ name: 'Aromatherapy Oils', price: 200 }]),
-  s('salon-spa', 'mens-haircut-grooming', "Men's Haircut & Grooming", 399, 45, 4.6, 1480, 810, 'today', 'Haircut, beard trim and head massage at your doorstep.'),
-  s('salon-spa', 'full-body-massage', 'Full Body Massage', 1499, 90, 4.8, 1190, 560, 'tomorrow', 'Swedish or deep-tissue massage by a certified therapist.'),
-  s('salon-spa', 'bridal-makeup', 'Bridal Makeup', 4999, 180, 4.9, 210, 70, 'scheduled', 'Complete bridal makeup and hairstyling by a senior artist.'),
-  // Electrical & Plumbing
-  s('electrical-plumbing', 'electrician-visit-general', 'Electrician Visit (General)', 249, 30, 4.4, 870, 350, 'today', 'Visit and diagnosis for switches, wiring, fans and minor electrical faults.', [{ name: 'Fixture Installation', price: 199 }]),
-  s('electrical-plumbing', 'fan-light-installation', 'Fan & Light Installation', 299, 30, 4.5, 720, 300, 'today', 'Ceiling fan, tube light and decorative light fitting.'),
-  s('electrical-plumbing', 'plumbing-tap-leak-repair', 'Plumbing – Tap & Leak Repair', 299, 45, 4.6, 640, 300, 'today', 'Tap, pipe and flush-tank leak repair with spare fitting.'),
-  s('electrical-plumbing', 'geyser-installation-repair', 'Geyser Installation & Repair', 449, 60, 4.4, 430, 170, 'tomorrow', 'Install, replace or repair electric and gas geysers.'),
-  s('electrical-plumbing', 'water-tank-cleaning', 'Water Tank Cleaning', 799, 90, 4.5, 390, 160, 'scheduled', 'Mechanised scrubbing and disinfection of overhead and sump tanks.'),
-  // Painting & Waterproofing
-  s('painting', 'room-painting-per-room', 'Room Painting (per room)', 3499, 480, 4.6, 430, 150, 'scheduled', 'Interior wall painting with furniture covering and clean-up.', [{ name: 'Wall Putty & Primer', price: 800 }]),
-  s('painting', 'terrace-waterproofing', 'Terrace Waterproofing', 7999, 600, 4.4, 150, 45, 'scheduled', 'Crack filling and waterproof coating for terraces and roofs.'),
-  s('painting', 'texture-accent-wall', 'Texture Accent Wall', 2499, 300, 4.7, 180, 60, 'scheduled', 'Designer texture finish on a single feature wall.'),
-  // Pest Control
-  s('pest-control', 'general-pest-control', 'General Pest Control', 799, 60, 4.5, 1980, 600, 'tomorrow', 'Odourless spray treatment for cockroaches, ants and common household pests.', [{ name: 'Termite Treatment', price: 600 }]),
-  s('pest-control', 'termite-treatment', 'Termite Treatment', 1999, 120, 4.4, 310, 90, 'scheduled', 'Drill-and-inject anti-termite treatment with 1-year warranty.'),
-  s('pest-control', 'mosquito-fogging', 'Mosquito Fogging', 499, 30, 4.2, 420, 210, 'today', 'Thermal fogging for homes, balconies and gardens.'),
-  s('pest-control', 'bed-bug-treatment', 'Bed Bug Treatment', 1299, 90, 4.6, 260, 100, 'tomorrow', 'Two-step heat and spray treatment for beds, sofas and wardrobes.'),
-  // Carpentry & Furniture Assembly
-  s('carpentry', 'furniture-assembly', 'Furniture Assembly', 349, 60, 4.5, 560, 260, 'tomorrow', 'Assembly of beds, wardrobes, tables and shelves.', [{ name: 'Wall Mounting', price: 150 }]),
-  s('carpentry', 'door-lock-repair', 'Door & Lock Repair', 299, 45, 4.4, 480, 220, 'today', 'Hinge, handle and lock repair or replacement.'),
-  s('carpentry', 'wardrobe-repair', 'Wardrobe & Drawer Repair', 399, 60, 4.3, 250, 90, 'tomorrow', 'Channel, hinge and shutter alignment for wardrobes and drawers.'),
-  s('carpentry', 'custom-shelf-installation', 'Shelf & Curtain Rod Installation', 349, 45, 4.5, 330, 140, 'today', 'Drill-and-fix wall shelves, curtain rods and TV brackets.'),
-];
+export const SEED_SERVICES = [
+  { id: '650000000000000000000001', categoryId: C(1), slug: 'deep-home-cleaning', name: 'Deep Home Cleaning', basePrice: 1499, durationMinutes: 180,
+    description: 'Top-to-bottom cleaning of floors, kitchen, bathrooms, windows and fittings.',
+    addOns: [{ id: '650000000000000000000101', name: 'Deep Cleaning', price: 150 }, { id: '650000000000000000000102', name: 'Eco-friendly Chemicals', price: 50 }, { id: '650000000000000000000103', name: 'Post-service Sanitization', price: 100 }] },
+  { id: '650000000000000000000004', categoryId: C(1), slug: 'sofa-carpet-shampooing', name: 'Sofa & Carpet Shampooing', basePrice: 899, durationMinutes: 90,
+    description: 'Machine shampooing and vacuuming for sofas and carpets.',
+    addOns: [{ id: '650000000000000000000401', name: 'Stain Treatment', price: 120 }] },
+  { id: '650000000000000000000002', categoryId: C(2), slug: 'ac-service-gas-refill', name: 'AC Service & Gas Refill', basePrice: 599, durationMinutes: 60,
+    description: 'Jet-wash service of indoor and outdoor units with a cooling check.',
+    addOns: [{ id: '650000000000000000000201', name: 'Gas Top-up', price: 400 }, { id: '650000000000000000000202', name: 'Filter Replacement', price: 250 }] },
+  { id: '650000000000000000000005', categoryId: C(2), slug: 'ro-water-purifier-service', name: 'RO/Water Purifier Service', basePrice: 399, durationMinutes: 45,
+    description: 'Filter check, membrane flush and TDS test for RO purifiers.',
+    addOns: [{ id: '650000000000000000000501', name: 'Filter Change', price: 300 }] },
+  { id: '650000000000000000000006', categoryId: C(3), slug: 'at-home-spa-women', name: 'At-Home Spa for Women', basePrice: 1299, durationMinutes: 120,
+    description: 'Relaxing spa session by a trained therapist, at home.',
+    addOns: [{ id: '650000000000000000000601', name: 'Aromatherapy Oils', price: 200 }] },
+  { id: '650000000000000000000003', categoryId: C(4), slug: 'electrician-visit-general', name: 'Electrician Visit (General)', basePrice: 249, durationMinutes: 30,
+    description: 'Visit and diagnosis for switches, wiring, fans and minor electrical faults.',
+    addOns: [{ id: '650000000000000000000301', name: 'Fixture Installation', price: 199 }] },
+  { id: '650000000000000000000007', categoryId: C(5), slug: 'room-painting', name: 'Room Painting (per room)', basePrice: 3499, durationMinutes: 480,
+    description: 'Interior wall painting with furniture covering and clean-up.',
+    addOns: [{ id: '650000000000000000000701', name: 'Wall Putty & Primer', price: 800 }] },
+  { id: '650000000000000000000008', categoryId: C(6), slug: 'general-pest-control', name: 'General Pest Control', basePrice: 799, durationMinutes: 60,
+    description: 'Odourless spray treatment for cockroaches, ants and common household pests.',
+    addOns: [{ id: '650000000000000000000801', name: 'Termite Treatment', price: 600 }] },
+  { id: '650000000000000000000009', categoryId: C(7), slug: 'furniture-assembly', name: 'Furniture Assembly', basePrice: 349, durationMinutes: 60,
+    description: 'Assembly of beds, wardrobes, tables and shelves.',
+    addOns: [{ id: '650000000000000000000901', name: 'Wall Mounting', price: 150 }] },
+] as const;
 
 export const SERVICES_CONSTANTS = { SEED_SERVICES };

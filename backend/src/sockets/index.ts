@@ -5,7 +5,7 @@ import { authService } from '../modules/auth/auth.service';
 import type { AccessTokenPayload } from '../modules/auth/auth.types';
 import BookingModel from '../models/Booking';
 import PartnerModel from '../models/Partner';
-import { ERROR_CODES, type ErrorCode } from '../constants/ErrorCodes';
+import { ERROR_CODES, type ErrorCode } from '../constants/errorCodes';
 
 /** Room names. A socket is in `user:<id>` and `role:<role>` after connecting, and `booking:<id>` after a successful booking:join. */
 export const rooms = {

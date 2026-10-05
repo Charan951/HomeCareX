@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { ROUTES } from "../../constants/routes";
 
 /* =========================================================
    STYLES (same design tokens as the other HomeCareX pages)
@@ -79,8 +80,8 @@ const columns: { title: string; links: FooterLink[] }[] = [
   {
     title: "Legal",
     links: [
-      { to: "/privacy", label: "Privacy Policy" },
-      { to: "/terms", label: "Terms & Conditions" },
+      { to: ROUTES.PRIVACY, label: "Privacy Policy" },
+      { to: ROUTES.TERMS, label: "Terms & Conditions" },
       { to: "/cookies", label: "Cookie Policy" },
     ],
   },

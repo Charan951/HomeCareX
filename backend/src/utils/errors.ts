@@ -1,4 +1,4 @@
-import { ERROR_CODES, type ErrorCode } from '../constants/ErrorCodes';
+import { ERROR_CODES, type ErrorCode } from '../constants/errorCodes';
 import { HttpError } from '../modules/auth/auth.types';
 
 type Details = { field: string; message: string }[];

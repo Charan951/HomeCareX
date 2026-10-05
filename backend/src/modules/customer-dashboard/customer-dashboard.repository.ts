@@ -1,5 +1,4 @@
 import { Types, type PipelineStage } from 'mongoose';
-import AddressModel from '../../models/Address';
 import BookingModel from '../../models/Booking';
 import CategoryModel from '../../models/Category';
 import NotificationModel from '../../models/Notification';
@@ -14,7 +13,7 @@ import {
   MAX_CATEGORIES,
   MAX_RECOMMENDED_SERVICES,
 } from './customer-dashboard.constants';
-import type { AddressRow, BookingsFacet, CategoryRow, ServiceRow } from './customer-dashboard.types';
+import type { BookingsFacet, CategoryRow, ServiceRow } from './customer-dashboard.types';
 
 /**
  * SECURITY: every query below is scoped to `customerId` / `userId` that the service
@@ -88,14 +87,14 @@ export function buildBookingsPipeline(customerId: Types.ObjectId, c: CollectionN
 
 export function buildCategoriesPipeline(c: CollectionNames = defaultCollections()): PipelineStage[] {
   return [
-    { $match: { isActive: true } },
+    { $match: { active: { $ne: false } } },
     { $sort: { sortOrder: 1, name: 1 } },
     { $limit: MAX_CATEGORIES },
     {
       $lookup: {
         from: c.services,
         let: { cid: '$_id' },
-        pipeline: [{ $match: { $expr: { $eq: ['$categoryId', '$$cid'] }, isActive: true } }, { $count: 'n' }],
+        pipeline: [{ $match: { $expr: { $eq: ['$categoryId', '$$cid'] }, active: { $ne: false } } }, { $count: 'n' }],
         as: 'svc',
       },
     },
@@ -112,7 +111,7 @@ export function buildCategoriesPipeline(c: CollectionNames = defaultCollections(
 
 export function buildRecommendedPipeline(): PipelineStage[] {
   return [
-    { $match: { isActive: true } },
+    { $match: { active: { $ne: false } } },
     { $sort: { bookingsCount: -1, ratingAvg: -1, _id: 1 } },
     { $limit: MAX_RECOMMENDED_SERVICES },
     {
@@ -140,14 +139,6 @@ export const customerDashboardRepository = {
     return row ?? { active: [], upcoming: [], total: 0 };
   },
 
-  /** The customer's default address, else their most recently updated one. */
-  defaultAddress(userId: Types.ObjectId) {
-    return AddressModel.findOne({ userId })
-      .sort({ isDefault: -1, updatedAt: -1 })
-      .select('label line1 area city pincode isDefault')
-      .lean<AddressRow | null>()
-      .exec();
-  },
 
   categories() {
     return CategoryModel.aggregate<CategoryRow>(buildCategoriesPipeline()).exec();

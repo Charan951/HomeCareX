@@ -22,7 +22,7 @@ const SORTS: Record<Exclude<ServiceSort, 'relevance'>, SortSpec> = {
 
 /** Pure: turns validated params into a Mongo filter + sort. Only active services in the given categories. */
 export function buildServiceQuery(query: ServiceQuery, categoryIds: Types.ObjectId[]): BuiltServiceQuery {
-  const filter: Record<string, unknown> = { isActive: true, categoryId: { $in: categoryIds } };
+  const filter: Record<string, unknown> = { active: { $ne: false }, categoryId: { $in: categoryIds } };
 
   if (query.q) filter.$text = { $search: query.q };
   if (query.rating !== undefined && query.rating > 0) filter.ratingAvg = { $gte: query.rating };

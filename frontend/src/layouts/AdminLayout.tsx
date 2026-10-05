@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from '@/components/admin/Sidebar';
 import { Header } from '@/components/admin/Header';
 import { Breadcrumbs } from '@/components/admin/Breadcrumbs';
+import { AdminSearch } from '@/components/admin/AdminSearch';
 import '@/styles/admin.css';
 
 export const AdminLayout: React.FC = () => (
@@ -13,6 +14,7 @@ export const AdminLayout: React.FC = () => (
       <Header />
       <div className="breadcrumb-bar">
         <Breadcrumbs />
+        <AdminSearch />
       </div>
       <main id="admin-main" className="admin-layout__main">
         <Outlet />

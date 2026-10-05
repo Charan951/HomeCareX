@@ -1,39 +1,36 @@
 import type { Request, Response } from 'express';
-import { getAuthUser } from '../../middleware/auth.middleware';
-import { asyncHandler } from '../../utils/asyncHandler';
-import { sendSuccess } from '../../utils/response';
 import { addressesService } from './addresses.service';
-import type { CreateAddressInput, UpdateAddressInput } from './addresses.types';
 
-// Identity always comes from the token (getAuthUser), never from the body, query or URL.
-const noStore = (res: Response) => res.set('Cache-Control', 'private, no-store');
+export const addressesController = {
+  async serviceability(req: Request, res: Response): Promise<void> {
+    const pincode = req.query.pincode as string;
+    const result = addressesService.checkServiceability(pincode);
+    res.json({ success: true, data: result });
+  },
 
-export const listAddresses = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = getAuthUser(req);
-  noStore(res);
-  sendSuccess(res, await addressesService.list(id));
-});
+  async list(req: Request, res: Response) {
+    const customerId = res.locals.auth.sub;
+    const addresses = await addressesService.list(customerId);
+    res.json({ success: true, data: { addresses } });
+  },
 
-export const createAddress = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = getAuthUser(req);
-  noStore(res);
-  sendSuccess(res, await addressesService.create(id, req.body as CreateAddressInput), { status: 201, message: 'Address saved' });
-});
+  async create(req: Request, res: Response) {
+    const customerId = res.locals.auth.sub;
+    const address = await addressesService.create(customerId, req.body);
+    res.status(201).json({ success: true, data: { address } });
+  },
 
-export const updateAddress = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = getAuthUser(req);
-  noStore(res);
-  sendSuccess(res, await addressesService.update(id, req.params.id, req.body as UpdateAddressInput), { message: 'Address updated' });
-});
+  async update(req: Request, res: Response) {
+    const customerId = res.locals.auth.sub;
+    const addressId = req.params.id;
+    const address = await addressesService.update(customerId, addressId, req.body);
+    res.json({ success: true, data: { address } });
+  },
 
-export const setDefaultAddress = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = getAuthUser(req);
-  noStore(res);
-  sendSuccess(res, await addressesService.setDefault(id, req.params.id), { message: 'Delivery address updated' });
-});
-
-export const deleteAddress = asyncHandler(async (req: Request, res: Response) => {
-  const { id } = getAuthUser(req);
-  noStore(res);
-  sendSuccess(res, await addressesService.remove(id, req.params.id), { message: 'Address deleted' });
-});
+  async remove(req: Request, res: Response) {
+    const customerId = res.locals.auth.sub;
+    const addressId = req.params.id;
+    await addressesService.remove(customerId, addressId);
+    res.json({ success: true, data: null });
+  },
+};

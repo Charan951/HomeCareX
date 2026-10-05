@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 import { Aggregator } from 'mingo';
 import { Types } from 'mongoose';
 import { errorHandler } from '../../middleware/error.middleware';
+import { addressesService } from '../addresses/addresses.service';
 import {
   buildBookingsPipeline,
   buildCategoriesPipeline,
@@ -75,11 +76,11 @@ const bUp = booking(B, 'assigned', { serviceName: "B's upcoming" });
 const bookings = [aLive, aLive2, aUpLate, aUpSoon, aUpNew, aDone, aCancelled, bLive, bUp];
 
 const categories = [
-  { _id: CAT_SPA, name: 'Salon & Spa', slug: 'salon-spa', icon: '💆', sortOrder: 2, isActive: true },
-  { _id: CAT_CLEAN, name: 'Home Cleaning', slug: 'home-cleaning', icon: '🧹', sortOrder: 1, isActive: true },
-  { _id: CAT_OFF, name: 'Hidden', slug: 'hidden', icon: '🙈', sortOrder: 0, isActive: false },
+  { _id: CAT_SPA, name: 'Salon & Spa', slug: 'salon-spa', icon: '💆', sortOrder: 2, active: true },
+  { _id: CAT_CLEAN, name: 'Home Cleaning', slug: 'home-cleaning', icon: '🧹', sortOrder: 1, active: true },
+  { _id: CAT_OFF, name: 'Hidden', slug: 'hidden', icon: '🙈', sortOrder: 0, active: false },
 ];
-const svc = (name: string, categoryId: Types.ObjectId, bookingsCount: number, ratingAvg: number, isActive = true) => ({
+const svc = (name: string, categoryId: Types.ObjectId, bookingsCount: number, ratingAvg: number, active = true) => ({
   _id: oid(),
   name,
   slug: name.toLowerCase().replace(/\W+/g, '-'),
@@ -90,7 +91,7 @@ const svc = (name: string, categoryId: Types.ObjectId, bookingsCount: number, ra
   ratingAvg,
   ratingCount: 10,
   bookingsCount,
-  isActive,
+  active,
   internalCostPrice: 123, // must never be returned
 });
 const services = [
@@ -126,12 +127,11 @@ function useSeededRepo() {
     const [row] = run<BookingsFacet>(buildBookingsPipeline(id, COLLECTIONS), bookings);
     return row ?? { active: [], upcoming: [], total: 0 };
   };
-  repo.defaultAddress = async (id) => {
-    calls.push({ fn: 'defaultAddress', id: id.toString() });
-    const own = id.equals(A)
-      ? { _id: oid(), label: 'Home', line1: 'Flat 302', area: 'Kukatpally', city: 'Hyderabad', pincode: '500072', isDefault: true }
+  addressesService.getDefault = async (id) => {
+    calls.push({ fn: 'defaultAddress', id });
+    return A.equals(id)
+      ? { id: oid().toString(), label: 'Home', line1: 'Flat 302', line2: 'Kukatpally', city: 'Hyderabad', state: 'Telangana', pincode: '500072', isDefault: true, serviceable: true }
       : null;
-    return own;
   };
   repo.categories = async () => run<CategoryRow>(buildCategoriesPipeline(COLLECTIONS), categories);
   repo.recommendedServices = async () => run<ServiceRow>(buildRecommendedPipeline(), services);
@@ -341,7 +341,7 @@ test("HTTP 200: customer B gets B's data, never A's", async () => {
 test('HTTP 401: no token / garbage token', async () => {
   const none = await get('');
   assert.equal(none.status, 401);
-  assert.equal(none.body.code, 'NO_ACCESS_TOKEN');
+  assert.equal(none.body.code, 'UNAUTHENTICATED');
   const bad = await get('', 'garbage.token.here');
   assert.equal(bad.status, 401);
   assert.equal(bad.body.code, 'INVALID_ACCESS_TOKEN');

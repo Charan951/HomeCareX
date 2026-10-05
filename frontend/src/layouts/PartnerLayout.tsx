@@ -3,13 +3,16 @@
 // Deps: react-router-dom, lucide-react, tailwindcss
 // Palette: orange #ff8a3d (accent / active / online), indigo #4338ca (shell / brand)
 
-import { useState, useRef, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Home, Briefcase, CalendarClock, Wrench, Wallet, Star, User,
-  LifeBuoy, Settings, Bell, Menu, X, ChevronDown, LogOut,
+  LifeBuoy, Settings, Bell, ArrowLeft, ChevronDown, LogOut, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { HomeCarexMark } from "@/components/band/Homecarexmark";
+import "@/styles/admin.css"; // shared sidebar look (admin-sidebar, nav-link, ...)
 import OnlineIndicator from "../components/partner/OnlineIndicator";
 import PartnerErrorBoundary from "../components/partner/PartnerErrorBoundary";
 
@@ -26,157 +29,248 @@ export const NAV = [
   { key: "system", label: "System", to: "/partner/system", icon: Settings },
 ];
 
-// Bottom nav shows 4 primary tabs + "More" sheet for the rest
-const BOTTOM_KEYS = ["home", "work", "earnings", "profile"];
+// Exact page names for sub-pages (falls back to the NAV label)
+const PAGE_TITLES: Record<string, string> = {
+  "/partner/availability": "Availability",
+  "/partner/working-hours": "Working Hours",
+  "/partner/availability/hours": "Working Hours",
+  "/partner/blackout-dates": "Blackout Dates",
+  "/partner/availability/blackout-dates": "Blackout Dates",
+  "/partner/schedule": "Schedule",
+  "/partner/earnings": "Earnings",
+};
+
+// Bottom tabs. Every other page is reached from the Profile tab (see ProfileMenu).
+// ---- Mobile bottom navigation (Instagram-style: hides on scroll down, shows on scroll up) ----
+const BOTTOM_NAV = [
+  { key: "home", label: "Home", to: "/partner", icon: Home, match: ["/partner"], exact: true },
+  { key: "work", label: "Work", to: "/partner/work", icon: Briefcase, match: ["/partner/work"] },
+  {
+    key: "availability", label: "Availability", to: "/partner/availability", icon: CalendarClock,
+    match: ["/partner/availability", "/partner/working-hours", "/partner/blackout-dates", "/partner/schedule"],
+  },
+  { key: "earnings", label: "Earnings", to: "/partner/earnings", icon: Wallet, match: ["/partner/earnings"] },
+  { key: "profile", label: "Profile", to: "/partner/profile", icon: User, match: ["/partner/profile"] },
+];
+
+function BottomNav({ visible, path }: { visible: boolean; path: string }) {
+  return (
+    <nav
+      aria-label="Primary"
+      className={`fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white transition-transform duration-300 lg:hidden ${
+        visible ? "translate-y-0" : "translate-y-full"
+      }`}
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+    >
+      <ul className="mx-auto flex h-14 max-w-md items-stretch justify-around">
+        {BOTTOM_NAV.map(({ key, label, to, icon: Icon, match, exact }) => {
+          const active = exact ? path === to : match.some((m) => path === m || path.startsWith(m + "/"));
+          return (
+            <li key={key} className="flex-1">
+              <NavLink
+                to={to}
+                aria-label={label}
+                aria-current={active ? "page" : undefined}
+                className={`flex h-full flex-col items-center justify-center gap-0.5 text-[11px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338ca] ${
+                  active ? "text-[#4338ca]" : "text-slate-500"
+                }`}
+              >
+                <Icon size={22} strokeWidth={active ? 2.4 : 1.8} aria-hidden />
+                <span>{label}</span>
+              </NavLink>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
+export const BOTTOM_KEYS = BOTTOM_NAV.map((n) => n.key);
 
 // ---- Online status shared with dashboard pages via context ----
 const PartnerStatusContext = createContext<{ online: boolean; setOnline: (v: boolean) => void }>({ online: false, setOnline: () => {} });
 export const usePartnerStatus = () => useContext(PartnerStatusContext);
 
-// ---- Avatar menu ----
-function AvatarMenu() {
-  const [open, setOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const initials = (user?.name ?? "P").trim().charAt(0).toUpperCase() || "P";
-  const ref = useRef<HTMLDivElement>(null);
+// ---- Sidebar groups (same accordion look as the admin sidebar) ----
+const NAV_GROUPS: { groupName: string; keys: string[] }[] = [
+  { groupName: "Overview", keys: ["home"] },
+  { groupName: "Operations", keys: ["work", "availability", "services"] },
+  { groupName: "Finance", keys: ["earnings", "performance"] },
+  { groupName: "Account", keys: ["profile", "support", "system"] },
+];
 
-  useEffect(() => {
-    const close = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && setOpen(false);
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, []);
+// ---- Sidebar: reuses the admin sidebar CSS so both portals look the same ----
+// Desktop only (>=1024px). On mobile the bottom bar + Profile page replace the old drawer.
+function PartnerSidebar({
+  collapsed, currentLabel,
+}: { collapsed: boolean; currentLabel?: string }) {
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const displayName = user?.name ?? "Partner";
+
+  const groupOf = (label?: string) =>
+    NAV_GROUPS.find((g) => g.keys.some((k) => NAV.find((n) => n.key === k)?.label === label))?.groupName ?? "Overview";
+  const [openGroup, setOpenGroup] = useState<string>(groupOf(currentLabel));
+
+  useEffect(() => { setOpenGroup(groupOf(currentLabel)); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const cls = ["admin-sidebar", collapsed ? "is-collapsed" : ""].filter(Boolean).join(" ");
 
   return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        className="flex items-center gap-1.5 rounded-full p-1 pr-2 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338ca]"
-      >
-        <span className="grid h-8 w-8 place-items-center rounded-full bg-[#4338ca] text-sm font-semibold text-white">
-          {initials}
-        </span>
-        <ChevronDown size={14} className="text-slate-500" />
-      </button>
-      {open && (
-        <div role="menu" className="absolute right-0 z-50 mt-2 w-48 rounded-lg border border-slate-200 bg-white py-1 shadow-lg">
-          <NavLink role="menuitem" to="/partner/profile" onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-            <User size={16} /> My profile
-          </NavLink>
-          <NavLink role="menuitem" to="/partner/support" onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
-            <LifeBuoy size={16} /> Help & support
-          </NavLink>
-          <button role="menuitem" onClick={async () => {
-              setOpen(false);
-              await logout();
-              navigate("/login", { replace: true });
-            }}
-            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50">
-            <LogOut size={16} /> Log out
+    <>
+      <aside className={cls} aria-label="Partner navigation">
+        <div className="sidebar-brand">
+          <div className="sidebar-brand__top">
+            <div className="sidebar-brand__logo">
+              <span className="sidebar-brand__icon"><HomeCarexMark size={22} /></span>
+              {!collapsed && <span className="sidebar-brand__name">HomeCareX</span>}
+            </div>
+          </div>
+          {!collapsed && (
+            <p className="sidebar-brand__guide">
+              {currentLabel ? `Partner / ${currentLabel}` : "Partner Console"}
+            </p>
+          )}
+        </div>
+
+        <nav className="sidebar-nav">
+          {NAV_GROUPS.map((group) => {
+            const items = NAV.filter((n) => group.keys.includes(n.key));
+            const isOpen = collapsed || openGroup === group.groupName;
+            return (
+              <div key={group.groupName} className="nav-group">
+                {!collapsed && (
+                  <button
+                    type="button"
+                    className="nav-group__title nav-group__toggle"
+                    aria-expanded={isOpen}
+                    onClick={() => setOpenGroup((cur) => (cur === group.groupName ? "" : group.groupName))}
+                  >
+                    <span>{group.groupName}</span>
+                    <ChevronDown size={14} className={`nav-group__chevron${isOpen ? " is-open" : ""}`} />
+                  </button>
+                )}
+                {isOpen && (
+                  <ul className="nav-list">
+                    {items.map(({ key, label, to, icon: Icon, end }) => (
+                      <li key={key}>
+                        <NavLink
+                          to={to}
+                          end={end}
+                          title={collapsed ? label : undefined}
+                          className={({ isActive }) => `nav-link${isActive ? " is-active" : ""}`}
+                        >
+                          <Icon className="nav-link__icon" size={20} aria-hidden />
+                          {!collapsed && <span className="nav-link__label">{label}</span>}
+                          {collapsed && <span className="sr-only">{label}</span>}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        <div className="sidebar-footer">
+          <button
+            type="button"
+            className="sidebar-footer__user sidebar-footer__user-btn"
+            title={collapsed ? displayName : undefined}
+            onClick={() => navigate("/partner/profile")}
+          >
+            <span className="avatar">{displayName.charAt(0).toUpperCase()}</span>
+            {!collapsed && <span className="profile-name">{displayName}</span>}
+          </button>
+          <button
+            type="button"
+            className="sidebar-signout-btn"
+            title="Sign out"
+            onClick={async () => { await logout(); navigate("/login", { replace: true }); }}
+          >
+            <LogOut size={18} />
+            {!collapsed && <span>Sign out</span>}
           </button>
         </div>
-      )}
-    </div>
-  );
-}
-
-// ---- Sidebar (desktop + drawer content) ----
-function SidebarLinks({ onNavigate }: { onNavigate?: () => void }) {
-  return (
-    <nav aria-label="Partner navigation" className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-      {NAV.map(({ key, label, to, icon: Icon, end }) => (
-        <NavLink
-          key={key}
-          to={to}
-          end={end}
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            `group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${
-              isActive
-                ? "bg-[#ff8a3d] text-white shadow-sm"
-                : "text-indigo-100 hover:bg-white/10 hover:text-white"
-            }`
-          }
-        >
-          <Icon size={18} aria-hidden />
-          {label}
-        </NavLink>
-      ))}
-    </nav>
-  );
-}
-
-function Brand() {
-  return (
-    <div className="flex items-center gap-2 px-5 py-5">
-      <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#ff8a3d] font-bold text-white">H</span>
-      <div className="leading-tight">
-        <p className="font-semibold text-white">HomeCareX</p>
-        <p className="text-xs text-indigo-200">Partner</p>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 }
 
 // ---- Layout ----
 export default function PartnerLayout() {
   const [online, setOnline] = useState(false); // TODO: persist via availability API
-  const [drawer, setDrawer] = useState(false);
+  const [collapsedPref, setCollapsedPref] = useState(false);
+  const [navVisible, setNavVisible] = useState(true);
+  const isDesktop = useMediaQuery("(min-width: 1024px)");
+  const collapsed = collapsedPref && isDesktop;
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
-  useEffect(() => setDrawer(false), [pathname]);
+  // Hide the bottom nav when scrolling down, show it when scrolling up (like Instagram)
+  useEffect(() => {
+    setNavVisible(true);
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const delta = y - last;
+      if (Math.abs(delta) < 8) return; // ignore tiny movements
+      if (y <= 24) setNavVisible(true);
+      else setNavVisible(delta < 0);
+      last = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [pathname]);
 
+  const cleanPath = pathname.replace(/\/+$/, "") || "/";
   const current = NAV.find((n) => (n.end ? pathname === n.to : pathname.startsWith(n.to)));
-  const bottom = NAV.filter((n) => BOTTOM_KEYS.includes(n.key));
-  const moreActive = current && !BOTTOM_KEYS.includes(current.key);
+  const title = PAGE_TITLES[cleanPath] ?? current?.label ?? "Partner";
+  // Availability / Working Hours / Blackout Dates / Schedule / Earnings on mobile: header shows only [Back] + page name
+  const minimalHeader = Object.keys(PAGE_TITLES).includes(cleanPath);
+
+  // Mobile back button: shown on every page except Home.
+  const showBack = cleanPath !== "/partner";
+  const isTabRoot = BOTTOM_NAV.some((n) => n.to === cleanPath); // /partner/work, /earnings, /profile ...
+  const goBack = () => {
+    if (isTabRoot) return navigate("/partner"); // tab root -> Home
+    const hasHistory = (window.history.state as { idx?: number } | null)?.idx;
+    if (hasHistory) return navigate(-1); // came from a page inside the app
+    // opened directly (refresh / bookmark): go to the logical parent
+    navigate(current && !BOTTOM_KEYS.includes(current.key) ? "/partner/profile" : "/partner");
+  };
 
   return (
     <PartnerStatusContext.Provider value={{ online, setOnline }}>
-      <div className="min-h-screen bg-slate-50 text-slate-900">
-        {/* Desktop sidebar */}
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-[#4338ca] lg:flex">
-          <Brand />
-          <SidebarLinks />
-        </aside>
+      <div className="flex min-h-screen bg-slate-50 text-slate-900">
+        <PartnerSidebar collapsed={collapsed} currentLabel={current?.label} />
 
-        {/* Mobile drawer (opened from header menu or "More") */}
-        {drawer && (
-          <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setDrawer(false)} />
-            <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-[#4338ca]">
-              <div className="flex items-center justify-between pr-3">
-                <Brand />
-                <button onClick={() => setDrawer(false)} aria-label="Close menu"
-                  className="rounded-md p-2 text-indigo-100 hover:bg-white/10">
-                  <X size={20} />
+        <div className="min-w-0 flex-1">
+          {/* Header: [Back] Page name ........ status, bell */}
+          <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-2 sm:h-16 sm:px-6">
+            <div className="flex min-w-0 items-center gap-0.5 sm:gap-3">
+              {showBack && (
+                <button onClick={goBack} aria-label="Go back"
+                  className="shrink-0 rounded-md p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338ca] lg:hidden">
+                  <ArrowLeft size={20} />
                 </button>
-              </div>
-              <SidebarLinks onNavigate={() => setDrawer(false)} />
-            </aside>
-          </div>
-        )}
-
-        <div className="lg:pl-64">
-          {/* Header */}
-          <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setDrawer(true)} aria-label="Open menu"
-                className="rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:hidden">
-                <Menu size={20} />
+              )}
+              <button onClick={() => setCollapsedPref((v) => !v)}
+                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+                className="hidden rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:inline-flex">
+                {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
               </button>
-              <h1 className="text-lg font-semibold text-[#4338ca]">{current?.label ?? "Partner"}</h1>
+              <h1 className="truncate text-base font-semibold text-[#4338ca] sm:text-lg">{title}</h1>
             </div>
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className={`shrink-0 items-center gap-0.5 sm:gap-3 ${minimalHeader ? "hidden lg:flex" : "flex"}`}>
               <OnlineIndicator online={online} onChange={setOnline} />
               <button aria-label="Notifications"
-                className="relative rounded-full p-2 text-slate-600 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338ca]">
+                className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338ca]">
                 <Bell size={20} />
               </button>
-              <AvatarMenu />
             </div>
           </header>
 
@@ -188,29 +282,7 @@ export default function PartnerLayout() {
           </main>
         </div>
 
-        {/* Mobile bottom nav */}
-        <nav aria-label="Primary" className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">
-          <ul className="grid grid-cols-5">
-            {bottom.map(({ key, label, to, icon: Icon, end }) => (
-              <li key={key}>
-                <NavLink to={to} end={end}
-                  className={({ isActive }) =>
-                    `flex flex-col items-center gap-0.5 py-2 text-xs font-medium ${isActive ? "text-[#ff8a3d]" : "text-slate-500"}`
-                  }>
-                  <Icon size={20} aria-hidden />
-                  {label}
-                </NavLink>
-              </li>
-            ))}
-            <li>
-              <button onClick={() => setDrawer(true)}
-                className={`flex w-full flex-col items-center gap-0.5 py-2 text-xs font-medium ${moreActive ? "text-[#ff8a3d]" : "text-slate-500"}`}>
-                <Menu size={20} aria-hidden />
-                More
-              </button>
-            </li>
-          </ul>
-        </nav>
+        <BottomNav visible={navVisible} path={cleanPath} />
       </div>
     </PartnerStatusContext.Provider>
   );

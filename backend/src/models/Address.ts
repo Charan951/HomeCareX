@@ -1,30 +1,30 @@
-import { Schema, model, type InferSchemaType } from 'mongoose';
+import { Schema, model, type InferRawDocType } from 'mongoose';
 
 /**
- * A saved service address. Belongs to exactly one customer (userId).
- * Contract for: addresses module, booking flow, customer dashboard.
- * Every read MUST filter by userId taken from the verified token.
+ * A customer's saved address. Booking never references this live: the booking module copies it
+ * into `addressSnapshot` at creation time, so later edits/deletes don't rewrite history.
  */
 const AddressSchema = new Schema(
   {
-    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    /** "Home", "Office", "Parents' Home"... */
-    label: { type: String, required: true, trim: true, maxlength: 30 },
+    customerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    label: { type: String, trim: true, maxlength: 50, default: 'Home' },
+    contactName: { type: String, trim: true, maxlength: 100 },
+    contactPhone: { type: String, trim: true, maxlength: 20 },
     line1: { type: String, required: true, trim: true, maxlength: 200 },
-    area: { type: String, trim: true, maxlength: 100 },
+    line2: { type: String, trim: true, maxlength: 200 },
+    landmark: { type: String, trim: true, maxlength: 200 },
     city: { type: String, required: true, trim: true, maxlength: 100 },
-    pincode: { type: String, match: /^\d{6}$/ },
-    location: {
-      type: { type: String, enum: ['Point'] },
-      coordinates: { type: [Number] }, // [lng, lat]
-    },
+    state: { type: String, required: true, trim: true, maxlength: 100 },
+    pincode: { type: String, required: true, match: /^\d{4,10}$/ },
+    // Optional: filled from the serviceable area's centre when the client has no geocoder.
+    location: { lat: { type: Number }, lng: { type: Number } },
     isDefault: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
 
-AddressSchema.index({ userId: 1, isDefault: -1, updatedAt: -1 });
+AddressSchema.index({ customerId: 1, createdAt: -1 });
 
-export type Address = InferSchemaType<typeof AddressSchema>;
+export type IAddress = InferRawDocType<(typeof AddressSchema)['obj']> & { _id: import('mongoose').Types.ObjectId };
 export const AddressModel = model('Address', AddressSchema);
 export default AddressModel;

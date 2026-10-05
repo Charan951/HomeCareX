@@ -23,8 +23,8 @@ export const serviceUpdateSchema = serviceCreateSchema.partial().refine((v) => O
   message: 'Nothing to update',
 });
 
-export const serviceAdminQuerySchema = z.object({
+export const serviceQuerySchema = z.object({
   category: z.string().trim().optional(), // category id or slug
   q: z.string().trim().max(60).optional(),
-  active: z.enum(['true', 'false']).optional(),
+  active: z.enum(['true', 'false']).optional(), // admin list only
 });

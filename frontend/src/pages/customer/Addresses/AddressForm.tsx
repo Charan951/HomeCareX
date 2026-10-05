@@ -23,15 +23,16 @@ interface AddressFormProps {
   onCancel: () => void;
 }
 
-type Errors = Partial<Record<"label" | "line1" | "city" | "pincode", string>>;
+type Errors = Partial<Record<"label" | "line1" | "city" | "state" | "pincode", string>>;
 
-function validate(v: { label: string; line1: string; city: string; pincode: string }): Errors {
+function validate(v: { label: string; line1: string; city: string; state: string; pincode: string }): Errors {
   const e: Errors = {};
   if (!v.label.trim()) e.label = "Give this address a name";
   else if (v.label.trim().length > 30) e.label = "Keep the name under 30 characters";
   if (!v.line1.trim()) e.line1 = "Enter the house / street address";
   if (!v.city.trim()) e.city = "Enter the city";
-  if (v.pincode.trim() && !/^\d{6}$/.test(v.pincode.trim())) e.pincode = "Pincode must be 6 digits";
+  if (!v.state.trim()) e.state = "Enter the state";
+  if (!/^\d{6}$/.test(v.pincode.trim())) e.pincode = "Pincode must be 6 digits";
   return e;
 }
 
@@ -45,23 +46,26 @@ const inputClass = (invalid: boolean) =>
 export default function AddressForm({ initial, isFirst, saving, serverError, onSubmit, onCancel }: AddressFormProps) {
   const [label, setLabel] = useState(initial?.label ?? "Home");
   const [line1, setLine1] = useState(initial?.line1 ?? "");
-  const [area, setArea] = useState(initial?.area ?? "");
+  const [area, setArea] = useState(initial?.line2 ?? "");
   const [city, setCity] = useState(initial?.city ?? "");
+  const [state, setState] = useState(initial?.state ?? "");
   const [pincode, setPincode] = useState(initial?.pincode ?? "");
   const [makeDefault, setMakeDefault] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    const found = validate({ label, line1, city, pincode });
+    const found = validate({ label, line1, city, state, pincode });
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     onSubmit({
       label: label.trim(),
       line1: line1.trim(),
-      area: area.trim() || null,
+      // An empty string clears line2 on edit (the API $sets what it's given).
+      ...(area.trim() || initial?.line2 ? { line2: area.trim() } : {}),
       city: city.trim(),
-      pincode: pincode.trim() || null,
+      state: state.trim(),
+      pincode: pincode.trim(),
       ...(makeDefault && !initial?.isDefault ? { isDefault: true } : {}),
     });
   }
@@ -127,10 +131,17 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
         </div>
       </div>
 
-      <div className="sm:w-1/2">
-        <label htmlFor="addr-pin" className="mb-1 block text-sm font-medium text-ink">Pincode <span className="font-normal text-muted">(optional)</span></label>
-        <input id="addr-pin" value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="500072" aria-invalid={!!errors.pincode} aria-describedby={errors.pincode ? "addr-pin-err" : undefined} className={inputClass(!!errors.pincode)} />
-        {err("addr-pin-err", errors.pincode)}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="addr-state" className="mb-1 block text-sm font-medium text-ink">State</label>
+          <input id="addr-state" value={state} onChange={(e) => setState(e.target.value)} maxLength={100} placeholder="Telangana" aria-invalid={!!errors.state} aria-describedby={errors.state ? "addr-state-err" : undefined} className={inputClass(!!errors.state)} />
+          {err("addr-state-err", errors.state)}
+        </div>
+        <div>
+          <label htmlFor="addr-pin" className="mb-1 block text-sm font-medium text-ink">Pincode</label>
+          <input id="addr-pin" value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="500072" aria-invalid={!!errors.pincode} aria-describedby={errors.pincode ? "addr-pin-err" : undefined} className={inputClass(!!errors.pincode)} />
+          {err("addr-pin-err", errors.pincode)}
+        </div>
       </div>
 
       {!initial?.isDefault && !isFirst && (

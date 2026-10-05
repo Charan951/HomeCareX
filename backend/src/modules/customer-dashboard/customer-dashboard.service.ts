@@ -1,10 +1,9 @@
 import { Types } from 'mongoose';
 import { Errors } from '../../utils/errors';
-import type { AddressDto } from '../addresses/addresses.types';
+import { addressesService } from '../addresses/addresses.service';
 import { LIVE_PROGRESS_STEP } from './customer-dashboard.constants';
 import { customerDashboardRepository as repo } from './customer-dashboard.repository';
 import type {
-  AddressRow,
   BookingRow,
   CategoryRow,
   CustomerDashboardDto,
@@ -13,7 +12,7 @@ import type {
   DashboardServiceDto,
   ServiceRow,
 } from './customer-dashboard.types';
-import { ERROR_CODES } from '../../constants/ErrorCodes';
+import { ERROR_CODES } from '../../constants/errorCodes';
 
 /* ---------- pure mappers (unit-tested) ---------- */
 
@@ -62,16 +61,6 @@ export const toServiceDto = (row: ServiceRow): DashboardServiceDto => ({
   ratingCount: row.ratingCount ?? 0,
 });
 
-export const toAddressDto = (row: AddressRow): AddressDto => ({
-  id: row._id.toString(),
-  label: row.label,
-  line1: row.line1,
-  area: row.area ?? null,
-  city: row.city,
-  pincode: row.pincode ?? null,
-  isDefault: row.isDefault ?? false,
-});
-
 /* ---------- service ---------- */
 
 export const customerDashboardService = {
@@ -89,7 +78,7 @@ export const customerDashboardService = {
 
     const [bookings, address, categories, services, unread] = await Promise.all([
       repo.bookings(customerId),
-      repo.defaultAddress(customerId),
+      addressesService.getDefault(userId),
       repo.categories(),
       repo.recommendedServices(),
       repo.unreadNotifications(customerId),
@@ -98,7 +87,7 @@ export const customerDashboardService = {
     return {
       greeting: { name: customer.name, firstName: firstName(customer.name) },
       isNewCustomer: bookings.total === 0,
-      defaultAddress: address ? toAddressDto(address) : null,
+      defaultAddress: address,
       activeBookings: bookings.active.map(toBookingDto),
       upcomingBookings: bookings.upcoming.map(toBookingDto),
       categories: categories.map(toCategoryDto),

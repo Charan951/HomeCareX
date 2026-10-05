@@ -39,13 +39,13 @@ const LIST_FIELDS = 'slug name description icon categoryId basePrice durationMin
 /** Only layer that talks to Mongo. Tests swap these methods for in-memory versions. */
 export const catalogRepository = {
   activeCategories(): Promise<CategoryRow[]> {
-    return CategoryModel.find({ isActive: true }, CATEGORY_FIELDS).sort({ sortOrder: 1, name: 1 }).lean<CategoryRow[]>().exec();
+    return CategoryModel.find({ active: { $ne: false } }, CATEGORY_FIELDS).sort({ sortOrder: 1, name: 1 }).lean<CategoryRow[]>().exec();
   },
 
   /** Per category, over active services: how many, the cheapest price and total bookings (used only to flag the most booked). */
   async activeServiceStats(): Promise<Map<string, CategoryStats>> {
     const rows = await ServiceModel.aggregate<{ _id: Types.ObjectId; count: number; fromPrice: number; bookings: number }>([
-      { $match: { isActive: true } },
+      { $match: { active: { $ne: false } } },
       { $group: { _id: '$categoryId', count: { $sum: 1 }, fromPrice: { $min: '$basePrice' }, bookings: { $sum: '$bookingsCount' } } },
     ]);
     return new Map(rows.map((r) => [String(r._id), { count: r.count, fromPrice: r.fromPrice, bookings: r.bookings }]));
@@ -69,6 +69,6 @@ export const catalogRepository = {
 
   findService(idOrSlug: string): Promise<ServiceRow | null> {
     const where = Types.ObjectId.isValid(idOrSlug) ? { _id: idOrSlug } : { slug: idOrSlug };
-    return ServiceModel.findOne({ ...where, isActive: true }, `${LIST_FIELDS} addOns`).lean<ServiceRow>().exec();
+    return ServiceModel.findOne({ ...where, active: { $ne: false } }, `${LIST_FIELDS} addOns`).lean<ServiceRow>().exec();
   },
 };
