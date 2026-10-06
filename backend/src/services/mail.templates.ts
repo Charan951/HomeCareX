@@ -13,7 +13,7 @@ export const BRAND = {
   text: '#1e293b',
   muted: '#64748b',
   border: '#e2e8f0',
-  page: '#f1f5f9',
+  page: '#f8fafc',
 } as const;
 
 export const esc = (v: string) =>
@@ -33,25 +33,25 @@ interface LayoutOptions {
 
 function layout({ preheader, logoSrc, bodyHtml, footerNote, supportEmail }: LayoutOptions): string {
   const logo = logoSrc
-    ? `<img src="${esc(logoSrc)}" width="190" alt="${BRAND.name}" style="display:block;margin:0 auto;border:0;outline:none;height:auto;max-width:190px" />`
+    ? `<img src="${esc(logoSrc)}" width="180" alt="${BRAND.name}" style="display:block;margin:0 auto;border:0;outline:none;height:auto;max-width:180px" />`
     : `<span style="font:800 26px ${FONT};color:${BRAND.indigo}">Home<span style="color:${BRAND.orange}">CareX</span></span>`;
   const support = supportEmail
-    ? `Need help? Write to <a href="mailto:${esc(supportEmail)}" style="color:${BRAND.indigo};text-decoration:none">${esc(supportEmail)}</a>.<br />`
-    : '';
+    ? `Have questions or need assistance? Reach out anytime at <a href="mailto:${esc(supportEmail)}" style="color:${BRAND.indigo};text-decoration:none;font-weight:600">${esc(supportEmail)}</a>.<br />`
+    : `We're here for you whenever you need a helping hand.<br />`;
 
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><title>${BRAND.name}</title></head>
 <body style="margin:0;padding:0;background:${BRAND.page};-webkit-text-size-adjust:100%">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent">${esc(preheader)}&#8199;&zwnj;&#8199;&zwnj;&#8199;&zwnj;</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BRAND.page}">
-  <tr><td align="center" style="padding:32px 12px">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid ${BRAND.border}">
+  <tr><td align="center" style="padding:36px 12px">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid ${BRAND.border};box-shadow:0 4px 16px rgba(0,0,0,0.04)">
       <tr><td style="height:5px;line-height:5px;font-size:0;background:${BRAND.indigo};border-bottom:3px solid ${BRAND.orange}">&nbsp;</td></tr>
-      <tr><td align="center" style="padding:28px 32px 8px">${logo}</td></tr>
-      <tr><td style="padding:8px 40px 36px;font-family:${FONT};color:${BRAND.text};font-size:15px;line-height:1.65">${bodyHtml}</td></tr>
-      <tr><td style="background:#f8fafc;border-top:1px solid ${BRAND.border};padding:22px 40px;font-family:${FONT};font-size:12px;line-height:1.7;color:${BRAND.muted};text-align:center">
+      <tr><td align="center" style="padding:32px 32px 10px">${logo}</td></tr>
+      <tr><td style="padding:10px 40px 36px;font-family:${FONT};color:${BRAND.text};font-size:15px;line-height:1.7">${bodyHtml}</td></tr>
+      <tr><td style="background:#f8fafc;border-top:1px solid ${BRAND.border};padding:24px 40px;font-family:${FONT};font-size:12px;line-height:1.7;color:${BRAND.muted};text-align:center">
         ${support}${esc(footerNote)}<br />
-        &copy; ${new Date().getFullYear()} ${BRAND.name}. All rights reserved.
+        &copy; ${new Date().getFullYear()} ${BRAND.name}. Dedicated to exceptional home services.
       </td></tr>
     </table>
   </td></tr>
@@ -60,15 +60,15 @@ function layout({ preheader, logoSrc, bodyHtml, footerNote, supportEmail }: Layo
 }
 
 const button = (href: string, label: string) => `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:28px auto 8px">
-  <tr><td align="center" bgcolor="${BRAND.indigo}" style="border-radius:10px">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:26px auto 10px">
+  <tr><td align="center" bgcolor="${BRAND.indigo}" style="border-radius:10px;box-shadow:0 2px 8px rgba(67,56,202,0.25)">
     <a href="${esc(href)}" style="display:inline-block;padding:14px 34px;font:600 15px ${FONT};color:#ffffff;text-decoration:none;border-radius:10px;background:${BRAND.indigo}">${esc(label)} &rarr;</a>
   </td></tr>
 </table>`;
 
 const row = (label: string, valueHtml: string, last = false) => `
 <tr>
-  <td style="padding:12px 18px;${last ? '' : `border-bottom:1px solid ${BRAND.border};`}font:600 12px ${FONT};letter-spacing:.06em;text-transform:uppercase;color:${BRAND.muted};width:110px;vertical-align:middle">${label}</td>
+  <td style="padding:12px 18px;${last ? '' : `border-bottom:1px solid ${BRAND.border};`}font:600 12px ${FONT};letter-spacing:.05em;text-transform:uppercase;color:${BRAND.muted};width:130px;vertical-align:middle">${label}</td>
   <td style="padding:12px 18px;${last ? '' : `border-bottom:1px solid ${BRAND.border};`}font:15px ${FONT};color:${BRAND.text};vertical-align:middle">${valueHtml}</td>
 </tr>`;
 
@@ -134,36 +134,37 @@ export function accountCreatedEmail(d: AccountCreatedEmailData) {
   });
 
   const bodyHtml = `
-<h1 style="margin:12px 0 6px;font:700 24px ${FONT};color:${BRAND.indigoDark};text-align:center">Welcome to ${BRAND.name}!</h1>
-<p style="margin:0 0 22px;text-align:center;color:${BRAND.muted}">Your account has been successfully created.</p>
+<h1 style="margin:8px 0 6px;font:700 24px ${FONT};color:${BRAND.indigoDark};text-align:center">Welcome to the HomeCareX family!</h1>
+<p style="margin:0 0 22px;text-align:center;color:${BRAND.muted}">Your home deserves exceptional care — and we're so glad you're here.</p>
 
-<p style="margin:0 0 18px">Hi ${esc(d.name)},</p>
-<p style="margin:0 0 22px">You can now sign in to your ${BRAND.name} account and access the services available to you.</p>
+<p style="margin:0 0 16px">Hi ${esc(d.name)},</p>
+<p style="margin:0 0 18px">Taking care of your home should bring peace of mind, not hassle. Whether it is deep home cleaning, electrical or plumbing work, or routine maintenance, you are now connected with verified specialists who treat your space with genuine pride and respect.</p>
+<p style="margin:0 0 20px">Here is a quick summary of your account details for your reference:</p>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${BRAND.border};border-radius:12px;border-collapse:separate;background:#f8fafc">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${BRAND.border};border-radius:12px;border-collapse:separate;background:#f8fafc;margin-bottom:20px">
   ${row('Name', esc(d.name))}
   ${row('Email', esc(d.email))}
   ${row('Role', esc(role))}
   ${row('Account created', esc(createdAt), true)}
 </table>
 
-${button(d.loginUrl, 'Go to HomeCareX')}
-<p style="margin:0 0 18px;text-align:center;font-size:12px;color:${BRAND.muted}">Button not working? Copy this link into your browser:<br /><a href="${esc(d.loginUrl)}" style="color:${BRAND.indigo};word-break:break-all">${esc(d.loginUrl)}</a></p>
+${button(d.loginUrl, 'Explore & Book Services')}
+<p style="margin:0 0 22px;text-align:center;font-size:12px;color:${BRAND.muted}">Button not working? Copy this link directly into your browser:<br /><a href="${esc(d.loginUrl)}" style="color:${BRAND.indigo};word-break:break-all">${esc(d.loginUrl)}</a></p>
 
-<p style="margin:0 0 8px;text-align:center">You can review or update your profile after signing in.</p>
-${button(d.profileUrl, 'Edit Profile')}
-<p style="margin:0 0 26px;text-align:center;font-size:12px;color:${BRAND.muted}">Profile link: <a href="${esc(d.profileUrl)}" style="color:${BRAND.indigo};word-break:break-all">${esc(d.profileUrl)}</a></p>
+<p style="margin:0 0 8px;text-align:center">Feel free to review and customize your profile so we can tailor every visit to your needs:</p>
+${button(d.profileUrl, 'View My Profile')}
+<p style="margin:0 0 24px;text-align:center;font-size:12px;color:${BRAND.muted}">Profile link: <a href="${esc(d.profileUrl)}" style="color:${BRAND.indigo};word-break:break-all">${esc(d.profileUrl)}</a></p>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff7ed;border-left:4px solid ${BRAND.orange};border-radius:6px">
   <tr><td style="padding:14px 18px;font:14px/1.6 ${FONT};color:#7c2d12">
-    If you did not create this account, please contact ${BRAND.name} support immediately.
+    <strong>Need peace of mind?</strong> If you did not create this account, please let our friendly support team know right away and we will secure your email immediately.
   </td></tr>
 </table>
 
-<p style="margin:26px 0 0">Regards,<br /><strong>${BRAND.name} Team</strong></p>`;
+<p style="margin:26px 0 0">Warmly,<br /><strong>The ${BRAND.name} Team</strong></p>`;
 
   const html = layout({
-    preheader: `Your ${BRAND.name} account has been successfully created.`,
+    preheader: `Welcome to ${BRAND.name}! Your home care journey starts here.`,
     logoSrc: d.logoSrc,
     bodyHtml,
     footerNote: `You are receiving this email because an account was created using ${d.email}.`,
@@ -173,23 +174,26 @@ ${button(d.profileUrl, 'Edit Profile')}
   const text = [
     `Hi ${d.name},`,
     '',
-    `Welcome to ${BRAND.name}!`,
+    `Welcome to the ${BRAND.name} family!`,
     '',
-    'Your account has been successfully created.',
+    'Your home deserves exceptional care — and we are so glad you are here.',
+    'Taking care of your home should bring peace of mind, not hassle.',
+    'Whether it is deep cleaning, electrical or plumbing repairs, or regular maintenance,',
+    'you are now connected with verified specialists who treat your space with genuine care.',
     '',
-    'Account details:',
+    'Your account details:',
     `Name: ${d.name}`,
     `Email: ${d.email}`,
     `Role: ${role}`,
     `Account created: ${createdAt}`,
     '',
-    `Go to HomeCareX: ${d.loginUrl}`,
-    `Edit Profile: ${d.profileUrl}`,
+    `Explore & Book Services: ${d.loginUrl}`,
+    `View Your Profile: ${d.profileUrl}`,
     '',
-    'If you did not create this account, please contact HomeCareX support immediately.',
+    `If you did not create this account, please contact ${BRAND.name} support immediately.`,
     '',
-    'Regards,',
-    'HomeCareX Team',
+    'Warmly,',
+    `The ${BRAND.name} Team`,
   ].join('\n');
 
   return { subject: 'Welcome to HomeCareX — Your account has been created', html, text };
@@ -199,56 +203,130 @@ export function partnerCredentialsEmail(d: PartnerCredentialsData) {
   const firstName = d.name.trim().split(/\s+/)[0] || d.name;
 
   const bodyHtml = `
-<h1 style="margin:12px 0 6px;font:700 24px ${FONT};color:${BRAND.indigoDark};text-align:center">Welcome aboard, ${esc(firstName)}!</h1>
-<p style="margin:0 0 22px;text-align:center;color:${BRAND.muted}">Your partner account is ready.</p>
+<h1 style="margin:8px 0 6px;font:700 24px ${FONT};color:${BRAND.indigoDark};text-align:center">Welcome to the partner team, ${esc(firstName)}!</h1>
+<p style="margin:0 0 22px;text-align:center;color:${BRAND.muted}">We're thrilled to have a skilled professional like you representing ${BRAND.name}.</p>
 
-<p style="margin:0 0 18px">Hi ${esc(d.name)},</p>
-<p style="margin:0 0 22px">You have been registered as a <strong style="color:${BRAND.indigo}">${esc(d.designation)}</strong> on the ${BRAND.name} partner platform. Use the details below to sign in and start receiving jobs.</p>
+<p style="margin:0 0 16px">Hi ${esc(d.name)},</p>
+<p style="margin:0 0 18px">Homeowners choose ${BRAND.name} because of trusted, expert partners who take genuine pride in their craft. You have been registered as a <strong style="color:${BRAND.indigo}">${esc(d.designation)}</strong> on our verified partner network.</p>
+<p style="margin:0 0 20px">Here are your temporary sign-in details to access your partner portal and start receiving job requests:</p>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${BRAND.border};border-radius:12px;border-collapse:separate;background:#f8fafc">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${BRAND.border};border-radius:12px;border-collapse:separate;background:#f8fafc;margin-bottom:20px">
   ${row('Login email', `<span style="color:${BRAND.text}">${esc(d.email)}</span>`)}
-  ${row('Password', `<span style="display:inline-block;padding:5px 10px;background:#ffffff;border:1px dashed ${BRAND.indigo};border-radius:6px;font:600 15px 'Courier New',Courier,monospace;letter-spacing:.04em;color:${BRAND.indigoDark}">${esc(d.password)}</span>`)}
+  ${row('Temporary password', `<span style="display:inline-block;padding:5px 12px;background:#ffffff;border:1px dashed ${BRAND.indigo};border-radius:6px;font:600 15px 'Courier New',Courier,monospace;letter-spacing:.04em;color:${BRAND.indigoDark}">${esc(d.password)}</span>`)}
   ${row('Role', esc(d.designation), true)}
 </table>
 
-${button(d.loginUrl, 'Sign in to your account')}
-<p style="margin:0 0 26px;text-align:center;font-size:12px;color:${BRAND.muted}">Button not working? Copy this link into your browser:<br /><a href="${esc(d.loginUrl)}" style="color:${BRAND.indigo};word-break:break-all">${esc(d.loginUrl)}</a></p>
+${button(d.loginUrl, 'Sign In to Partner Portal')}
+<p style="margin:0 0 24px;text-align:center;font-size:12px;color:${BRAND.muted}">Direct portal link:<br /><a href="${esc(d.loginUrl)}" style="color:${BRAND.indigo};word-break:break-all">${esc(d.loginUrl)}</a></p>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff7ed;border-left:4px solid ${BRAND.orange};border-radius:6px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff7ed;border-left:4px solid ${BRAND.orange};border-radius:6px;margin-bottom:24px">
   <tr><td style="padding:14px 18px;font:14px/1.6 ${FONT};color:#7c2d12">
-    <strong>Keep this secure.</strong> Change your password right after your first sign-in and never share it with anyone. ${BRAND.name} staff will never ask for your password.
+    <strong>Security reminder:</strong> Please change your temporary password immediately upon your first sign-in. For your protection, never share this password with anyone — our staff will never ask for your password.
   </td></tr>
 </table>
 
-<p style="margin:26px 0 8px;font-weight:600;color:${BRAND.indigoDark}">What happens next</p>
-<ol style="margin:0;padding-left:20px;color:${BRAND.text}">
-  <li style="margin-bottom:6px">Sign in and update your password.</li>
-  <li style="margin-bottom:6px">Complete your profile and verification documents.</li>
-  <li>Set your working hours to start receiving job requests.</li>
+<p style="margin:0 0 10px;font-weight:700;color:${BRAND.indigoDark}">Quick steps to get you ready for your first booking:</p>
+<ol style="margin:0 0 24px;padding-left:20px;color:${BRAND.text};line-height:1.75">
+  <li style="margin-bottom:6px">Sign in and set your personal, permanent password.</li>
+  <li style="margin-bottom:6px">Review your profile details and upload any required verification documents.</li>
+  <li>Set your service areas and availability to start receiving customer bookings.</li>
 </ol>
-<p style="margin:26px 0 0">Warm regards,<br /><strong>The ${BRAND.name} Team</strong></p>`;
+
+<p style="margin:26px 0 0">We're fully invested in your success and look forward to doing great work together.<br /><br />Proud to partner with you,<br /><strong>The ${BRAND.name} Team</strong></p>`;
 
   const html = layout({
-    preheader: `Your ${BRAND.name} partner account is ready. Sign in with the details inside.`,
+    preheader: `Welcome to the ${BRAND.name} Partner Community! Your workspace is ready.`,
     logoSrc: d.logoSrc,
     bodyHtml,
-    footerNote: `You are receiving this email because an administrator created a ${BRAND.name} partner account for ${d.email}. If this was not expected, please ignore this message.`,
+    footerNote: `You are receiving this email because a ${BRAND.name} partner account was created for ${d.email}. If this was unexpected, please reach out to us.`,
     supportEmail: d.supportEmail,
   });
 
   const text = [
     `Welcome to ${BRAND.name}, ${d.name}!`,
     '',
-    `Your partner account (${d.designation}) is ready.`,
+    `We are thrilled to welcome you as a ${d.designation} on our partner platform.`,
+    'Homeowners trust us because of skilled, dependable partners who take real pride in their craft.',
     '',
-    `Login:    ${d.loginUrl}`,
+    'Your sign-in details:',
+    `Portal:   ${d.loginUrl}`,
     `Email:    ${d.email}`,
     `Password: ${d.password}`,
     '',
-    'Please change your password after your first sign-in and never share it with anyone.',
+    'Important: Please change your password immediately after your first sign-in.',
+    'Our team will never ask for your password.',
     '',
+    'Next steps:',
+    '1. Sign in and set your personal password.',
+    '2. Complete your profile and verification documents.',
+    '3. Set your service areas and availability to start receiving jobs.',
+    '',
+    'Proud to partner with you,',
     `The ${BRAND.name} Team`,
   ].join('\n');
 
   return { subject: `Welcome to ${BRAND.name}: your partner account is ready`, html, text };
+}
+
+export interface PasswordResetEmailData {
+  name: string;
+  email: string;
+  resetUrl: string;
+  logoSrc?: string;
+  supportEmail?: string;
+}
+
+export function passwordResetEmail(d: PasswordResetEmailData): { subject: string; html: string; text: string } {
+  const firstName = d.name.trim().split(/\s+/)[0] || d.name;
+
+  const bodyHtml = `
+<h1 style="margin:8px 0 6px;font:700 24px ${FONT};color:${BRAND.indigoDark};text-align:center">Let's get you back in</h1>
+<p style="margin:0 0 22px;text-align:center;color:${BRAND.muted}">Reset your password and regain access to your account.</p>
+
+<p style="margin:0 0 16px">Hi ${esc(firstName)},</p>
+<p style="margin:0 0 16px">We received a request to reset the password for your ${BRAND.name} account. No worries at all — it happens to the best of us!</p>
+<p style="margin:0 0 20px">Simply tap the button below to choose a fresh, secure password:</p>
+
+${button(d.resetUrl, 'Reset My Password')}
+
+<p style="margin:20px 0 22px;text-align:center;font-size:12px;color:${BRAND.muted}">Button not working? Copy and paste this link into your browser:<br /><a href="${esc(d.resetUrl)}" style="color:${BRAND.indigo};word-break:break-all">${esc(d.resetUrl)}</a></p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border:1px solid ${BRAND.border};border-radius:10px;margin-bottom:20px">
+  <tr><td style="padding:16px 20px;font:13px/1.7 ${FONT};color:${BRAND.muted}">
+    <strong style="color:${BRAND.text}">A quick note on account security:</strong><br />
+    &bull; This link is valid for <strong>30 minutes</strong> and can only be used once.<br />
+    &bull; If you didn't request a password reset, you can safely disregard this email — your account remains completely safe and untouched.<br />
+    &bull; For your safety, never forward or share this link with anyone.
+  </td></tr>
+</table>
+
+<p style="margin:26px 0 0">Warmly,<br /><strong>The ${BRAND.name} Team</strong></p>`;
+
+  const html = layout({
+    preheader: `Reset your ${BRAND.name} password quickly and securely.`,
+    logoSrc: d.logoSrc,
+    bodyHtml,
+    footerNote: `You are receiving this email because a password reset was requested for ${d.email}.`,
+    supportEmail: d.supportEmail,
+  });
+
+  const text = [
+    `Hi ${firstName},`,
+    '',
+    `We received a request to reset the password for your ${BRAND.name} account.`,
+    'No worries at all — it happens to the best of us!',
+    '',
+    'Click the link below to choose a fresh password:',
+    d.resetUrl,
+    '',
+    'Quick security notes:',
+    '- This link is valid for 30 minutes and can only be used once.',
+    '- If you did not request this, you can safely ignore this email; your account remains secure.',
+    '- Never share this link with anyone. The HomeCareX team will never ask for your password.',
+    '',
+    'Warmly,',
+    `The ${BRAND.name} Team`,
+  ].join('\n');
+
+  return { subject: `Reset your ${BRAND.name} password`, html, text };
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, Tag, ArrowRight, ArrowLeft, UserCheck, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import type { ApiError } from '@/lib/http';
+import { classifyApiError } from '@/lib/apiError';
 import { ROUTES } from '@/constants/routes';
 import PasswordField from '@/components/auth/PasswordField';
 import PasswordStrength from '@/components/auth/PasswordStrength';
@@ -146,21 +146,25 @@ export const RegisterPage: React.FC = () => {
       const landingPath = newUser.home || (newUser.role === 'admin' ? '/admin' : `/${newUser.role}`);
       navigate(landingPath, { replace: true });
     } catch (err) {
-      const apiErr = err as ApiError;
-      const status = apiErr.status ?? (navigator.onLine ? 500 : 0);
-      setErrorStatus(status);
+      const classified = classifyApiError(err);
+      setErrorStatus(classified.status ?? null);
 
-      if (status === 409) {
-        setError('An account with this email or mobile number already exists. Please sign in instead.');
-      } else if (status === 429) {
-        setError('Too many registration attempts. Please wait a moment and try again.');
-      } else if (status === 0 || !navigator.onLine) {
+      if (classified.kind === 'offline') {
         setError('Unable to connect to the server. Please check your internet connection.');
-      } else if (status >= 500) {
-        setError('Server error occurred during registration. Please try again shortly.');
+      } else if (classified.kind === 'network') {
+        setError('Unable to connect to the server. Please check your connection and try again.');
+      } else if (classified.kind === 'timeout') {
+        setError('The server is taking too long to respond. Please check your connection and try again.');
+      } else if (classified.status === 409) {
+        setError('An account with this email or mobile number already exists. Please sign in instead.');
+      } else if (classified.status === 429) {
+        setError('Too many registration attempts. Please wait a moment and try again.');
+      } else if (classified.status && classified.status >= 500) {
+        setError('A server error occurred. Please try again shortly.');
       } else {
-        setError(apiErr.message || 'Registration failed. Please check your details and try again.');
+        setError(classified.message || 'Registration failed. Please check your details and try again.');
       }
+    } finally {
       setLoading(false);
     }
   }

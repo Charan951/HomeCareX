@@ -20,6 +20,6 @@ export const rateLimit = ({ windowMs, max }: { windowMs: number; max: number }) 
   };
 };
 
-/** Login / register: 10 requests per minute per IP. */
-export const authRateLimit = rateLimit({ windowMs: 60_000, max: 10 });
+/** Login / register: 5 requests per minute per IP. */
+export const authRateLimit = rateLimit({ windowMs: 60_000, max: 5 });
 export const rateLimitMiddleware = rateLimit;

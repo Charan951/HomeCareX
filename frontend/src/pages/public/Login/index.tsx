@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, ArrowRight, ArrowLeft, ShieldCheck, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import type { ApiError } from '@/lib/http';
+import { classifyApiError } from '@/lib/apiError';
 import { ADMIN_ROLES, type AuthUser } from '@/types/auth';
 import { ROUTES } from '@/constants/routes';
 import PasswordField from '@/components/auth/PasswordField';
@@ -194,23 +194,27 @@ export const LoginPage: React.FC = () => {
       }
       navigate(destinationFor(signedIn, returnUrl), { replace: true });
     } catch (err) {
-      const apiErr = err as ApiError;
-      const status = apiErr.status ?? (navigator.onLine ? 500 : 0);
-      setErrorStatus(status);
+      const classified = classifyApiError(err);
+      setErrorStatus(classified.status ?? null);
 
-      if (status === 423) {
-        setError('Your account is temporarily locked due to multiple failed login attempts. Please try again in 15 minutes.');
-      } else if (status === 429) {
-        setError('Too many login attempts. Please wait a moment and try again.');
-      } else if (status === 401) {
-        setError('Invalid email or password. Please try again.');
-      } else if (status === 0 || !navigator.onLine) {
+      if (classified.kind === 'offline') {
         setError('Unable to reach the server. Please check your internet connection.');
-      } else if (status >= 500) {
+      } else if (classified.kind === 'network') {
+        setError('Unable to reach the server. Please check your connection and try again.');
+      } else if (classified.kind === 'timeout') {
+        setError('The server is taking too long to respond. Please check your connection and try again.');
+      } else if (classified.status === 423) {
+        setError('Your account is temporarily locked due to multiple failed login attempts. Please try again in 15 minutes.');
+      } else if (classified.status === 429) {
+        setError('Too many login attempts. Please wait a moment and try again.');
+      } else if (classified.status === 401) {
+        setError('Invalid email or password. Please try again.');
+      } else if (classified.status && classified.status >= 500) {
         setError('A server error occurred. Please try again shortly.');
       } else {
-        setError(apiErr.message || 'Login failed. Please try again.');
+        setError(classified.message || 'Login failed. Please try again.');
       }
+    } finally {
       setLoading(false);
     }
   }

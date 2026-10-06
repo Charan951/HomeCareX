@@ -22,6 +22,10 @@ const UserSchema = new Schema(
     /** Bumped on logout / password change to invalidate every refresh token. */
     tokenVersion: { type: Number, default: 0 },
     lastLoginAt: { type: Date },
+    /** SHA-256 hash of password reset token. */
+    passwordResetTokenHash: { type: String, select: false },
+    /** Expiration date for password reset token (30m). */
+    passwordResetExpiresAt: { type: Date },
   },
   { timestamps: true },
 );

@@ -37,14 +37,13 @@ Thumbs.db
 docs/
 *.pdf
 MEMORY.md
-
-package.json
-
-package-lock.json
-
 .postman/
 postman/
 
 # Package files
 package.json
-
+package-lock.json
+frontend/package.json
+backend/package.json
+*/package.json
+*/package-lock.json
