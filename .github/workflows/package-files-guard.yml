@@ -1,0 +1,35 @@
+name: Package files guard
+
+# package.json / package-lock.json are shared by every PR and are the main source of
+# merge conflicts. Only PRs labelled "dependencies" may change them.
+# Tests and seeds are auto-discovered, so feature PRs never need to touch these files.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Block package file changes without the "dependencies" label
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'dependencies') }}
+        run: |
+          changed=$(git diff --name-only "$BASE...$HEAD" | grep -E '(^|/)package(-lock)?\.json$' || true)
+          if [ -z "$changed" ]; then echo "No package file changes."; exit 0; fi
+          echo "Changed package files:"; echo "$changed"
+          if [ "$HAS_LABEL" = "true" ]; then echo "Allowed: PR has the 'dependencies' label."; exit 0; fi
+          echo "::error::This PR changes package.json / package-lock.json. Revert them with:"
+          echo "::error::  git checkout origin/develop -- package-lock.json package.json backend/package.json frontend/package.json"
+          echo "::error::If you really need a new dependency, ask a maintainer to add the 'dependencies' label."
+          exit 1

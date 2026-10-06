@@ -1,2 +1,8 @@
 # Only these reviewers can approve changes. Approval from one of them is required to merge.
 * @Charan951 @Naveen3831 @Satya-sai-1304
+
+# Package manifests and lockfile: maintainer review only (main merge-conflict source).
+package.json @Charan951
+package-lock.json @Charan951
+/backend/package.json @Charan951
+/frontend/package.json @Charan951
