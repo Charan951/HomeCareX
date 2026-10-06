@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import paymentRoutes from '../modules/payments/payments.routes';
+import walletRoutes from '../modules/wallet/wallet.routes';
 import { authRoutes } from '../modules/auth/auth.routes';
 import { auditRoutes } from '../modules/audit/audit.routes';
 import { adminRoutes } from '../modules/admin/admin.routes';
@@ -55,7 +56,8 @@ rootRouter.use(leadsRoutes); // POST /public/leads
 rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings/check-slot, POST /bookings, GET /bookings/:id
 rootRouter.use('/partner/earnings', earningsRoutes); // GET /partner/earnings/summary
 rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, GET /addresses/serviceability
-rootRouter.use('/payments', paymentRoutes); // POST /payments/create-order, /verify, /attempt
+rootRouter.use('/payments', paymentRoutes); // GET /payments, POST /payments/order, /cod, /verify, /attempt, /webhook (public, HMAC)
+rootRouter.use('/wallet', walletRoutes); // GET /wallet
 rootRouter.use(reviewsRoutes); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
 
 export default rootRouter;
