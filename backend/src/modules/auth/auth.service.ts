@@ -12,6 +12,7 @@ import {
 import { HttpError, type AccessTokenPayload, type AuthUserDto, type RefreshTokenPayload } from './auth.types';
 import type { LoginInput, RegisterInput } from './auth.validation';
 import type { UserRole } from '../../models/User';
+import { mailService } from '../../services/mail.service';
 
 const accessSecret = () => process.env.JWT_SECRET || 'dev_access_secret_change_me';
 const refreshSecret = () => process.env.JWT_REFRESH_SECRET || `${accessSecret()}_refresh`;
@@ -83,7 +84,20 @@ export const authService = {
       phone: input.phone,
       passwordHash,
       role: input.role,
+      referralCode: input.referralCode,
     });
+
+    try {
+      await mailService.sendAccountCreatedEmail({
+        name: user.name,
+        email: user.email,
+        role: user.role as UserRole,
+        createdAt: user.createdAt,
+      });
+    } catch {
+      console.error('Account-created email failed for user', user.id);
+    }
+
     return { user: toAuthUser(user), ...issueTokens(user) };
   },
 

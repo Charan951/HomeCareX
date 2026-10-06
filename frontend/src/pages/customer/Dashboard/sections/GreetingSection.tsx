@@ -9,7 +9,7 @@ interface GreetingSectionProps {
 const step = (i: number) => ({ "--i": i }) as CSSProperties;
 
 /** Greeting and name only. The category banner and search box now sit below it (see HeroBanner). Entrance motion is in index.css (.hero-rise, reduced-motion safe). */
-export default function GreetingSection({ firstName, isNewCustomer }: GreetingSectionProps) {
+export default function GreetingSection({ firstName }: GreetingSectionProps) {
   return (
     <section aria-labelledby="dashboard-greeting" className="px-1 text-ink md:px-2">
       <div className="hero-rise" style={step(0)}>

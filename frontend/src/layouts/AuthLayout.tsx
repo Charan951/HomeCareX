@@ -1,131 +1,101 @@
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { ArrowLeft, ShieldCheck, Clock, CreditCard, Headphones, Star, Sparkles } from 'lucide-react';
-
-const features = [
-  { icon: ShieldCheck, title: 'Verified Professionals', desc: 'Background-checked partners you can trust.' },
-  { icon: Clock, title: 'Real-Time Tracking', desc: 'Know exactly when help is on the way.' },
-  { icon: CreditCard, title: 'Secure Payments', desc: 'Pay safely through the app, every time.' },
-  { icon: Headphones, title: '24/7 Support', desc: "We're here whenever you need us." },
-];
-
-const stats = [
-  { value: '10K+', label: 'Happy Customers' },
-  { value: '500+', label: 'Verified Partners' },
-  { value: '50+', label: 'Cities Covered' },
-  { value: '4.8★', label: 'Average Rating' },
-];
-
-const avatarColors = ['bg-brand-400', 'bg-accent-400', 'bg-brand-300', 'bg-accent-300'];
+import { Outlet } from 'react-router-dom';
+import { ShieldCheck, CheckCircle2, Clock, Sparkles } from 'lucide-react';
 
 const AuthLayout: React.FC = () => {
-  const location = useLocation();
-  const showBackToHome = location.pathname === '/login';
-
   return (
-    <div className="min-h-screen lg:h-screen lg:overflow-hidden flex bg-gray-50">
-      {/* Left branding panel — visible from lg (1024px) up */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-accent-900 text-white flex-col justify-between p-6 xl:p-8 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-accent-900 via-accent-800 to-brand-700" />
-        <div className="absolute -top-32 -right-20 h-96 w-96 rounded-full bg-brand-500/40 blur-3xl animate-blob" />
-        <div className="absolute top-1/3 -left-24 h-80 w-80 rounded-full bg-accent-400/30 blur-3xl animate-blob-slow" />
-        <div className="absolute -bottom-24 right-1/4 h-72 w-72 rounded-full bg-brand-400/20 blur-3xl animate-blob" style={{ animationDelay: '2s' }} />
-        <div
-          className="absolute inset-0 opacity-[0.06]"
-          style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '26px 26px' }}
-        />
-        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/10 to-transparent" />
-
-        <div className="relative z-10 flex items-center justify-between animate-fadeUp">
-          <Link to="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="HomeCareX" className="h-8 xl:h-9 w-auto drop-shadow-lg" />
-          </Link>
-          <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md rounded-full pl-1.5 pr-2.5 py-1 border border-white/10 shadow-lg">
-            <div className="flex -space-x-1.5">
-              {avatarColors.map((c, i) => (
-                <div
-                  key={i}
-                  className={`h-5 w-5 rounded-full ${c} border-2 border-accent-900 flex items-center justify-center text-[9px] font-semibold animate-floaty`}
-                  style={{ animationDelay: `${i * 0.3}s` }}
-                >
-                  {String.fromCharCode(65 + i)}
-                </div>
-              ))}
-            </div>
-            <span className="text-[11px] text-white/90">Trusted by 10K+ families</span>
-          </div>
+    <div className="w-full min-h-[100dvh] h-[100dvh] overflow-hidden flex bg-gray-50">
+      {/* Left branding panel: Uses the homepage hero section image with softer, lighter directional gradient scrim */}
+      <div className="hidden lg:flex lg:w-1/2 h-full relative bg-neutral-950 text-white flex-col justify-between p-6 xl:p-8 select-none overflow-hidden max-w-full">
+        {/* Background Image with softer, lighter gradient: subtle contrast behind text, transparent on right */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          <img
+            src="/images/home-cleaning.jpg"
+            alt="HomeCareX Professional Home Services"
+            className="w-full h-full object-cover object-center brightness-[0.98] contrast-[1.03]"
+          />
+          {/* Softer, lighter directional gradient: gentle scrim on left behind text, fading to transparent on right */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+          {/* Subtle vertical framing gradient for top and bottom contrast */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
         </div>
 
-        <div className="relative z-10 max-w-md xl:max-w-lg animate-fadeUp" style={{ animationDelay: '0.15s' }}>
-          <div className="inline-flex items-center gap-1 bg-brand-400/15 border border-brand-400/30 text-brand-300 text-[11px] font-medium px-2.5 py-0.5 rounded-full mb-2">
-            <Sparkles size={11} />
-            Trusted home services platform
-          </div>
-          <h1 className="text-2xl xl:text-3xl font-bold leading-tight mb-2">
-            Your Home, <span className="text-brand-400">Our Care</span>
-          </h1>
-          <p className="text-white/80 mb-3.5 max-w-md text-xs xl:text-sm line-clamp-2 leading-relaxed">
-            Book trusted home service professionals in minutes — cleaning, repairs, and more, all in one platform.
-          </p>
-
-          <div className="space-y-2 xl:space-y-2.5 mb-3.5 max-w-md">
-            {features.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="flex items-start gap-2.5 group hover:translate-x-1 transition-transform duration-300">
-                <div className="mt-0.5 h-7 w-7 rounded-md bg-white/10 backdrop-blur-sm flex items-center justify-center shrink-0 border border-white/10 group-hover:bg-brand-400/20 group-hover:border-brand-400/30 transition-colors duration-300">
-                  <Icon size={14} />
-                </div>
-                <div>
-                  <p className="font-semibold text-xs">{title}</p>
-                  <p className="text-[11px] text-white/70 leading-tight">{desc}</p>
+        {/* Content wrapper: fits strictly within 100dvh with zero scrolling */}
+        <div className="relative z-10 flex flex-col justify-between h-full w-full max-w-full overflow-hidden select-none">
+          {/* Top: Highlighted Brand Name, Sub-badge, and Slogan Badge (positioned a bit down) */}
+          <div className="shrink-0 flex items-start justify-between w-full pt-3 sm:pt-4 xl:pt-5">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <span className="font-black text-2xl xl:text-3xl tracking-tight text-white drop-shadow-lg">
+                  HomeCare<span className="text-[#ff8a3d]">X</span>
+                </span>
+                <span className="h-2 w-2 rounded-full bg-[#ff8a3d] animate-pulse" />
+              </div>
+              {/* Trusted Service Platform directly below the brand name */}
+              <div>
+                <div className="inline-flex items-center gap-1.5 bg-[#ff8a3d]/25 border border-[#ff8a3d]/40 text-[#ffa66b] text-[11px] font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-sm">
+                  <Sparkles size={11} className="text-[#ff8a3d]" />
+                  Trusted Service Platform
                 </div>
               </div>
-            ))}
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-sm border border-white/20 px-3 py-1 rounded-full text-xs text-white drop-shadow-sm">
+              <Sparkles size={12} className="text-[#ff8a3d]" />
+              <span className="font-medium tracking-wide">Your Home, Our Care</span>
+            </div>
           </div>
 
-          {/* Testimonial card with appropriate spacing and max-w-md */}
-          <div className="max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-xl p-3 xl:p-3.5 my-3 xl:my-4 shadow-xl">
-            <div className="flex gap-0.5 mb-1.5 text-brand-400">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} size={12} fill="currentColor" />
-              ))}
-            </div>
-            <p className="text-xs text-white/90 italic leading-snug mb-1">
-              Booked a plumber in under 5 minutes. Showed up on time, fixed everything — best home service experience I've had.
-            </p>
-            <p className="text-[10px] text-white/60">— Priya M., Bengaluru</p>
-          </div>
-        </div>
+          {/* Lower section: Positioned further down so the faces in the image are clearly visible */}
+          <div className="w-full max-w-lg mt-auto mb-5 space-y-3">
+            <h1 className="text-2xl xl:text-3xl font-black leading-tight tracking-tight text-white drop-shadow-xl">
+              Every home has a story. <br />
+              <span className="text-[#ff8a3d]">HomeCareX</span> is here to care for yours.
+            </h1>
 
-        <div className="relative z-10 grid grid-cols-4 gap-3 border-t border-white/15 pt-3 xl:pt-4 animate-fadeUp" style={{ animationDelay: '0.3s' }}>
-          {stats.map((s) => (
-            <div key={s.label}>
-              <p className="text-lg xl:text-xl font-bold text-brand-400">{s.value}</p>
-              <p className="text-[10px] xl:text-[11px] text-white/70 leading-tight">{s.label}</p>
+            {/* Minimal trust pills without subtext descriptions */}
+            <div className="flex flex-wrap gap-2 pt-0.5">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-xs font-semibold text-white drop-shadow-md">
+                <ShieldCheck size={14} className="text-[#ff8a3d]" />
+                <span>Verified Specialists</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-xs font-semibold text-white drop-shadow-md">
+                <CheckCircle2 size={14} className="text-[#ff8a3d]" />
+                <span>Upfront Pricing</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-xs font-semibold text-white drop-shadow-md">
+                <Clock size={14} className="text-[#ff8a3d]" />
+                <span>On-Time Guarantee</span>
+              </div>
             </div>
-          ))}
+          </div>
+
+          {/* Bottom: Minimal Stats */}
+          <div className="shrink-0 pt-3 border-t border-white/20 w-full">
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <p className="text-lg xl:text-xl font-extrabold text-[#ff8a3d] drop-shadow-lg">10,000+</p>
+                <p className="text-xs font-semibold text-white/95 drop-shadow-md">Happy Homes</p>
+              </div>
+              <div>
+                <p className="text-lg xl:text-xl font-extrabold text-[#ff8a3d] drop-shadow-lg">500+</p>
+                <p className="text-xs font-semibold text-white/95 drop-shadow-md">Verified Pros</p>
+              </div>
+              <div>
+                <p className="text-lg xl:text-xl font-extrabold text-[#ff8a3d] drop-shadow-lg">4.8 / 5.0</p>
+                <p className="text-xs font-semibold text-white/95 drop-shadow-md">Rating</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Right form panel */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-6 py-8 relative bg-white overflow-y-auto">
-        <div className="absolute top-0 right-0 h-64 w-64 bg-brand-100 rounded-full blur-3xl opacity-40 -z-0" />
-        <div className="absolute bottom-0 left-0 h-64 w-64 bg-accent-100 rounded-full blur-3xl opacity-40 -z-0" />
+      {/* Right form panel: Strictly fit to screen height with zero scroll on desktop */}
+      <div className="w-full lg:w-1/2 h-full max-h-[100dvh] overflow-y-auto lg:overflow-hidden overflow-x-hidden relative bg-white flex flex-col justify-center items-center px-4 sm:px-6 py-4">
+        <div className="absolute top-0 right-0 h-64 w-64 bg-brand-100 rounded-full blur-3xl opacity-40 -z-0 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 h-64 w-64 bg-accent-100 rounded-full blur-3xl opacity-40 -z-0 pointer-events-none" />
 
-        {showBackToHome && (
-          <Link
-            to="/"
-            className="absolute top-6 left-6 flex items-center gap-1.5 text-sm text-gray-500 hover:text-accent-700 hover:-translate-x-0.5 transition-all z-10"
-          >
-            <ArrowLeft size={16} />
-            Back to Home
-          </Link>
-        )}
-
-        <Link to="/" className="lg:hidden mb-8 z-10">
-          <img src="/logo.png" alt="HomeCareX" className="h-10 w-auto" />
-        </Link>
-
-        <div className="w-full max-w-md relative z-10 animate-fadeUp">
+        <div className="w-full max-w-[480px] relative z-10 animate-fadeUp my-auto lg:my-0">
           <Outlet />
         </div>
       </div>

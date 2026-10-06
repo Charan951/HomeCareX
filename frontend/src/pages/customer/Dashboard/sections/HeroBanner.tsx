@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import clsx from "clsx";
-import { customerPath } from "@/routes/customerPath";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import { Icon3D, tintAt } from "@/components/customer";
 import type { DashboardCategoryDto } from "@/features/customer";
@@ -126,7 +124,6 @@ function Slide({ category: c, index, isActive }: { category: DashboardCategoryDt
   const photo = categoryPhoto(c.slug);
   const [failed, setFailed] = useState(false);
   const showPhoto = photo && !failed;
-  const count = `${c.serviceCount} ${c.serviceCount === 1 ? "service" : "services"}`;
 
   return (
     <div
