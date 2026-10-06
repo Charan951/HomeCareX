@@ -10,8 +10,9 @@ async function main() {
   if (!url) throw new Error('DATABASE_URL is not set (see backend/.env.example).');
   await mongoose.connect(url);
   await Promise.all([mongoose.model('Service').syncIndexes(), mongoose.model('Category').syncIndexes()]);
-  const r = await upsertCatalogSeed();
-  console.log(`Catalog ready: ${r.categories} categories, ${r.services} services.`);
+  const refreshMedia = process.argv.includes('--refresh-media');
+  const r = await upsertCatalogSeed({ refreshMedia });
+  console.log(`Catalog ready: ${r.categories} categories, ${r.services} services.${refreshMedia ? ' Service galleries were reset to the seed photos.' : ''}`);
   await mongoose.disconnect();
 }
 

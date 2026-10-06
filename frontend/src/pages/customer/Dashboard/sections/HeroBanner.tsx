@@ -68,8 +68,7 @@ export default function HeroBanner({ categories, children }: HeroBannerProps) {
           if (Math.abs(dx) > 40) go(active + (dx < 0 ? 1 : -1));
           touchX.current = null;
         }}
-        className="relative h-[250px] overflow-hidden rounded-[26px] bg-transparent md:h-[400px] md:rounded-[32px] md:bg-[#1E1B2E] md:shadow-[0_14px_34px_-18px_rgba(30,27,46,.55)]"
-      >
+     className="relative h-[250px] overflow-hidden rounded-[26px] bg-transparent md:h-[clamp(260px,calc(100dvh_-_320px),380px)] md:rounded-[32px] md:bg-[#1E1B2E] md:shadow-[0_14px_34px_-18px_rgba(30,27,46,.55)]"      >
         <div
           className="flex h-full transition-transform duration-700 ease-[cubic-bezier(.65,0,.25,1)] motion-reduce:transition-none"
           style={{ transform: `translateX(-${active * 100}%)` }}
@@ -115,7 +114,7 @@ export default function HeroBanner({ categories, children }: HeroBannerProps) {
       </div>
 
       {/* Phones: search sits below the banner. md+: pulled up over the banner edge. */}
-      <div className="relative z-10 mt-4 px-3 md:-mt-[56px]">{children}</div>
+      <div className="relative z-10 mt-4 px-4 md:-mt-[56px]">{children}</div>
     </section>
   );
 }
@@ -153,7 +152,7 @@ function Slide({ category: c, index, isActive }: { category: DashboardCategoryDt
 
       {/* Phones: its own strip under the photo. md+: vertically centred at the left. */}
       <div className="relative flex flex-1 items-center gap-1.5 bg-transparent px-1 md:absolute md:inset-y-0 md:left-0 md:max-w-[44%] md:flex-col md:items-start md:justify-center md:gap-2 md:px-14">
-        <h2 className={clsx("text-[22px] font-bold leading-[1.1] tracking-tight md:text-[44px]", showPhoto ? "text-ink md:text-white" : "text-ink")}>{c.name}</h2>
+        <h3 className={clsx("text-[22px] font-bold leading-[1.1] tracking-tight md:text-[44px]", showPhoto ? "text-ink md:text-white" : "text-ink")}>{c.name}</h3>
        
       </div>
     </div>

@@ -26,7 +26,7 @@ export function ServiceCard({ service: s, index }: { service: CatalogService; in
 
   return (
     <Link
-      to={`${customerPath(`/book/${s.slug}`)}?step=1`}
+      to={customerPath(`/services/${s.slug}`)}
       style={{ animationDelay: `${Math.min(index * 55, 330)}ms` }}
       className={clsx(
         "service-card-enter group flex h-full flex-col overflow-hidden rounded-[24px] border border-line bg-panel p-2 transition-all duration-300 sm:p-2.5",

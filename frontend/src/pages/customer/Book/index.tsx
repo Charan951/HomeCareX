@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
+import clsx from "clsx";
 import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useBookingDraftStore } from "@/features/booking";
 import { customerPath } from "@/routes/customerPath";
+import BackToService from "./components/BackToService";
 import BookingStepper from "./components/BookingStepper";
 import StepService from "./StepService";
 import StepAddress from "./StepAddress";
@@ -66,33 +68,22 @@ export default function BookServiceShell() {
   if (!serviceSlug) return <Navigate to={customerPath("/services")} replace />;
 
   return (
-    <div
-      className={`mx-auto w-full min-w-0 px-4 sm:px-0 ${
-        effectiveStep === 4 ? "max-w-5xl space-y-3 py-3 sm:space-y-4 sm:py-4" : "max-w-2xl space-y-6 py-6"
-      }`}
-    >
+    <div className={clsx("mx-auto w-full min-w-0", "max-w-5xl space-y-5 pb-4 sm:space-y-6 sm:pb-6 lg:max-w-6xl")}>
+      <BackToService slug={serviceSlug} />
       <div>
-        <h1 className="text-xl font-semibold text-ink">Book a Service</h1>
+        <h1 className={"text-2xl font-bold tracking-tight text-ink md:text-[28px]"}>Book a Service</h1>
         <p className="mt-1 text-sm text-muted">Complete the steps below to confirm your booking.</p>
       </div>
       {notice && (
-        <div
-          role="alert"
-          className="flex items-start justify-between gap-3 rounded border border-danger bg-danger-soft px-3 py-2 text-sm text-ink"
-        >
+        <div role="alert" className="flex items-start justify-between gap-3 rounded-2xl border border-danger bg-danger-soft px-4 py-3 text-sm text-ink">
           <span>{notice}</span>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            aria-label="Dismiss message"
-            className="shrink-0 text-xs font-medium underline"
-          >
+          <button type="button" onClick={() => setNotice(null)} aria-label="Dismiss message" className="shrink-0 text-xs font-medium underline">
             Dismiss
           </button>
         </div>
       )}
-      <BookingStepper currentStep={effectiveStep} focusOnMount={redirectedByGuard.current} compact={effectiveStep === 4} />
-      <div className={`min-w-0 rounded border border-line bg-panel ${effectiveStep === 4 ? "p-3 sm:p-4" : "p-4 sm:p-6"}`}>
+      <BookingStepper currentStep={effectiveStep} focusOnMount={redirectedByGuard.current} compact={false} />
+      <div className="min-w-0">
         {effectiveStep === 1 && <StepService serviceSlug={serviceSlug} />}
         {effectiveStep === 2 && <StepAddress />}
         {effectiveStep === 3 && <StepSlot />}

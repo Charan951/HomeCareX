@@ -4,6 +4,7 @@ import CustomerLayout from "../layouts/CustomerLayout";
 
 import Dashboard from "../pages/customer/Dashboard";
 import Addresses from "../pages/customer/Addresses";
+import SetupAddress from "../pages/customer/SetupAddress";
 import Bookings from "../pages/customer/Bookings";
 import BookingDetails from "../pages/customer/BookingDetails";
 import Categories from "../pages/customer/Categories";
@@ -13,6 +14,7 @@ import Profile from "../pages/customer/Profile";
 import Referrals from "../pages/customer/Referrals";
 import Reviews from "../pages/customer/Reviews";
 import Services from "../pages/customer/Services";
+import ServiceDetails from "../pages/customer/ServiceDetails";
 import Support from "../pages/customer/Support";
 import Tracking from "../pages/customer/Tracking";
 import Wallet from "../pages/customer/Wallet";
@@ -34,6 +36,8 @@ import ServiceBooked from "../pages/customer/BookingSuccess/ServiceBooked";
 export default function CustomerRoutes() {
   return (
     <Routes>
+      {/* First-login map setup: full screen, outside the dashboard layout. */}
+      <Route path="/setup-address" element={<SetupAddress />} />
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/addresses" element={<Addresses />} />
@@ -49,6 +53,7 @@ export default function CustomerRoutes() {
         <Route path="/referrals" element={<Referrals />} />
         <Route path="/reviews" element={<Reviews />} />
         <Route path="/services" element={<Services />} />
+        <Route path="/services/:slug" element={<ServiceDetails />} />
         <Route path="/support" element={<Support />} />
         <Route path="/support/tickets" element={<Tickets />} />
         <Route path="/tracking" element={<Tracking />} />

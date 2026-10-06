@@ -1,10 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { ArrowRight, Clock3, Minus, Plus, ShieldCheck, Sparkles, Star } from "lucide-react";
+import clsx from "clsx";
 
 /** Backend rejects quantity > 20 (bookings.validation.ts). */
 const MAX_QUANTITY = 20;
 import { useBookingDraftStore } from "@/features/booking";
 import { LoadingState, ErrorState } from "@/components/customer";
 import { FOCUS_RING } from "@/components/customer/focusRing";
+import { formatDuration } from "@/components/customer/catalog/format";
+import { useService } from "@/hooks/useService";
+import { Icon3D, serviceVisual } from "@/pages/customer/Shared/visuals";
+import { formatINR } from "./formatMoney";
 import { findMockServiceBySlug, type MockAddOn } from "./serviceCatalog.mock";
 import AddOnSelector from "./components/AddOnSelector";
 
@@ -27,6 +33,8 @@ export default function StepService({ serviceSlug }: { serviceSlug?: string }) {
   const [selectedAddOns, setSelectedAddOns] = useState<Map<string, MockAddOn>>(new Map());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // Display only (photo, category, duration, rating). Prices and ids still come from the booking catalog above.
+  const { data: real } = useService(serviceSlug);
 
   const setServiceDetails = useBookingDraftStore((s) => s.setServiceDetails);
   const draftServiceId = useBookingDraftStore((s) => s.serviceId);
@@ -99,66 +107,166 @@ export default function StepService({ serviceSlug }: { serviceSlug?: string }) {
     );
   }
 
+const stagger = (i: number): CSSProperties => ({ "--i": i }) as CSSProperties;
+const visual = serviceVisual(service.slug, real?.category.slug ?? "");
+const photo = real?.media[0]?.url ?? visual.image;
+const selected = [...selectedAddOns.values()];
+
+const stepBtn = clsx(
+  "flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-brand-soft hover:text-brand disabled:cursor-not-allowed disabled:text-muted/40 disabled:hover:bg-transparent",
+  FOCUS_RING,
+);
+
+const priceDetails = (id: string) => (
+  <section aria-labelledby={id} className="rounded-2xl border border-dashed border-brand/30 bg-brand-soft/40 p-4">
+    <h3 id={id} className="text-sm font-semibold text-ink">
+      Price details
+    </h3>
+    <dl className="mt-3 space-y-2 text-sm">
+      <div className="flex items-baseline justify-between gap-4">
+        <dt className="min-w-0 text-muted">
+          {service.name} × {quantity}
+        </dt>
+        <dd className="shrink-0 font-semibold tabular-nums text-ink">{formatINR(service.basePrice * quantity)}</dd>
+      </div>
+      {selected.map((a) => (
+        <div key={a.id} className="flex items-baseline justify-between gap-4">
+          <dt className="min-w-0 text-muted">{a.name}</dt>
+          <dd className="shrink-0 font-semibold tabular-nums text-ink">+{formatINR(a.price)}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+);
+
+const nextButton = (
+  <button
+    type="button"
+    onClick={handleNextStep}
+    disabled={isSubmitting}
+    aria-busy={isSubmitting}
+    className={clsx(
+      "group inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-brand px-7 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#3730A3] disabled:opacity-60 motion-safe:active:scale-95",
+      FOCUS_RING,
+    )}
+  >
+    {isSubmitting ? "Saving…" : "Next Step"}
+    {!isSubmitting && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden="true" />}
+  </button>
+);
+
 return (
-  <div className="flex h-full min-h-0 flex-col">
-    {/* Header */}
-    <div className="shrink-0 border-b border-line px-4 py-3">
-      <h3 className="text-lg font-bold text-ink">{service.name}</h3>
-      <p className="text-xs text-muted">Base price: ₹{service.basePrice} per unit</p>
+  <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-8">
+   <div className="min-w-0 space-y-6">
+    {/* Intro */}
+    <div className="flex items-start gap-3.5">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand text-white shadow-[0_12px_24px_-12px_rgba(67,56,202,.8)]">
+        <Sparkles className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <div>
+        <h3 className="text-xl font-bold tracking-tight text-ink sm:text-2xl">What do you need done?</h3>
+        <p className="mt-0.5 text-sm text-muted">Set the quantity and pick any extras for this visit.</p>
+      </div>
     </div>
 
-    {/* Body: scrolls only on very short screens */}
-    <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-3">
-      <div className="flex items-center justify-between gap-4 sm:justify-start">
-        <span className="text-sm font-medium text-ink">Quantity:</span>
-        <div className="flex items-center rounded border border-line">
-          <button
-            type="button"
-            onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-            aria-label="Decrease quantity"
-            className={`min-h-[44px] min-w-[44px] text-muted hover:bg-canvas ${FOCUS_RING}`}
-          >
-            −
+    {/* Service summary */}
+    <div className="sd-rise flex items-center gap-4 rounded-3xl border border-line bg-panel p-4 shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)] sm:p-5" style={stagger(0)}>
+      <div className={clsx("relative h-[84px] w-[84px] shrink-0 overflow-hidden rounded-2xl", visual.tint)}>
+        {photo ? (
+          <img
+            src={photo}
+            alt=""
+            className="h-full w-full object-cover"
+            style={{ objectPosition: visual.focus }}
+            onError={(e) => {
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        ) : (
+          <Icon3D asset={visual.asset} className="h-full w-full p-3" />
+        )}
+      </div>
+      <div className="min-w-0">
+        {real && <p className="inline-flex rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-semibold text-brand">{real.category.name}</p>}
+        <h3 className="mt-1 text-xl font-bold leading-tight tracking-tight text-ink">{service.name}</h3>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
+          <span>Base price: {formatINR(service.basePrice)} per unit</span>
+          {real && (
+            <span className="inline-flex items-center gap-1">
+              <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+              {formatDuration(real.durationMinutes)}
+            </span>
+          )}
+          {real && real.ratingCount > 0 && (
+            <span className="inline-flex items-center gap-1 font-medium text-ink">
+              <Star className="h-3.5 w-3.5 fill-accent text-accent" aria-hidden="true" />
+              {real.rating.toFixed(1)}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+
+    {/* Quantity */}
+    <section aria-labelledby="qty-heading" className="sd-rise rounded-3xl border border-line bg-panel p-4 shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)] sm:p-5" style={stagger(1)}>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <h3 id="qty-heading" className="text-sm font-semibold text-ink">
+            No of Persons
+          </h3>
+          <p className="mt-0.5 text-xs text-muted">Units to be serviced (up to {MAX_QUANTITY}).</p>
+        </div>
+        <div role="group" aria-label="Quantity" className="inline-flex items-center rounded-full border border-line bg-panel p-1 shadow-sm">
+          <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={quantity <= 1} aria-label="Decrease quantity" className={stepBtn}>
+            <Minus className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
           </button>
-          <span className="w-10 text-center text-sm font-medium" aria-live="polite">
+          <span key={quantity} className="bk-tick w-12 text-center text-lg font-bold tabular-nums text-ink" aria-live="polite">
             {quantity}
           </span>
-          <button
-            type="button"
-            onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
-            aria-label="Increase quantity"
-            className={`min-h-[44px] min-w-[44px] text-muted hover:bg-canvas ${FOCUS_RING}`}
-          >
-            +
+          <button type="button" onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))} disabled={quantity >= MAX_QUANTITY} aria-label="Increase quantity" className={stepBtn}>
+            <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
           </button>
         </div>
       </div>
+    </section>
 
-      <AddOnSelector
-        addOns={service.addOns}
-        selectedIds={new Set(selectedAddOns.keys())}
-        onToggle={toggleAddOn}
-      />
+    <div className="sd-rise rounded-3xl border border-line bg-panel p-4 shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)] sm:p-5" style={stagger(2)}>
+      <AddOnSelector addOns={service.addOns} selectedIds={new Set(selectedAddOns.keys())} onToggle={toggleAddOn} />
     </div>
 
-    {/* Footer: always pinned */}
-    <div className="shrink-0 border-t border-line bg-panel px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs text-muted">Running Estimate</p>
-          <p className="text-lg font-bold leading-tight text-ink">₹{runningEstimate}</p>
+    {/* Mobile / tablet: price details inline, estimate bar floats above the bottom navigation */}
+    <div className="sd-rise lg:hidden" style={stagger(3)}>{priceDetails("price-heading-inline")}</div>
+
+    <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 md:bottom-4 lg:hidden">
+      <div className="flex items-center justify-between gap-4 rounded-3xl border border-line bg-white/90 py-2 pl-5 pr-2 shadow-[0_18px_40px_-14px_rgba(30,27,46,.45)] backdrop-blur-xl">
+        <div className="min-w-0">
+          <p className="text-[11px] font-medium leading-4 text-muted">Running Estimate</p>
+          <p key={runningEstimate} className="bk-tick text-xl font-bold leading-6 tracking-tight tabular-nums text-ink">
+            {formatINR(runningEstimate)}
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={handleNextStep}
-          disabled={isSubmitting}
-          aria-busy={isSubmitting}
-          className={`h-10 rounded bg-brand px-6 text-xs font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50 ${FOCUS_RING}`}
-        >
-          {isSubmitting ? "Saving…" : "Next Step"}
-        </button>
+        {nextButton}
       </div>
     </div>
+   </div>
+
+   {/* Desktop: sticky summary panel on the right */}
+   <aside className="hidden lg:sticky lg:top-24 lg:block" aria-label="Booking summary">
+    <div className="overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_30px_70px_-44px_rgba(67,56,202,.6)]">
+      <div className="bg-gradient-to-br from-brand to-[#6D5BE8] px-5 py-5 text-white">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Running estimate</p>
+        <p key={runningEstimate} className="bk-tick mt-1 text-3xl font-bold tracking-tight tabular-nums">
+          {formatINR(runningEstimate)}
+        </p>
+      </div>
+      <div className="px-5 py-5">{priceDetails("price-heading-panel")}</div>
+      <div className="flex px-5 pb-5 [&>button]:w-full">{nextButton}</div>
+      <p className="flex items-center justify-center gap-1.5 border-t border-line bg-canvas px-5 py-3 text-xs text-muted">
+        <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+        Final price is confirmed before you pay
+      </p>
+    </div>
+   </aside>
   </div>
 );
 }

@@ -12,6 +12,8 @@
     "seed:incentives": "ts-node --transpile-only src/scripts/seed-incentives.ts",
     "seed:dashboard": "ts-node --transpile-only src/scripts/seed-dashboard.ts",
     "seed:customers": "ts-node --transpile-only src/scripts/seed-admin-customers.ts",
+    "seed:catalog": "ts-node --transpile-only src/scripts/seed-catalog.ts",
+    "seed:service-reviews": "ts-node --transpile-only src/scripts/seed-service-reviews.ts",
     "create:admin": "ts-node --transpile-only src/scripts/create-admin.ts",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
