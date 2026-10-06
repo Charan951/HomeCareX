@@ -7,6 +7,7 @@ import PartnerWorkingHoursPage from "../pages/partner/WorkingHours";
 import PartnerBlackoutDatesPage from "../pages/partner/BlackoutDates";
 import PartnerSchedulePage from "../pages/partner/Schedule";
 import PartnerEarningsPage from "../pages/partner/Earnings";
+import PartnerIncentivesPage from "../pages/partner/Incentives";
 import "../styles/calm-overrides.css";
 import "../styles/mobile-plain.css";
 
@@ -37,7 +38,7 @@ export const PARTNER_PAGES: { path: string; title: string }[] = [
   // Earnings (5)
   
   { path: "earnings/payouts", title: "Payout history" },
-  { path: "earnings/incentives", title: "Incentives" },
+  
   { path: "earnings/statements", title: "Earnings statements" },
   { path: "earnings/bank-details", title: "Bank / UPI details" },
   // Performance (3)
@@ -75,6 +76,8 @@ export default function PartnerRoutes() {
         <Route path="availability/blackout-dates" element={<PartnerBlackoutDatesPage />} />
         <Route path="schedule" element={<PartnerSchedulePage />} />
          <Route path="earnings" element={<PartnerEarningsPage />} />
+        <Route path="incentives" element={<PartnerIncentivesPage />} />
+        <Route path="earnings/incentives" element={<PartnerIncentivesPage />} />
         {PARTNER_PAGES.map(({ path, title }) => (
           <Route
             key={path}

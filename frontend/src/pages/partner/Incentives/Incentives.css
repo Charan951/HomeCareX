@@ -1,0 +1,214 @@
+/* ==========================================================================
+   Partner Incentives: minimal design
+   White cards, grey borders, dark text. Colour only on the three summary
+   icons, the progress bar and a small status dot.
+   ========================================================================== */
+
+.inc-page {
+  --inc-blue: #2563eb;   --inc-blue-soft: #eff6ff;
+  --inc-green: #059669;  --inc-green-soft: #ecfdf5;
+  --inc-indigo: #6366f1; --inc-indigo-soft: #eef2ff;
+  --inc-orange: #d97706;
+  --inc-grey: #9ca3af;
+
+  --inc-ink: #0f172a; --inc-text: #334155; --inc-muted: #64748b;
+  --inc-line: #e5e7eb; --inc-panel: #f3f4f6;
+  --inc-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  width: 100%; min-width: 0;
+  display: flex; flex-direction: column; gap: 1.1rem;
+  color: var(--inc-ink);
+}
+
+.inc-sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* ---- top row: Back | Incentives ---- */
+.inc-topbar { position: relative; z-index: 5; display: flex; align-items: center; gap: 0.9rem; }
+.inc-back {
+  flex: none; display: grid; place-items: center;
+  width: 2.5rem; height: 2.5rem; padding: 0;
+  color: var(--inc-ink); text-decoration: none;
+  background: #fff; border: 1px solid var(--inc-line); border-radius: 50%;
+  transition: background 0.2s ease;
+}
+.inc-back:hover { background: var(--inc-panel); }
+.inc-title { margin: 0; font-size: 1.4rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+
+/* filter button (icon only) + dropdown, beside the first section title */
+.inc-filter { position: relative; z-index: 6; margin-left: auto; }
+.inc-filter-btn {
+  display: grid; place-items: center;
+  width: 2.4rem; height: 2.4rem; padding: 0;
+  color: var(--inc-text);
+  background: #fff; border: 1px solid var(--inc-line); border-radius: 0.75rem;
+  cursor: pointer; transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.inc-filter-btn:hover { background: var(--inc-panel); color: var(--inc-ink); }
+.inc-filter-btn[aria-expanded="true"] { border-color: var(--inc-ink); color: var(--inc-ink); }
+
+.inc-menu {
+  position: absolute; top: calc(100% + 0.4rem); right: 0;
+  min-width: 12.5rem; padding: 0.3rem;
+  background: #fff; border: 1px solid var(--inc-line); border-radius: 0.9rem;
+  box-shadow: 0 14px 30px -12px rgba(15, 23, 42, 0.25);
+  animation: inc-pop 0.15s var(--inc-ease) both;
+}
+.inc-menu-item {
+  display: flex; align-items: center; gap: 0.5rem; width: 100%;
+  padding: 0.55rem 0.65rem;
+  font: inherit; font-size: 0.9rem; font-weight: 500; text-align: left;
+  color: var(--inc-text); background: transparent;
+  border: 0; border-radius: 0.6rem; cursor: pointer;
+}
+.inc-menu-item:hover { background: var(--inc-panel); }
+.inc-menu-item.is-on { color: var(--inc-ink); font-weight: 700; }
+.inc-menu-check { flex: none; width: 1rem; display: grid; place-items: center; color: var(--inc-ink); }
+.inc-menu-label { flex: 1; }
+.inc-menu-count { font-size: 0.8rem; font-weight: 600; color: var(--inc-muted); }
+
+.inc-stack, .inc-layout, .inc-main { display: flex; flex-direction: column; min-width: 0; gap: 1.1rem; }
+.inc-side { min-width: 0; }
+
+/* ---- summary boxes: Rewards earned | Active | Upcoming ---- */
+.inc-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.inc-stat {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.55rem; min-width: 0;
+  padding: 0.8rem;
+  background: #fff; border: 1px solid var(--inc-line); border-radius: 1rem;
+  animation: inc-fade 0.35s var(--inc-ease) both;
+}
+.inc-stat-icon { display: grid; place-items: center; flex: none; width: 2.1rem; height: 2.1rem; border-radius: 50%; }
+.inc-stat--green .inc-stat-icon { color: var(--inc-green); background: var(--inc-green-soft); }
+.inc-stat--blue .inc-stat-icon { color: var(--inc-blue); background: var(--inc-blue-soft); }
+.inc-stat--indigo .inc-stat-icon { color: var(--inc-indigo); background: var(--inc-indigo-soft); }
+.inc-stat-label { margin: 0; font-size: 0.74rem; font-weight: 500; color: var(--inc-muted); }
+.inc-stat-value { margin: 0.1rem 0 0; font-size: 1.2rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; overflow-wrap: anywhere; }
+.inc-stat-hint { display: none; margin: 0.2rem 0 0; font-size: 0.78rem; color: var(--inc-muted); }
+.inc-stat--green .inc-stat-hint { color: var(--inc-green); }
+
+/* ---- sections ---- */
+.inc-section { display: flex; flex-direction: column; gap: 0.7rem; min-width: 0; }
+.inc-section-head { position: relative; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.inc-section-title { display: flex; align-items: center; gap: 0.45rem; margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--inc-text); }
+.inc-section-title svg { color: var(--inc-muted); }
+.inc-count { font-size: 0.8rem; font-weight: 600; color: var(--inc-muted); }
+
+/* equal-height cards in each row */
+.inc-grid { display: grid; grid-template-columns: 1fr; align-items: stretch; gap: 0.8rem; min-width: 0; }
+.inc-empty {
+  margin: 0; padding: 1.1rem; font-size: 0.88rem; text-align: center;
+  color: var(--inc-muted); background: #fff; border: 1px dashed #d1d5db; border-radius: 1rem;
+}
+
+/* ---- campaign card ---- */
+.inc-card {
+  display: flex; flex-direction: column; gap: 0.8rem; min-width: 0;
+  padding: 1.1rem 1.15rem;
+  background: #fff; border: 1px solid var(--inc-line); border-radius: 1rem;
+  animation: inc-fade 0.35s var(--inc-ease) both;
+  transition: border-color 0.2s ease;
+}
+.inc-card:hover { border-color: #cbd5e1; }
+.inc-card--expired { background: #fafafa; }
+
+.inc-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.inc-card-titles { min-width: 0; }
+.inc-card-title { margin: 0.25rem 0 0; font-size: 1.05rem; font-weight: 700; line-height: 1.35; overflow-wrap: anywhere; }
+.inc-card--expired .inc-card-title { color: var(--inc-text); }
+
+/* status: tiny dot + plain text */
+.inc-status { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.76rem; font-weight: 600; color: var(--inc-muted); }
+.inc-status::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--inc-grey); }
+.inc-status--active::before { background: var(--inc-blue); }
+.inc-status--upcoming::before { background: var(--inc-orange); }
+.inc-status--completed::before { background: var(--inc-green); }
+
+/* reward: the key number */
+.inc-reward { flex: none; text-align: right; }
+.inc-reward span { display: block; font-size: 0.72rem; font-weight: 500; color: var(--inc-muted); }
+.inc-reward strong { display: block; margin-top: 0.1rem; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.inc-card--expired .inc-reward strong { color: var(--inc-text); }
+
+.inc-desc {
+  margin: 0; font-size: 0.88rem; line-height: 1.5; color: var(--inc-muted); overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* progress */
+.inc-progress-block { display: flex; flex-direction: column; gap: 0.4rem; }
+.inc-progress-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.85rem; color: var(--inc-muted); font-variant-numeric: tabular-nums; }
+.inc-progress-label strong { font-size: 1.1rem; font-weight: 800; color: var(--inc-ink); }
+.inc-progress-label span:last-child { font-weight: 600; color: var(--inc-text); }
+.inc-progress { height: 0.4rem; background: var(--inc-panel); border-radius: 999px; overflow: hidden; }
+.inc-progress-fill { height: 100%; background: var(--inc-blue); border-radius: inherit; }
+.inc-card--completed .inc-progress-fill { background: var(--inc-green); }
+.inc-card--expired .inc-progress-fill { background: #cbd5e1; }
+
+/* one summary line */
+.inc-meta { margin: 0; font-size: 0.84rem; line-height: 1.45; color: var(--inc-muted); }
+.inc-meta strong { color: var(--inc-ink); }
+.inc-card .inc-meta--done, .inc-card .inc-meta--done strong { color: var(--inc-green); }
+
+/* warning: a quiet line, not a box */
+.inc-warn { display: flex; align-items: flex-start; gap: 0.45rem; margin: 0; font-size: 0.82rem; line-height: 1.4; color: #92400e; }
+.inc-warn svg { flex: none; margin-top: 0.1rem; }
+
+/* "How it works" sits at the bottom so equal-height cards line up */
+.inc-rules { margin-top: auto; padding-top: 0.7rem; border-top: 1px solid var(--inc-line); font-size: 0.84rem; }
+.inc-rules summary { cursor: pointer; font-weight: 600; color: var(--inc-text); list-style-position: inside; }
+.inc-rules ul { margin: 0.5rem 0 0; padding-left: 1.2rem; color: var(--inc-muted); line-height: 1.55; }
+
+/* blank state */
+.inc-blank {
+  display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  padding: 2.5rem 1.25rem; text-align: center;
+  background: #fff; border: 1px dashed #d1d5db; border-radius: 1.1rem;
+}
+.inc-blank svg { color: var(--inc-grey); }
+.inc-blank h2 { margin: 0.2rem 0 0; font-size: 1.05rem; }
+.inc-blank p { margin: 0; max-width: 28rem; font-size: 0.9rem; line-height: 1.5; color: var(--inc-muted); }
+
+/* skeleton */
+.inc-page .inc-skel--stat { height: 6rem; border-radius: 1rem; }
+.inc-page .inc-skel--card { height: 10rem; border-radius: 1rem; }
+
+@keyframes inc-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes inc-pop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .inc-page *, .inc-page *::before, .inc-page *::after { animation: none !important; transition: none !important; }
+}
+.inc-page :is(a, button, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--inc-ink); outline-offset: 2px; border-radius: 0.5rem;
+}
+
+/* ---- phones: the layout header (blue) already has the back arrow and page name,
+   so the top row is hidden (kept for screen readers) ---- */
+@media (max-width: 767px) {
+  .inc-topbar {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+  }
+}
+
+/* ---- tablet and up ---- */
+@media (min-width: 768px) {
+  .inc-page { gap: 1.3rem; }
+  .inc-title { font-size: 1.8rem; }
+  .inc-stats { gap: 0.9rem; }
+  .inc-stat { flex-direction: row; align-items: center; gap: 0.9rem; padding: 1rem 1.2rem; }
+  .inc-stat-icon { width: 2.8rem; height: 2.8rem; }
+  .inc-stat-label { font-size: 0.82rem; }
+  .inc-stat-value { font-size: 1.6rem; }
+  .inc-stat-hint { display: block; }
+  .inc-filter-btn { width: 2.9rem; height: 2.9rem; border-radius: 0.85rem; }
+  .inc-filter-btn svg { width: 22px; height: 22px; }
+  .inc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+}
+
+@media (min-width: 1440px) {
+  .inc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

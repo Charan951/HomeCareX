@@ -182,11 +182,6 @@ export default function Bookings() {
   const [eligiblePartnersLoading, setEligiblePartnersLoading] =
     useState<boolean>(false);
 
-  const hasActiveFilters = useMemo(
-    () => hasAnyFilters(filters),
-    [filters],
-  );
-
   const activeFilterCount = useMemo(() => {
     let count = 0;
 

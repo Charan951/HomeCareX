@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { Clock, Mail, Phone } from "lucide-react";
 import MobileDrawer from "./MobileDrawer";
 
 /* =========================================================
@@ -207,7 +208,14 @@ const contact = {
 
 /* =========================================================
    NAVIGATION
-   (edit these to match your real routes)
+========================================================= */
+
+const navItems = [
+  { to: "/", label: "Home", end: true },
+  { to: "/services", label: "Services", end: false },
+  { to: "/about", label: "About", end: true },
+  { to: "/contact", label: "Contact", end: true },
+];
 
 /* =========================================================
    HEADER COMPONENT
@@ -322,15 +330,15 @@ const Header: React.FC = () => {
         <div className="flex min-h-10 items-center justify-between bg-[#242064] px-6 text-xs">
           <div className="hidden items-center gap-5 lg:inline-flex">
             <span className="inline-flex items-center gap-2 text-[#dfe1ff]">
-              <ClockIcon />
+              <Clock size={14} aria-hidden="true" />
               {contact.hours}
             </span>
             <a href={contact.phoneHref} className="hcx-top-link">
-              <PhoneIcon />
+              <Phone size={14} aria-hidden="true" />
               {contact.phone}
             </a>
             <a href={`mailto:${contact.email}`} className="hcx-top-link">
-              <MailIcon />
+              <Mail size={14} aria-hidden="true" />
               {contact.email}
             </a>
           </div>

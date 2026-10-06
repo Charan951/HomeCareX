@@ -13,7 +13,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   partner: [
     'partner:dashboard', 'partner:jobs:read', 'partner:jobs:update',
     'partner:availability:read', 'partner:availability:update', 'partner:profile:read', 'partner:profile:update',
-    'partner:earnings:read', 
+    'partner:earnings:read', 'partner:incentives:read',
   ],
   customer: [],
 };
