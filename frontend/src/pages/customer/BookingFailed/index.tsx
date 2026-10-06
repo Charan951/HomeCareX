@@ -4,7 +4,7 @@ import { useBookingDraftStore } from "@/features/booking";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import { customerPath } from "@/routes/customerPath";
 
-type Reason = "failed" | "verification" | "network" | "slot";
+type Reason = "failed" | "verification" | "network" | "slot" | "cancelled";
 
 const COPY: Record<Reason, { title: string; lines: string[]; canRetry: boolean }> = {
   failed: {
@@ -12,6 +12,14 @@ const COPY: Record<Reason, { title: string; lines: string[]; canRetry: boolean }
     lines: [
       "Your payment could not be completed.",
       "Your booking has not been confirmed. Please try again.",
+    ],
+    canRetry: true,
+  },
+  cancelled: {
+    title: "Payment Cancelled",
+    lines: [
+      "You closed the payment window, so you have not been charged.",
+      "Your booking is not confirmed yet. You can retry or choose cash on service.",
     ],
     canRetry: true,
   },
@@ -50,7 +58,7 @@ export default function BookingFailed() {
 
   const raw = params.get("reason");
   const reason: Reason =
-    raw === "verification" || raw === "network" || raw === "slot" ? raw : "failed";
+    raw === "verification" || raw === "network" || raw === "slot" || raw === "cancelled" ? raw : "failed";
   const copy = COPY[reason];
 
   const goBack = (step: 3 | 4) => {

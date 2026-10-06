@@ -43,8 +43,10 @@ export default function SidebarNav({ idPrefix, onNavigate }: SidebarNavProps) {
     });
   }
 
+  // The label must not be "Main": calm-overrides.css hides nav[aria-label="Main"] below 1024px (meant for the partner
+  // app), which blanked this menu on tablets.
   return (
-    <nav aria-label="Main" className="space-y-1 px-3 pb-6">
+    <nav aria-label="Customer menu" className="space-y-1 px-3 pb-6">
       {SIDEBAR_GROUPS.map((group) => {
         const key = group.heading.toLowerCase();
         const buttonId = `${idPrefix}-${key}`;

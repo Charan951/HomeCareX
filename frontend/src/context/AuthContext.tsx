@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { AuthContextValue, AuthStatus, AuthUser, LoginInput, ProfilePatch } from "../types/auth";
+import type { AuthContextValue, AuthStatus, AuthUser, LoginInput, RegisterInput, ProfilePatch } from "../types/auth";
 import { authApi } from "@/services/authApi";
 import { SESSION_EXPIRED_EVENT, tokenStore } from "@/lib/tokenStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -88,6 +88,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     [applySession]
   );
 
+  const register = useCallback(
+    async (input: RegisterInput) => {
+      const { user: u, accessToken } = await authApi.register(input);
+
+      applySession(u, accessToken, "authenticated");
+
+      return u;
+    },
+    [applySession]
+  );
+
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
@@ -107,8 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, status, isAuthenticated: status === "authenticated" && user !== null, login, logout, updateProfile }),
-    [user, status, login, logout, updateProfile],
+    () => ({ user, status, isAuthenticated: status === "authenticated" && user !== null, login, register, logout, updateProfile }),
+    [user, status, login, register, logout, updateProfile],
   );
 
   return (

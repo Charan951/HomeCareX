@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import paymentRoutes from '../modules/payments/payments.routes';
+import walletRoutes from '../modules/wallet/wallet.routes';
 import { authRoutes } from '../modules/auth/auth.routes';
 import { auditRoutes } from '../modules/audit/audit.routes';
 import { adminRoutes } from '../modules/admin/admin.routes';
@@ -13,9 +14,12 @@ import { adminDashboardRoutes } from '../modules/admin-dashboard/admin-dashboard
 import { settingsRoutes } from '../modules/settings/settings.routes';
 import { designationsRoutes } from '../modules/designations/designations.routes';
 import { notificationsRoutes } from '../modules/notifications/notifications.routes';
-import { categoriesRoutes, categoriesPublicRoutes } from '../modules/categories/categories.routes';
-import { servicesRoutes, servicesPublicRoutes } from '../modules/services/services.routes';
+import { categoriesRoutes } from '../modules/categories/categories.routes';
+import { servicesRoutes } from '../modules/services/services.routes';
+import { catalogRoutes } from '../modules/catalog/catalog.routes';
+import { incentivesRoutes } from '../modules/incentives/incentives.routes';
 import { adminCustomersRoutes } from '../modules/admin-customers/admin-customers.routes';
+
 import leadsRoutes from '../modules/leads/leads.routes';
 
 import { bookingsRoutes } from '../modules/bookings/bookings.routes';
@@ -33,8 +37,7 @@ rootRouter.use('/admin/settings', settingsRoutes); // GET /admin/settings, PUT /
 rootRouter.use('/admin/designations', designationsRoutes); // GET, POST, PATCH /:id, DELETE /:id
 rootRouter.use('/admin/categories', categoriesRoutes); // GET, POST, PATCH /:id, DELETE /:id
 rootRouter.use('/admin/services', servicesRoutes); // GET, GET /:id, POST, PATCH /:id, DELETE /:id
-rootRouter.use('/categories', categoriesPublicRoutes); // GET /categories (active only)
-rootRouter.use('/services', servicesPublicRoutes); // GET /services?category=&q=, GET /services/:idOrSlug
+rootRouter.use(catalogRoutes); // PUBLIC: GET /categories, GET /services?q&category&rating&minPrice&maxPrice&duration&availability&sort&page&limit, GET /services/:idOrSlug
 rootRouter.use('/notifications', notificationsRoutes); // GET /notifications, PATCH /:id/read, PATCH /read-all
 rootRouter.use('/admin', auditRoutes); // GET /admin/audit-logs
 
@@ -55,8 +58,9 @@ rootRouter.use(leadsRoutes); // POST /public/leads
 rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings/check-slot, POST /bookings, GET /bookings/:id
 rootRouter.use('/partner/earnings', earningsRoutes); // GET /partner/earnings/summary
 rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, GET /addresses/serviceability
-rootRouter.use('/payments', paymentRoutes); // POST /payments/create-order, /verify, /attempt
+rootRouter.use('/payments', paymentRoutes); // GET /payments, POST /payments/order, /cod, /verify, /attempt, /webhook (public, HMAC)
+rootRouter.use('/wallet', walletRoutes); // GET /wallet
 rootRouter.use(reviewsRoutes); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
-
+rootRouter.use('/partner/incentives', incentivesRoutes); // GET /partner/incentives, GET /partner/incentives/:id
 rootRouter.use('/admin/customers', adminCustomersRoutes);
 export default rootRouter;

@@ -21,7 +21,7 @@ export default function OfferBanner({ offer }: { offer: Offer }) {
     <div
       className={clsx(
         "flex w-72 shrink-0 flex-col justify-between rounded-lg border p-4",
-        offer.accent === "brand" ? "border-brand/10 bg-brand-soft" : "border-accent/20 bg-accent-soft",
+        offer.accent === "brand" ? "border-[#E6E8F5] bg-[#F7F8FD]" : "border-accent/20 bg-accent-soft",
       )}
     >
       <div>

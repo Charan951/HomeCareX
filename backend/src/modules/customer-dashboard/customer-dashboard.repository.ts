@@ -94,7 +94,7 @@ export function buildCategoriesPipeline(c: CollectionNames = defaultCollections(
       $lookup: {
         from: c.services,
         let: { cid: '$_id' },
-        pipeline: [{ $match: { $expr: { $eq: ['$categoryId', '$$cid'] }, isActive: true } }, { $count: 'n' }],
+        pipeline: [{ $match: { $expr: { $eq: ['$categoryId', '$$cid'] }, active: { $ne: false } } }, { $count: 'n' }],
         as: 'svc',
       },
     },
@@ -111,7 +111,7 @@ export function buildCategoriesPipeline(c: CollectionNames = defaultCollections(
 
 export function buildRecommendedPipeline(): PipelineStage[] {
   return [
-    { $match: { isActive: true } },
+    { $match: { active: { $ne: false } } },
     { $sort: { bookingsCount: -1, ratingAvg: -1, _id: 1 } },
     { $limit: MAX_RECOMMENDED_SERVICES },
     {
