@@ -4,10 +4,13 @@ import { PageHeader } from '@/components/admin/PageHeader';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { useUIStore } from '@/store/useUIStore';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { adminApi, type Designation, type PartnerMember } from '../Services/adminApi'
 import type { ApiError } from '@/lib/http';
 import { PartnerFormModal } from './PartnerFormModal';
 import { DesignationsModal } from './DesignationsModal';
+
+import './index.css';
 
 type Notice = { text: string; tone: 'success' | 'warning' } | null;
 
@@ -16,7 +19,11 @@ const NOTICE_CLASS = {
   warning: 'border-amber-200 bg-amber-50 text-amber-800',
 } as const;
 
+const initials = (name: string) =>
+  name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
+
 export const AdminManagePartnersPage: React.FC = () => {
+  const isMobile = useMediaQuery('(max-width: 767px)');
   const [partners, setPartners] = useState<PartnerMember[]>([]);
   // Search text comes from the search bar below the header
   const search = useUIStore((state) => state.pageSearch);
@@ -82,12 +89,12 @@ export const AdminManagePartnersPage: React.FC = () => {
   }
 
   return (
-    <div className="admin-page-container">
+    <div className="admin-page-container mp-page">
       <PageHeader
         title="Manage Partners"
         description="Register partners, edit their details and manage the designation list."
         actions={
-          <div className="flex gap-2">
+          <div className="flex gap-2 mp-actions">
             <button type="button" className="hcx-btn" onClick={() => setDesignationsOpen(true)}>
               <ListChecks size={16} /> Designations
             </button>
@@ -109,63 +116,105 @@ export const AdminManagePartnersPage: React.FC = () => {
         </div>
       )}
 
+      {isMobile ? (
+        loading ? (
+          <ul className="mp-list" aria-label="Loading partners">
+            {[0, 1, 2].map((n) => <li key={n} className="mp-card"><span className="hcx-skeleton hcx-skeleton--block" style={{ height: 92 }} /></li>)}
+          </ul>
+        ) : visiblePartners.length === 0 ? (
+          <div className="mp-state">
+            {partners.length === 0
+              ? 'No partners yet. Tap “Add Partner” to register one.'
+              : 'No partners match your search.'}
+          </div>
+        ) : (
+          <ul className="mp-list" aria-label="Partners">
+            {visiblePartners.map((s) => (
+              <li key={s.id} className="mp-card">
+                <div className="mp-card__head">
+                  <span className="mp-avatar" aria-hidden>{initials(s.name)}</span>
+                  <div className="mp-card__who">
+                    <span className="mp-card__name">{s.name}</span>
+                    <span className="mp-card__role">{s.designation ?? 'No designation'}</span>
+                  </div>
+                  <StatusBadge status={s.status} />
+                </div>
+                <dl className="mp-info">
+                  <div><dt>Email</dt><dd>{s.email}</dd></div>
+                  <div><dt>Phone</dt><dd>{s.phone ?? '—'}</dd></div>
+                  <div><dt>Gender</dt><dd style={{ textTransform: 'capitalize' }}>{s.gender ?? '—'}</dd></div>
+                </dl>
+                <div className="mp-card__actions">
+                  <button type="button" className="hcx-btn" onClick={() => openEdit(s)} aria-label={`Edit ${s.name}`}>
+                    <Pencil size={15} /> Edit
+                  </button>
+                  <button type="button" className="hcx-btn hcx-btn--danger-ghost" onClick={() => setToRemove(s)} aria-label={`Remove ${s.name}`}>
+                    <Trash2 size={15} /> Remove
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : (
       <div className="hcx-table-card">
-        <div className="hcx-table-scroll">
-          <table className="hcx-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Designation</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Gender</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={6}>Loading…</td></tr>
-              ) : visiblePartners.length === 0 ? (
+          <div className="hcx-table-scroll">
+            <table className="hcx-table">
+              <thead>
                 <tr>
-                  <td colSpan={6}>
-                    {partners.length === 0
-                      ? 'No partners yet. Click “Add Partner” to register one.'
-                      : 'No partners match your search.'}
-                  </td>
+                  <th>Name</th>
+                  <th>Designation</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Gender</th>
+                  <th>Status</th>
                 </tr>
-              ) : (
-                visiblePartners.map((s) => (
-                  <tr key={s.id}>
-                    <td>{s.name}</td>
-                    <td>{s.designation ?? '—'}</td>
-                    <td>{s.email}</td>
-                    <td>{s.phone ?? '—'}</td>
-                    <td style={{ textTransform: 'capitalize' }}>{s.gender ?? '—'}</td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={s.status} />
-                        <button type="button" className="hcx-btn hcx-btn--ghost" style={{ minHeight: 30, padding: '4px 8px' }} onClick={() => openEdit(s)} aria-label={`Edit ${s.name}`} title="Edit">
-                          <Pencil size={15} />
-                        </button>
-                        <button
-                          type="button"
-                          className="hcx-btn hcx-btn--ghost hcx-btn--danger-ghost"
-                          style={{ minHeight: 30, padding: '4px 8px' }}
-                          onClick={() => setToRemove(s)}
-                          aria-label={`Remove ${s.name}`}
-                          title="Remove"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={6}>Loading…</td></tr>
+                ) : visiblePartners.length === 0 ? (
+                  <tr>
+                    <td colSpan={6}>
+                      {partners.length === 0
+                        ? 'No partners yet. Click “Add Partner” to register one.'
+                        : 'No partners match your search.'}
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  visiblePartners.map((s) => (
+                    <tr key={s.id}>
+                      <td>{s.name}</td>
+                      <td>{s.designation ?? '—'}</td>
+                      <td>{s.email}</td>
+                      <td>{s.phone ?? '—'}</td>
+                      <td style={{ textTransform: 'capitalize' }}>{s.gender ?? '—'}</td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <StatusBadge status={s.status} />
+                          <button type="button" className="hcx-btn hcx-btn--ghost" style={{ minHeight: 30, padding: '4px 8px' }} onClick={() => openEdit(s)} aria-label={`Edit ${s.name}`} title="Edit">
+                            <Pencil size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            className="hcx-btn hcx-btn--ghost hcx-btn--danger-ghost"
+                            style={{ minHeight: 30, padding: '4px 8px' }}
+                            onClick={() => setToRemove(s)}
+                            aria-label={`Remove ${s.name}`}
+                            title="Remove"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
       <PartnerFormModal
         open={formOpen}

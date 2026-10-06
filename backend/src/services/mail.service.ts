@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import nodemailer, { type Transporter } from 'nodemailer';
 import type Mail from 'nodemailer/lib/mailer';
-import { partnerCredentialsEmail } from './mail.templates';
+import { accountCreatedEmail, accountCreatedUrls, partnerCredentialsEmail, type AccountCreatedEmailData } from './mail.templates';
 
 let transporter: Transporter | null = null;
 
@@ -38,6 +38,28 @@ function logo(): { src?: string; attachments: Mail.Attachment[] } {
 }
 
 export const mailService = {
+  async sendAccountCreatedEmail(data: Omit<AccountCreatedEmailData, 'loginUrl' | 'profileUrl' | 'logoSrc' | 'supportEmail'>) {
+    const frontendUrl = process.env.FRONTEND_URL
+      || (process.env.APP_LOGIN_URL ? new URL(process.env.APP_LOGIN_URL).origin : 'http://localhost:3000');
+    const urls = accountCreatedUrls(data.role, frontendUrl);
+    const { src, attachments } = logo();
+    const { subject, html, text } = accountCreatedEmail({
+      ...data,
+      ...urls,
+      logoSrc: src,
+      supportEmail: process.env.SUPPORT_EMAIL,
+    });
+
+    await getTransporter().sendMail({
+      from: process.env.MAIL_FROM || process.env.SMTP_USER,
+      to: data.email,
+      subject,
+      text,
+      html,
+      attachments,
+    });
+  },
+
   async sendPartnerCredentials(to: { name: string; email: string; designation: string }, password: string) {
     const { src, attachments } = logo();
     const { subject, html, text } = partnerCredentialsEmail({

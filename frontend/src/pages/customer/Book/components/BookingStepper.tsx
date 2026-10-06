@@ -26,18 +26,32 @@ export default function BookingStepper({ currentStep, focusOnMount = false, comp
     // eslint-disable-next-line react-hooks/exhaustive-deps -- focusOnMount only matters on the first run
   }, [currentStep]);
 
-  return (
+    return (
     <div className={`w-full ${compact ? "mb-0" : "mb-6"}`}>
       <h2
         ref={headingRef}
         tabIndex={-1}
-        className={`rounded text-lg font-semibold text-ink outline-none focus:outline-none focus:ring-0 ${compact ? "mb-2" : "mb-3"}`}
+        className={`rounded text-lg font-semibold text-ink outline-none focus:outline-none focus:ring-0 ${
+          compact ? "mb-2" : "mb-3"
+        }`}
       >
         Step {currentStep} of 4: {STEP_TITLES[currentStep - 1]}
       </h2>
-      <div className="flex gap-2" role="progressbar" aria-valuenow={currentStep} aria-valuemin={1} aria-valuemax={4}>
+
+      <div
+        className="flex gap-2"
+        role="progressbar"
+        aria-valuenow={currentStep}
+        aria-valuemin={1}
+        aria-valuemax={4}
+      >
         {[1, 2, 3, 4].map((step) => (
-          <div key={step} className={`h-1.5 flex-1 rounded-full transition-colors ${currentStep >= step ? "bg-brand" : "bg-line"}`} />
+          <div
+            key={step}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              currentStep >= step ? "bg-brand" : "bg-line"
+            }`}
+          />
         ))}
       </div>
     </div>

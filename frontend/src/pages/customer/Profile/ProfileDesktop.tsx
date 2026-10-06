@@ -64,40 +64,46 @@ export default function ProfileDesktop({ name, email, phone, addressLabel, addre
         <p className="mt-0.5 text-sm text-muted">Manage your details, places and account shortcuts.</p>
       </div>
 
-      <section aria-labelledby="profile-desktop-name" className="relative flex items-center gap-6 overflow-hidden rounded-[28px] bg-gradient-to-br from-[#3730A3] via-brand to-[#6D5EF0] p-7 text-white shadow-[0_20px_44px_-18px_rgba(67,56,202,.55)]">
-        <span aria-hidden="true" className="pointer-events-none absolute -right-14 -top-20 h-72 w-72 rounded-full bg-accent/30" />
+      <section aria-labelledby="profile-desktop-name" className="relative flex flex-wrap items-center gap-x-6 gap-y-5 overflow-hidden rounded-[28px] border border-[#D9DCF7] bg-[#E9EBFF] p-5 text-ink lg:p-7">
         <div
           aria-hidden="true"
-          className="relative flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white/35 bg-gradient-to-br from-[#8B7CF6] to-[#4338CA] text-3xl font-semibold shadow-[0_10px_18px_-8px_rgba(0,0,0,.4)]"
+          className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 lg:h-24 lg:w-24 border-white bg-brand text-3xl font-semibold text-white"
         >
           {initialsOf(name)}
         </div>
-        <div className="relative min-w-0">
+        <div className="relative min-w-0 flex-1 basis-[200px]">
           <h2 id="profile-desktop-name" className="truncate text-2xl font-bold">
             {name}
           </h2>
-          <p className="truncate text-sm text-white/85">{email ?? "HomeCareX customer"}</p>
+          <p className="truncate text-sm text-muted">{email ?? "HomeCareX customer"}</p>
+          {addressText && (
+            <span className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#D9DCF7] bg-white px-3 py-0.5 text-xs font-semibold text-ink">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-brand" aria-hidden="true" />
+              <span className="truncate">{addressText}</span>
+            </span>
+          )}
           <Link
             to={editTo}
-            className={clsx("mt-3 inline-flex items-center gap-2 rounded-full bg-white/18 px-4 py-1.5 text-sm font-semibold text-white ring-1 ring-white/30 transition-colors hover:bg-white/28", FOCUS_RING)}
+            className={clsx("mt-3 flex w-fit items-center gap-2 rounded-full border-[1.5px] border-[#B9BFF2] bg-[#E9EBFF] px-5 py-2 text-sm font-semibold text-brand transition-colors hover:bg-white", FOCUS_RING)}
           >
             <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
             Edit profile
           </Link>
         </div>
-        <ul className="relative ml-auto flex gap-3">
+        {/* Tablet (sidebar open) is narrow, so the stats drop to their own full-width row; they sit beside the name from xl. */}
+        <ul className="relative grid w-full grid-cols-3 gap-3 xl:ml-auto xl:flex xl:w-auto">
           {stats.map((s) => (
             <li key={s.label}>
               <Link
                 to={s.to}
-                className={clsx("block min-w-[96px] rounded-[18px] border border-white/20 bg-white/14 px-5 py-3 text-center transition-colors hover:bg-white/22", FOCUS_RING)}
+                className={clsx("block rounded-[18px] border border-[#D9DCF7] bg-white px-3 py-3 text-center xl:min-w-[96px] xl:px-5 transition-colors hover:border-brand", FOCUS_RING)}
               >
                 {s.value === undefined ? (
-                  <span className="mx-auto block h-6 w-6 animate-pulse rounded bg-white/25" role="status" aria-label="Loading" />
+                  <span className="mx-auto block h-6 w-6 animate-pulse rounded bg-line" role="status" aria-label="Loading" />
                 ) : (
                   <span className="block text-2xl font-bold leading-tight">{s.value ?? "–"}</span>
                 )}
-                <span className="text-xs text-white/85">{s.label}</span>
+                <span className="text-xs text-muted">{s.label}</span>
               </Link>
             </li>
           ))}

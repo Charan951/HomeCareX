@@ -352,8 +352,8 @@ const BannerSlider: React.FC<BannerSliderProps> = ({
                   />
 
                   {/* Readability overlays */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-[#1e1b4b]/95 via-[#312e81]/70 to-[#312e81]/10" />
-                  <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-[#1e1b4b]/80 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#1e1b4b]/75 via-[#312e81]/30 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#1e1b4b]/55 to-transparent" />
 
                   {/* Content */}
                   <div className="relative flex h-full items-center px-6 pb-28 pt-12 sm:px-12 lg:px-16">

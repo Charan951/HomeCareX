@@ -12,6 +12,7 @@ const UserSchema = new Schema(
     phone: { type: String, unique: true, sparse: true, trim: true },
     passwordHash: { type: String, required: true, select: false },
     role: { type: String, enum: USER_ROLES, default: 'customer', index: true },
+    referralCode: { type: String, trim: true },
     /** Partners only: the specialist type (Plumber, Electrician...). */
     designation: { type: String, trim: true },
     gender: { type: String, enum: ['male', 'female', 'other'] },
