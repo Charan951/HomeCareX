@@ -44,6 +44,8 @@ const PAGE_TITLES: Record<string, string> = {
 const EXTRA_TITLES: Record<string, string> = {
   "/partner/incentives": "Partner Incentives",
   "/partner/earnings/incentives": "Partner Incentives",
+  "/partner/payouts": "Partner Payouts",
+  "/partner/earnings/payouts": "Partner Payouts",
 };
 
 // Bottom tabs. Every other page is reached from the Profile tab (see ProfileMenu).
@@ -237,7 +239,7 @@ export default function PartnerLayout() {
   const title = PAGE_TITLES[cleanPath] ?? EXTRA_TITLES[cleanPath] ?? current?.label ?? "Partner";
   // Availability / Working Hours / Blackout Dates / Schedule / Earnings on mobile: header shows only [Back] + page name
   const minimalHeader = Object.keys(PAGE_TITLES).includes(cleanPath);
-  // Partner Incentives page: no Online/Offline pill (every other page keeps it)
+  // Partner Incentives / Partner Payouts pages: no Online/Offline pill (every other page keeps it)
   const hideStatusPill = Object.keys(EXTRA_TITLES).includes(cleanPath);
 
   // Mobile back button: shown on every page except Home.
