@@ -1,241 +1,123 @@
-import { useEffect } from 'react';
-import { useParams, useLocation, Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { CheckCircle2 } from 'lucide-react';
-import { bookingApi, type NormalizedApiError } from '@/services/bookingApi';
-import { useBookingDraftStore } from '@/features/booking';
-import { ErrorState, LoadingState } from '@/components/customer';
-import { formatSlotLabel } from '../Book/components/SlotPicker';
-import type { BookingStatus, BookingView } from '@/types/booking';
-import { BOOKINGS } from '../../../mocks/customerMockData';
-import { statusBadgeClass } from '../../../utils/statusBadge';
-import { customerPath } from '@/routes/customerPath';
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { customerPath } from "@/routes/customerPath";
 
-function MockBookingDetails({ id }: { id: string | undefined }) {
-  const booking = BOOKINGS.find((b) => b.id === id) ?? BOOKINGS[0];
+export default function BookingSuccess() {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const method = searchParams.get("method");
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <Link to={customerPath('/bookings')} className="text-sm text-brand font-medium">← Back to bookings</Link>
-      </div>
+  const isCOD = method === "cod";
 
-      <div className="bg-panel border border-line rounded p-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-xl font-semibold text-ink">{booking.service}</h1>
-            <p className="text-muted text-sm mt-1">{booking.id} · {booking.category}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusBadgeClass(booking.status)}`}>{booking.status}</span>
-            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-300">
-              Payment Pending
-            </span>
-          </div>
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-4 mt-6 text-sm">
-          <div>
-            <div className="text-muted text-xs">Scheduled</div>
-            <div className="text-ink mt-0.5">{booking.scheduledAt}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Address</div>
-            <div className="text-ink mt-0.5">{booking.address}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Partner</div>
-            <div className="text-ink mt-0.5">{booking.partner ? `${booking.partner.name} · ⭐ ${booking.partner.rating}` : 'Not yet assigned'}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Payment status</div>
-            <div className="text-amber-700 font-medium mt-0.5">Pending</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const STATUS_LABEL: Record<BookingStatus, string> = {
-  pending_payment: 'Awaiting payment',
-  confirmed: 'Confirmed',
-  created: 'Confirmed',
-  searching_for_partner: 'Finding a partner',
-  assigned: 'Partner Assigned',
-  en_route: 'En Route',
-  arrived: 'Arrived',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-  rated: 'Completed',
-  cancelled_by_customer: 'Cancelled',
-  cancelled_by_partner: 'Partner cancelled, reassigning',
-  no_show: 'No show',
-  disputed: 'Under review',
-};
-
-const OBJECT_ID = /^[0-9a-fA-F]{24}$/;
-const rupees = (n: number) => `₹${n.toLocaleString('en-IN')}`;
-
-function formatDate(iso: string): string {
-  if (!iso) return '';
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function LiveBookingDetails({ id }: { id: string }) {
-  const location = useLocation();
-  const justBooked = Boolean((location.state as { justBooked?: boolean } | null)?.justBooked);
-
-  useEffect(() => {
-    if (justBooked) useBookingDraftStore.getState().clearDraft();
-  }, [justBooked]);
-
-  const { data: booking, isError, error, refetch } = useQuery<BookingView, NormalizedApiError>({
-    queryKey: ['booking', id],
-    queryFn: () => bookingApi.getBooking(id),
-  });
-
-  if (isError) {
-    return (
-      <ErrorState
-        title="Couldn't load this booking"
-        message={error?.message ?? 'Something went wrong. Please try again.'}
-        onRetry={() => void refetch()}
-      />
-    );
-  }
-  if (!booking) return <LoadingState label="Loading your booking…" />;
-
-  const base = booking.priceSnapshot.lines.find((l) => l.kind === 'BASE');
-  const addOns = booking.priceSnapshot.lines.filter((l) => l.kind === 'ADDON');
-  const a = booking.addressSnapshot;
-  const label = STATUS_LABEL[booking.status] ?? booking.status;
-  const isPaymentPending = (booking.paymentStatus ?? 'PENDING') === 'PENDING';
+  // Note: Replace these mock values with your actual data context
+  const bookingId = id?.slice(-5).toUpperCase() || "2047D7";
+  const totalAmount = "₹1528";
+  const dateString = "October 5, 2026";
+  const timeString = "4:00 PM – 6:00 PM";
+  const serviceName = "Deep Home Cleaning";
+  const address = "14, Road No. 5, Jubilee Hills, Jubilee Hills, Hyderabad, Telangana — 500033";
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link to={customerPath('/bookings')} className="text-sm text-brand font-medium">← Back to bookings</Link>
-      </div>
+    <div className="p-4 md:p-8 font-sans w-full min-h-screen">
+      <div className="bg-[#eefcf2] rounded-xl p-8 md:p-12 w-full max-w-6xl mx-auto text-center shadow-sm">
+        
+        {/* Stars */}
+        <div className="flex justify-center items-center gap-2 text-[#c3a372] mb-4">
+          <span className="text-lg">★</span>
+          <span className="text-xl">★</span>
+          <span className="text-2xl">★</span>
+          <span className="text-xl">★</span>
+          <span className="text-lg">★</span>
+        </div>
 
-      {/* Booking Confirmed Banner */}
-      {justBooked && booking.status === 'confirmed' && (
-        <div role="status" className="flex items-start gap-3 rounded border border-green-200 bg-green-50 px-4 py-3 text-green-800">
-          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-          <div>
-            <p className="font-semibold">Booking confirmed!</p>
-            <p className="text-sm">
-              {base?.name ?? 'Your service'} is booked for {formatDate(booking.date)}, {formatSlotLabel(booking.slot)}.
+        {/* Heading */}
+        <h1 className="text-4xl md:text-5xl font-serif text-[#102a20] mb-6">
+          Booking Confirmed
+        </h1>
+
+        <p className="text-gray-600 mb-2 text-lg">
+          We are pleased to inform you that your reservation request has been received and confirmed.
+        </p>
+        <p className="text-gray-900 font-bold mb-6 text-lg">
+          Your booking is confirmed. Thank You!
+        </p>
+
+        {/* Highlighted Payment Notice */}
+        <div className="flex justify-center mb-10">
+          {isCOD ? (
+            <p className="text-gray-900 font-bold text-base">
+              Payment: cash on service. Please pay {totalAmount} to the professional after the visit.
+            </p>
+          ) : (
+            <p className="text-green-700 font-bold text-base">
+              Payment successful. Your service is fully paid.
+            </p>
+          )}
+        </div>
+
+        {/* Booking Details Section */}
+        <div className="text-left max-w-5xl mx-auto mt-4">
+          <h2 className="text-2xl font-serif text-[#102a20] mb-6">Booking Details</h2>
+
+          {/* Grid reverted to 4 columns */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 border-b border-gray-200 pb-8 mb-6">
+            <div className="md:border-r md:border-dashed md:border-gray-300 pr-2">
+              <p className="text-sm text-gray-500 mb-2">Booking:</p>
+              <p className="font-extrabold text-gray-900 text-lg">{bookingId}</p>
+            </div>
+            
+            <div className="md:border-r md:border-dashed md:border-gray-300 pr-2">
+              <p className="text-sm text-gray-500 mb-1">Date & Time:</p>
+              <p className="font-extrabold text-gray-900">{dateString}</p>
+              <p className="text-xs text-gray-500 mt-1">{timeString}</p>
+            </div>
+            
+            <div className="md:border-r md:border-dashed md:border-gray-300 pr-2">
+              <p className="text-sm text-gray-500 mb-2">Total:</p>
+              <p className="font-extrabold text-gray-900 text-lg">{totalAmount}</p>
+            </div>
+            
+            <div className="pr-2">
+              <p className="text-sm text-gray-500 mb-2">Status:</p>
+              <p className="font-extrabold text-gray-900 text-lg">Confirmed</p>
+            </div>
+          </div>
+
+          {/* Details Line */}
+          <div className="mb-3 text-sm md:text-base">
+            <p className="text-gray-600">
+              <span className="font-bold text-gray-900">Details:</span>{" "}
+              <span className="text-[#c3a372] font-semibold">{serviceName}</span> | {address}
             </p>
           </div>
-        </div>
-      )}
 
-      {/* Main Details Card */}
-      <div className="bg-panel border border-line rounded p-6">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-xl font-semibold text-ink">{base?.name ?? 'Booking'}</h1>
-            <p className="text-muted text-sm mt-1">Booking ID · {booking._id}</p>
-          </div>
-          
-          {/* Dual Status Badges */}
-          <div className="flex items-center gap-2">
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${statusBadgeClass(label)}`}>
-              {label}
-            </span>
-            <span
-              className={`text-xs font-semibold px-2.5 py-1 rounded-full whitespace-nowrap flex items-center gap-1.5 ${
-                isPaymentPending
-                  ? 'bg-amber-50 text-amber-700 border border-amber-300'
-                  : 'bg-emerald-50 text-emerald-700 border border-emerald-300'
-              }`}
-            >
-              <span className={`w-1.5 h-1.5 rounded-full ${isPaymentPending ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
-              Payment {booking.paymentStatus ?? 'PENDING'}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-4 mt-6 text-sm">
-          <div>
-            <div className="text-muted text-xs">Scheduled</div>
-            <div className="text-ink mt-0.5">{formatDate(booking.date)} · {formatSlotLabel(booking.slot)}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Address</div>
-            <div className="text-ink mt-0.5">{a.line1}, {a.city}, {a.state} — {a.pincode}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Partner</div>
-            <div className="text-ink mt-0.5">{booking.partnerId ? 'Assigned' : 'Not yet assigned'}</div>
-          </div>
-          <div>
-            <div className="text-muted text-xs">Quantity</div>
-            <div className="text-ink mt-0.5">{booking.quantity}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Status Timeline */}
-      <div className="bg-panel border border-line rounded p-6">
-        <h3 className="font-semibold text-ink mb-4">Status timeline</h3>
-        <ol className="space-y-3">
-          {booking.statusHistory.map((h, i) => (
-            <li key={i} className="flex items-center gap-3 text-sm">
-              <span className="h-2.5 w-2.5 rounded-full shrink-0 bg-brand" />
-              <span className="text-ink">{STATUS_LABEL[h.to as BookingStatus] ?? h.to}</span>
-              <span className="text-xs text-muted ml-auto">
-                {new Date(h.at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}
+          {/* Payment Status added below Booking Details */}
+          <div className="mb-10 text-sm md:text-base">
+            <p className="text-gray-600">
+              <span className="font-bold text-gray-900">Payment Status:</span>{" "}
+              <span className={`font-semibold ${isCOD ? 'text-amber-600' : 'text-green-600'}`}>
+                {isCOD ? 'Pending (Cash on Service)' : 'Paid Successfully'}
               </span>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      {/* Price Breakdown with Payment Alert */}
-      <div className="bg-panel border border-line rounded p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-ink">Price breakdown</h3>
-          <span className="text-xs font-medium px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-            Payment Status: {booking.paymentStatus ?? 'PENDING'}
-          </span>
-        </div>
-        <div className="space-y-2 text-sm">
-          {base && (
-            <div className="flex justify-between">
-              <span className="text-muted">Base price × {base.quantity}</span>
-              <span className="text-ink">{rupees(base.amount)}</span>
-            </div>
-          )}
-          {addOns.map((l) => (
-            <div key={String(l.refId)} className="flex justify-between">
-              <span className="text-muted">{l.name}</span>
-              <span className="text-ink">+{rupees(l.amount)}</span>
-            </div>
-          ))}
-          {booking.priceSnapshot.discount > 0 && (
-            <div className="flex justify-between">
-              <span className="text-muted">Discount</span>
-              <span className="text-ink">−{rupees(booking.priceSnapshot.discount)}</span>
-            </div>
-          )}
-          <div className="flex justify-between">
-            <span className="text-muted">Convenience fee</span>
-            <span className="text-ink">{rupees(booking.priceSnapshot.convenienceFee)}</span>
+            </p>
           </div>
-          <div className="flex justify-between font-semibold pt-2 border-t border-line">
-            <span className="text-ink">Total</span>
-            <span className="text-ink">{rupees(booking.priceSnapshot.total)}</span>
+
+          {/* Action Links */}
+          <div className="flex gap-6">
+            <button
+              onClick={() => navigate(customerPath(`/bookings/${id}`))}
+              className="text-gray-600 hover:text-black underline font-medium underline-offset-4 transition-colors"
+            >
+              View My Bookings
+            </button>
+            <button
+              onClick={() => navigate(customerPath('/'))}
+              className="text-gray-600 hover:text-black underline font-medium underline-offset-4 transition-colors"
+            >
+              Return to Home
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
-}
-
-export default function BookingDetails() {
-  const { id } = useParams();
-  return id && OBJECT_ID.test(id) ? <LiveBookingDetails id={id} /> : <MockBookingDetails id={id} />;
 }

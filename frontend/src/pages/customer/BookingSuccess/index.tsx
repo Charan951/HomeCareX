@@ -40,14 +40,25 @@ export default function BookingSuccess() {
     queryKey: ["booking", bookingId],
     queryFn: () => bookingApi.getBooking(bookingId as string),
     enabled: Boolean(bookingId),
+    refetchInterval: (query) => {
+      // Auto-refresh every 5 seconds if the payment is still pending
+      return query.state.data?.status === BOOKING_STATUS.PENDING_PAYMENT ? 5000 : false;
+    },
   });
 
   const clearDraft = useBookingDraftStore((s) => s.clearDraft);
-  const isPaid = data?.paymentStatus === "PAID";
+  
+  const isPaymentPending = data?.status === BOOKING_STATUS.PENDING_PAYMENT;
+  
+  // Valid states for this page: Paid, Cash on Service (Pending), or Online Payment Processing
+  const isValidView =
+    data !== undefined &&
+    data.status !== BOOKING_STATUS.CANCELLED_BY_CUSTOMER &&
+    (data.paymentStatus === "PAID" || data.paymentStatus === "PENDING" || isPaymentPending);
 
   useEffect(() => {
-    if (isPaid) clearDraft();
-  }, [isPaid, clearDraft]);
+    if (isValidView) clearDraft();
+  }, [isValidView, clearDraft]);
 
   if (isLoading) return <LoadingState label="Loading your booking…" />;
 
@@ -61,18 +72,16 @@ export default function BookingSuccess() {
     );
   }
 
-  const confirmed =
-    data.paymentStatus === "PAID" &&
-    data.status !== BOOKING_STATUS.PENDING_PAYMENT &&
-    data.status !== BOOKING_STATUS.CANCELLED_BY_CUSTOMER;
+  // "Cash on Service" condition (booking is confirmed, but payment is intentionally pending)
+  const payOnService = data.paymentStatus === "PENDING" && !isPaymentPending;
 
-  if (!confirmed) {
+  if (!isValidView) {
     return (
       <div className="flex min-h-[calc(100vh-64px)] w-full items-center justify-center px-4 py-8">
         <div className="w-full max-w-lg rounded-2xl border border-line bg-panel p-6 text-center shadow-sm">
-          <h1 className="font-serif text-xl font-semibold text-ink">Payment not confirmed yet</h1>
+          <h1 className="font-serif text-xl font-semibold text-ink">Booking Cancelled or Invalid</h1>
           <p className="mt-2 text-sm text-muted">
-            We haven't received a confirmed payment for this booking. Check My Bookings before trying again.
+            This booking cannot be displayed. Check My Bookings for more details.
           </p>
           <Link
             to={customerPath("/bookings")}
@@ -93,35 +102,47 @@ export default function BookingSuccess() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] w-full bg-white">
-      {/* Top Banner with Clear, Visible Green Shade */}
-      <div className="w-full bg-gradient-to-b from-[#dcfce7] via-[#f0fdf4] to-white px-6 pb-8 pt-12 sm:pt-16">
+      {/* Dynamic Banner: Amber for pending, Green for confirmed */}
+      <div className={`w-full bg-gradient-to-b ${isPaymentPending ? 'from-amber-100 via-amber-50' : 'from-[#dcfce7] via-[#f0fdf4]'} to-white px-6 pb-8 pt-12 sm:pt-16`}>
         <div className="mx-auto max-w-4xl text-center">
           <StarHeader />
 
-          {/* Heading with no blue focus outline */}
           <h1 className="mt-4 font-serif text-3xl font-normal tracking-tight text-gray-900 outline-none focus:outline-none sm:text-4xl">
-            Booking Confirmed
+            {isPaymentPending ? "Payment Processing" : "Booking Confirmed"}
           </h1>
 
           <div className="mt-6 space-y-2 text-xs text-gray-600 sm:text-sm">
-            <p>
-              We are pleased to inform you that your reservation request has been received and confirmed.
-            </p>
-            <p className="font-semibold text-gray-800">
-              Your booking is confirmed. Thank You!
-            </p>
+            {isPaymentPending ? (
+              <>
+                <p>We have recorded your booking request and are waiting for payment confirmation.</p>
+                <p className="font-semibold text-amber-700 animate-pulse">
+                  Please do not refresh. This page will update automatically...
+                </p>
+              </>
+            ) : (
+              <>
+                <p>We are pleased to inform you that your reservation request has been received and confirmed.</p>
+                <p className="font-semibold text-gray-800">
+                  Your booking is confirmed. Thank You!
+                </p>
+              </>
+            )}
+            
+            {payOnService && (
+              <p className="text-gray-700">
+                Payment: cash on service. Please pay ₹{data.priceSnapshot.total} to the professional after the visit.
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Main Details Area: Preserving Exact Original Width and Height */}
       <main className="mx-auto max-w-4xl px-6 pb-16 pt-2 sm:px-8">
         <section aria-labelledby="details-heading">
           <h2 id="details-heading" className="font-serif text-xl font-medium text-gray-900 sm:text-2xl">
             Booking Details
           </h2>
 
-          {/* 4-column detail grid */}
           <div className="mt-5 grid grid-cols-2 gap-y-6 border-y border-dashed border-gray-200 py-4 sm:grid-cols-4 sm:gap-x-4 sm:border-y-0 sm:py-2">
             <div className="sm:border-r sm:border-dashed sm:border-gray-200 sm:pr-6">
               <span className="block text-xs text-gray-500">Booking:</span>
@@ -143,13 +164,12 @@ export default function BookingSuccess() {
 
             <div className="sm:pl-6">
               <span className="block text-xs text-gray-500">Status:</span>
-              <span className="mt-1 block font-bold capitalize text-gray-900">
-                {data.status.toLowerCase()}
+              <span className={`mt-1 block font-bold capitalize ${isPaymentPending ? 'text-amber-600' : 'text-gray-900'}`}>
+                {data.status.replace(/_/g, ' ').toLowerCase()}
               </span>
             </div>
           </div>
 
-          {/* Details Row */}
           <div className="mt-6 text-xs text-gray-600 sm:text-sm">
             <span className="font-medium text-gray-800">Details: </span>
             <span className="font-medium text-[#bfa071]">{base?.name ?? "Service Package"}</span>
@@ -157,7 +177,6 @@ export default function BookingSuccess() {
             <span className="text-gray-500 break-words">{address}</span>
           </div>
 
-          {/* Bottom Action Links */}
           <div className="mt-8 flex items-center gap-6 text-xs sm:text-sm">
             <Link
               to={customerPath("/bookings")}
