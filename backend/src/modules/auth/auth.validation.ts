@@ -9,12 +9,26 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   name: z.string().trim().min(2, 'Name is required'),
   email: z.string().trim().toLowerCase().email('Enter a valid email'),
-  phone: z.string().trim().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit mobile number').optional(),
+  phone: z
+    .string()
+    .trim()
+    .transform((val) => {
+      const cleaned = val.replace(/[\s()-]/g, '');
+      if (cleaned.startsWith('+91')) return cleaned.slice(3);
+      if (cleaned.startsWith('91') && cleaned.length === 12) return cleaned.slice(2);
+      return cleaned;
+    })
+    .refine((val) => !val || /^[6-9]\d{9}$/.test(val), {
+      message: 'Enter a valid 10-digit mobile number',
+    })
+    .optional(),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password needs an uppercase letter')
     .regex(/[0-9]/, 'Password needs a number'),
+  confirmPassword: z.string().optional(),
+  referralCode: z.string().trim().optional(),
   role: z.enum(['customer', 'partner']).default('customer'),
 });
 
