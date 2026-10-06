@@ -1,12 +1,12 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { CalendarCheck, IndianRupee, LifeBuoy, Star } from 'lucide-react';
+import { CalendarCheck, IndianRupee, LifeBuoy, Pencil, Star, Trash2 } from 'lucide-react';
 
-import { ConfirmDialog, PageHeader, StatCard, StatusBadge, Timeline } from '@/components/admin';
+import { ConfirmDialog, Modal, PageHeader, StatCard, StatusBadge, Timeline } from '@/components/admin';
 import type { TimelineItem } from '@/components/admin';
 import { adminCustomerApi } from '@/services/adminCustomerApi';
-import type { AdminCustomerDetail, CustomerStatus } from '@/types/adminCustomer';
+import type { AdminCustomerDetail, CustomerOverview, CustomerStatus } from '@/types/adminCustomer';
 
 import './index.css';
 
@@ -192,6 +192,70 @@ const ReviewsTab: React.FC<{ data: AdminCustomerDetail }> = ({ data }) =>
     </div>
   );
 
+/** Edit name / email / phone (same fields and rules as the Customers list). */
+const EditCustomerModal: React.FC<{ customer: CustomerOverview; open: boolean; onClose: () => void; onSaved: () => void }> = ({
+  customer, open, onClose, onSaved,
+}) => {
+  const queryClient = useQueryClient();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  // Start from the latest saved values every time the dialog opens.
+  useEffect(() => {
+    if (open) {
+      setName(customer.name);
+      setEmail(customer.email);
+      setPhone(customer.phone ?? '');
+      setError(null);
+    }
+  }, [open, customer]);
+
+  const mutation = useMutation({
+    mutationFn: () => adminCustomerApi.update(customer.id, { name: name.trim(), email: email.trim(), phone: phone.trim() }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'customers'] });
+      onSaved();
+    },
+    onError: (e) => setError(errMessage(e, 'Could not save the changes. Please try again.')),
+  });
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name.trim().length < 2) return setError('Name must be at least 2 characters');
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError('Enter a valid email');
+    if (phone.trim() && !/^[6-9]\d{9}$/.test(phone.trim())) return setError('Enter a valid 10-digit mobile number');
+    setError(null);
+    mutation.mutate();
+  };
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Edit customer"
+      size="sm"
+      dismissible={!mutation.isPending}
+      footer={
+        <>
+          <button type="button" className="hcx-btn" onClick={onClose} disabled={mutation.isPending}>Cancel</button>
+          <button type="submit" form="cd-edit-form" className="hcx-btn hcx-btn--primary" disabled={mutation.isPending}>
+            {mutation.isPending ? 'Saving…' : 'Save changes'}
+          </button>
+        </>
+      }
+    >
+      <form id="cd-edit-form" className="cd-form" onSubmit={submit} noValidate>
+        <label className="hcx-field"><span>Name</span><input value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" /></label>
+        <label className="hcx-field"><span>Email</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" /></label>
+        <label className="hcx-field"><span>Phone</span><input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="numeric" placeholder="10-digit mobile (optional)" autoComplete="off" /></label>
+        {error && <div role="alert" className="cd-form__error">{error}</div>}
+      </form>
+    </Modal>
+  );
+};
+
 /* ---------------- page ---------------- */
 
 const AdminCustomerDetailsPage: React.FC = () => {
@@ -202,6 +266,9 @@ const AdminCustomerDetailsPage: React.FC = () => {
   const [confirmTo, setConfirmTo] = useState<CustomerStatus | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
   const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const query = useQuery({
@@ -225,6 +292,19 @@ const AdminCustomerDetailsPage: React.FC = () => {
       setActionError(errMessage(e, 'Could not update the customer. Please try again.'));
       if ((e as { status?: number })?.status === 409) void queryClient.invalidateQueries({ queryKey: ['admin', 'customers'] });
     },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (reason: string) => adminCustomerApi.remove(id, reason),
+    onSuccess: async () => {
+      setRemoveOpen(false);
+      setRemoveError(null);
+      // The customer no longer exists, so drop the cached detail and go back to the list.
+      queryClient.removeQueries({ queryKey: ['admin', 'customers', 'detail', id] });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'customers'] });
+      navigate('/admin/customers');
+    },
+    onError: (e) => setRemoveError(errMessage(e, 'Could not remove the customer. Please try again.')),
   });
 
   const onTabKey = (e: React.KeyboardEvent, index: number) => {
@@ -295,13 +375,29 @@ const AdminCustomerDetailsPage: React.FC = () => {
         back="/admin/customers"
         meta={<StatusBadge status={isBlocked ? 'Blocked' : 'Active'} />}
         actions={
-          <button
-            type="button"
-            className={`cd-action ${isBlocked ? 'hcx-btn hcx-btn--primary' : 'hcx-btn hcx-btn--danger'}`}
-            onClick={() => { setActionError(null); setNotice(null); setConfirmTo(isBlocked ? 'active' : 'blocked'); }}
-          >
-            {isBlocked ? 'Unblock customer' : 'Block customer'}
-          </button>
+          <div className="cd-actions">
+            <button
+              type="button"
+              className="cd-action cd-action--edit hcx-btn"
+              onClick={() => { setNotice(null); setEditOpen(true); }}
+            >
+              <Pencil size={14} aria-hidden /> Edit
+            </button>
+            <button
+              type="button"
+              className="cd-action cd-action--remove hcx-btn"
+              onClick={() => { setNotice(null); setRemoveError(null); setRemoveOpen(true); }}
+            >
+              <Trash2 size={14} aria-hidden /> Remove
+            </button>
+            <button
+              type="button"
+              className={`cd-action ${isBlocked ? 'hcx-btn hcx-btn--primary' : 'hcx-btn hcx-btn--danger'}`}
+              onClick={() => { setActionError(null); setNotice(null); setConfirmTo(isBlocked ? 'active' : 'blocked'); }}
+            >
+              {isBlocked ? 'Unblock customer' : 'Block customer'}
+            </button>
+          </div>
         }
       />
 
@@ -366,6 +462,30 @@ const AdminCustomerDetailsPage: React.FC = () => {
         onConfirm={(reason) => {
           if (confirmTo && reason) mutation.mutate({ status: confirmTo, reason });
         }}
+      />
+
+      <EditCustomerModal
+        customer={o}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => { setEditOpen(false); setNotice('Customer details updated.'); }}
+      />
+
+      <ConfirmDialog
+        open={removeOpen}
+        tone="danger"
+        title={`Remove ${o.name}?`}
+        confirmLabel="Remove customer"
+        loading={removeMutation.isPending}
+        reason={{ label: 'Reason', required: true, placeholder: 'Why is this customer being removed?' }}
+        message={
+          <>
+            This permanently deletes the customer and their saved addresses. Customers with bookings can't be removed; block them instead.
+            {removeError && <div role="alert" style={{ marginTop: 8, color: 'var(--hcx-danger)' }}>{removeError}</div>}
+          </>
+        }
+        onCancel={() => { if (!removeMutation.isPending) { setRemoveOpen(false); setRemoveError(null); } }}
+        onConfirm={(reason) => { if (reason) removeMutation.mutate(reason); }}
       />
     </div>
   );

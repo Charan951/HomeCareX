@@ -82,3 +82,34 @@
   .cd-address, .cd-review { border-radius: 14px; }
   .cd-state { padding: 36px 16px; border-radius: 14px; }
 }
+
+/* ---------- header actions: Edit / Remove / Block ---------- */
+.cd-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.cd-actions .cd-action { display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; }
+/* Modern look: soft rounded buttons, subtle lift on hover, clear focus ring. */
+.cd-actions .cd-action { min-height: 38px; padding: 0 16px; font-size: 14px; font-weight: 600; border-radius: 10px; transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .15s ease; }
+.cd-actions .cd-action:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15, 23, 42, .08); }
+.cd-actions .cd-action:active:not(:disabled) { transform: translateY(0); box-shadow: none; }
+.cd-actions .cd-action:focus-visible { outline: 2px solid var(--hcx-accent); outline-offset: 2px; }
+.cd-actions .cd-action svg { flex: 0 0 auto; }
+
+/* Edit: soft indigo tint */
+.cd-actions .cd-action--edit { color: var(--hcx-accent); background: var(--hcx-accent-soft); border-color: transparent; }
+.cd-actions .cd-action--edit:hover:not(:disabled) { background: #e0e7ff; }
+
+/* Remove: soft red tint, fills solid on hover */
+.cd-actions .cd-action--remove { color: var(--hcx-danger); background: var(--hcx-danger-soft); border-color: transparent; }
+.cd-actions .cd-action--remove:hover:not(:disabled) { color: #fff; background: var(--hcx-danger); }
+
+/* ---------- edit dialog ---------- */
+.cd-form { display: flex; flex-direction: column; gap: 12px; }
+.cd-form__error { font-size: 13px; color: var(--hcx-danger); }
+.cd-form .hcx-field { margin-top: 0; }
+.cd-form .hcx-field input { height: 38px; padding: 0 10px; font: inherit; font-weight: 400; border: 1px solid var(--hcx-line); border-radius: 8px; }
+
+@media (max-width: 767px) {
+  /* Edit and Remove share a row; Block / Unblock gets the full width below. */
+  .cd-actions { width: 100%; justify-content: stretch; }
+  .cd-page .cd-actions .cd-action { flex: 1 1 calc(50% - 4px); min-height: 44px; border-radius: 12px; }
+  .cd-page .cd-actions .cd-action:last-child { flex: 1 1 100%; }
+}
