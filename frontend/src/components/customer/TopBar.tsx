@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Menu } from "lucide-react";
 import clsx from "clsx";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { customerPath } from "@/routes/customerPath";
@@ -14,7 +13,10 @@ interface TopBarProps {
   onToggleSidebar: () => void;
 }
 
-const HAMBURGER = "-ml-2 flex h-11 w-11 items-center justify-center rounded-lg text-ink hover:bg-canvas";
+const HAMBURGER =
+  "group relative h-10 w-10 shrink-0 rounded-[14px] border border-line  from-white to-brand-soft  transition-[box-shadow,transform] duration-200  active:scale-95";
+/** Centred bars; the short middle one grows to full width on hover. */
+const BAR = "absolute left-1/2 h-[2.5px] -translate-x-1/2 rounded-full bg-brand transition-all duration-200";
 
 /**
  * Top bar.
@@ -27,31 +29,37 @@ export default function TopBar({ sidebarOpen, onToggleSidebar }: TopBarProps) {
   const unread = useUnreadNotifications();
 
   return (
-    <header className="customer-topbar sticky top-0 z-30 flex h-[62px] items-center justify-between gap-2 border-b border-white/80 bg-white/90 px-3 shadow-[0_6px_22px_rgba(30,27,46,.06)] backdrop-blur-xl md:h-16 md:px-8">
+    <header className="customer-topbar sticky top-0 z-30 flex h-[64px] items-center justify-between gap-3 border-b border-line/70 bg-white/85 px-3 shadow-[0_6px_16px_-14px_rgba(30,27,46,.28)] backdrop-blur-xl md:h-[68px] md:px-8">
       <div className="flex min-w-0 flex-1 items-center gap-1">
-        <button
-          type="button"
-          onClick={onToggleSidebar}
-          aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          aria-expanded={sidebarOpen}
-          aria-controls={CUSTOMER_SIDEBAR_ID}
-          className={clsx(HAMBURGER, "hidden md:flex", FOCUS_RING)}
-        >
-          <Menu className="h-6 w-6" aria-hidden="true" />
-        </button>
+        {/* Only shown while the sidebar is collapsed; when it is open, its own close (X) button lives in the sidebar. */}
+        {!sidebarOpen && (
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            aria-label="Open sidebar"
+            aria-expanded={false}
+            aria-controls={CUSTOMER_SIDEBAR_ID}
+            className={clsx(HAMBURGER, "hidden md:block", FOCUS_RING)}
+          >
+            <span aria-hidden="true" className={clsx(BAR, "top-[12px] w-5")} />
+            <span aria-hidden="true" className={clsx(BAR, "top-[18px] w-3.5 group-hover:w-5")} />
+            <span aria-hidden="true" className={clsx(BAR, "top-[25px] w-5")} />
+          </button>
+        )}
 
-        <Link to={customerPath()} className={clsx("rounded text-base font-semibold text-brand", !sidebarOpen ? "md:mr-1" : "md:hidden", "hidden md:inline-flex", FOCUS_RING)}>
-          HomeCareX
+        <Link to={customerPath()} className={clsx("rounded-lg text-lg font-bold tracking-tight", sidebarOpen ? "md:hidden" : "ml-2", "hidden md:inline-flex", FOCUS_RING)}>
+          <span className="text-accent">Home</span>
+          <span className="text-brand">CareX</span>
         </Link>
 
-        <span aria-hidden="true" className="mx-3 hidden h-8 w-px bg-line md:block" />
+        <span aria-hidden="true" className={clsx("mx-3 hidden h-8 w-px bg-line", !sidebarOpen && "md:block")} />
         {/* One picker at every width (a single instance keeps DOM ids unique). */}
         <div className="min-w-0 flex-1 md:flex-none">
           <LocationPicker />
         </div>
       </div>
 
-      <div className="shrink-0 rounded-full bg-canvas/80 p-0.5"><NotificationBell count={unread} /></div>
+      <NotificationBell count={unread} />
     </header>
   );
 }

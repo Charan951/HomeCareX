@@ -1,4 +1,7 @@
-import axios from "axios";
+import http, {
+  type ApiError,
+  type ApiResponse,
+} from "@/lib/http";
 
 import type {
   BookingView,
@@ -6,14 +9,9 @@ import type {
   CreateBookingResponse,
   SlotAvailability,
   SlotsResponse,
+  PartnerOption,
+  BookingDetail,
 } from "@/types/booking";
-
-import {
-  SESSION_EXPIRED_EVENT,
-  tokenStore,
-} from "@/lib/tokenStore";
-
-import type { RazorpaySuccess } from "./razorpay";
 
 export interface NormalizedApiError {
   status: number;
@@ -22,370 +20,274 @@ export interface NormalizedApiError {
   details?: unknown;
 }
 
-export interface PaymentInit {
-  /**
-   * Razorpay order id.
-   * Example: order_Qxxxxxxxx
-   */
-  orderId: string;
-
-  /**
-   * Amount in paise.
-   * Example: ₹599 = 59900
-   */
-  amount: number;
-
-  currency: string;
-
-  /**
-   * Razorpay public key.
-   * Example: rzp_test_xxxxx
-   */
-  keyId?: string;
-}
-
-export type CreateBookingWithPayment = CreateBookingResponse & {
-  payment?: PaymentInit;
-};
-
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "/api/v1",
-
-  // Needed if your backend uses refresh cookies.
-  withCredentials: true,
-});
-
-/* -------------------------------------------------------------------------- */
-/* Auth                                                                       */
-/* -------------------------------------------------------------------------- */
-
-function currentToken(): string | null {
-  return tokenStore.get() ?? null;
-}
-
-api.interceptors.request.use((config) => {
-  const token = currentToken();
-
-  if (token) {
-    config.headers = config.headers || {};
-
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response,
-
-  (error) => {
-    if (
-      axios.isAxiosError(error) &&
-      error.response?.status === 401 &&
-      currentToken()
-    ) {
-      window.dispatchEvent(
-        new Event(SESSION_EXPIRED_EVENT)
-      );
-    }
-
-    return Promise.reject(error);
-  }
-);
-
-/* -------------------------------------------------------------------------- */
-/* Error normalization                                                        */
-/* -------------------------------------------------------------------------- */
-
+/**
+ * `lib/http` already turns every failure into an ApiError
+ * ({ message, status, code, details }).
+ *
+ * This function only fills in safe defaults so the rest of
+ * the application receives a consistent error shape.
+ */
 export function normalizeApiError(
-  error: unknown
+  err: unknown,
 ): NormalizedApiError {
-  if (axios.isAxiosError(error)) {
-    const data = error.response?.data;
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "message" in err
+  ) {
+    const e = err as Partial<ApiError>;
 
     return {
-      status: error.response?.status ?? 500,
-      code: data?.code ?? "UNKNOWN_ERROR",
+      status: e.status ?? 0,
+      code:
+        e.code ??
+        (e.status === undefined
+          ? "NETWORK_ERROR"
+          : "UNKNOWN_ERROR"),
       message:
-        data?.message ??
-        error.message ??
-        "An unexpected error occurred",
-      details: data?.details,
+        e.message || "An unexpected error occurred",
+      details: e.details,
     };
   }
 
   return {
-    status: 500,
+    status: 0,
     code: "UNKNOWN_ERROR",
-    message:
-      error instanceof Error
-        ? error.message
-        : "Unknown error",
+    message: "An unexpected error occurred",
   };
 }
 
+/**
+ * Alias for internal backwards compatibility.
+ */
 export const normalizeError = normalizeApiError;
 
-/* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
-/* -------------------------------------------------------------------------- */
-
-function normalizePayment(
-  value: unknown
-): PaymentInit | undefined {
-  if (!value || typeof value !== "object") {
-    return undefined;
-  }
-
-  const payment = value as Record<string, unknown>;
-
-  /*
-   * Support both camelCase API responses:
-   *
-   * {
-   *   orderId: "...",
-   *   keyId: "..."
-   * }
-   *
-   * and Razorpay-style responses:
-   *
-   * {
-   *   order_id: "...",
-   *   key_id: "..."
-   * }
-   */
-
-  const orderId =
-    typeof payment.orderId === "string"
-      ? payment.orderId
-      : typeof payment.order_id === "string"
-        ? payment.order_id
-        : undefined;
-
-  const keyId =
-    typeof payment.keyId === "string"
-      ? payment.keyId
-      : typeof payment.key_id === "string"
-        ? payment.key_id
-        : undefined;
-
-  const amount =
-    typeof payment.amount === "number"
-      ? payment.amount
-      : Number(payment.amount);
-
-  const currency =
-    typeof payment.currency === "string"
-      ? payment.currency
-      : "INR";
-
-  if (
-    !orderId ||
-    !Number.isFinite(amount) ||
-    amount <= 0
-  ) {
-    console.error(
-      "[bookingApi] Invalid payment initialization:",
-      value
-    );
-
-    return undefined;
-  }
-
-  return {
-    orderId,
-    amount,
-    currency,
-    ...(keyId ? { keyId } : {}),
-  };
-}
-
-/* -------------------------------------------------------------------------- */
-/* Booking API                                                                */
-/* -------------------------------------------------------------------------- */
-
 export const bookingApi = {
+  // =========================================================================
+  // CUSTOMER BOOKING APIs
+  // =========================================================================
+
+  /**
+   * Fetch available slots for a service on a specific date.
+   *
+   * GET /services/:serviceId/slots?date=:date
+   */
   async getSlots(
     serviceId: string,
-    date: string
+    date: string,
   ): Promise<SlotsResponse> {
     try {
-      const response = await api.get(
-        `/services/${serviceId}/slots`,
-        {
-          params: {
-            date,
+      const { data } =
+        await http.get<ApiResponse<SlotsResponse>>(
+          `/services/${serviceId}/slots`,
+          {
+            params: {
+              date,
+            },
           },
-        }
-      );
-
-      return response.data.data;
-    } catch (error) {
-      throw normalizeApiError(error);
-    }
-  },
-
-  async createBooking(
-    input: CreateBookingRequest,
-    idempotencyKey: string
-  ): Promise<CreateBookingWithPayment> {
-    try {
-      const response = await api.post(
-        "/bookings",
-        input,
-        {
-          headers: {
-            "Idempotency-Key": idempotencyKey,
-          },
-        }
-      );
-
-      console.log(
-        "[bookingApi] POST /bookings response:",
-        response.data
-      );
-
-      /*
-       * Supported recommended shape:
-       *
-       * {
-       *   data: {
-       *      _id: "...",
-       *      ...
-       *   },
-       *   payment: {
-       *      orderId: "order_...",
-       *      amount: 59900,
-       *      currency: "INR",
-       *      keyId: "rzp_test_..."
-       *   }
-       * }
-       */
-
-      let booking = response.data?.data;
-
-      let paymentRaw =
-        response.data?.payment ??
-        response.data?.data?.payment;
-
-      /*
-       * Also support:
-       *
-       * {
-       *   data: {
-       *     booking: {...},
-       *     payment: {...}
-       *   }
-       * }
-       */
-      if (
-        response.data?.data?.booking &&
-        typeof response.data.data.booking === "object"
-      ) {
-        booking = response.data.data.booking;
-
-        paymentRaw =
-          response.data.data.payment ??
-          response.data.payment;
-      }
-
-      if (!booking?._id) {
-        console.error(
-          "[bookingApi] Booking missing from API response:",
-          response.data
         );
 
-        throw {
-          status: 500,
-          code: "INVALID_BOOKING_RESPONSE",
-          message:
-            "The server returned an invalid booking response.",
-        } satisfies NormalizedApiError;
-      }
+      return data.data;
+    } catch (err) {
+      throw normalizeApiError(err);
+    }
+  },
 
-      const payment = normalizePayment(paymentRaw);
+  /**
+   * Real-time slot availability check when moving
+   * from Step 3 to Step 4.
+   *
+   * POST /bookings/check-slot
+   *
+   * Throws NormalizedApiError with status 409 if
+   * the slot has already been booked.
+   */
+  async checkSlot(
+    serviceId: string,
+    date: string,
+    slot: string,
+  ): Promise<SlotAvailability> {
+    try {
+      const { data } =
+        await http.post<ApiResponse<SlotAvailability>>(
+          "/bookings/check-slot",
+          {
+            serviceId,
+            date,
+            slot,
+          },
+        );
 
-      console.log("[bookingApi] Parsed booking:", booking);
-      console.log("[bookingApi] Parsed payment:", payment);
+      return data.data;
+    } catch (err) {
+      throw normalizeApiError(err);
+    }
+  },
+
+  /**
+   * Create a booking.
+   *
+   * The same idempotency key must be reused when
+   * retrying the SAME request.
+   *
+   * POST /bookings
+   */
+  async createBooking(
+    input: CreateBookingRequest,
+    idempotencyKey: string,
+  ): Promise<CreateBookingResponse> {
+    try {
+      const { data } =
+        await http.post<
+          ApiResponse<BookingView> & {
+            replayed?: boolean;
+          }
+        >(
+          "/bookings",
+          input,
+          {
+            headers: {
+              "Idempotency-Key": idempotencyKey,
+            },
+          },
+        );
 
       return {
-        booking,
-        replayed: Boolean(response.data?.replayed),
-
-        ...(payment ? { payment } : {}),
+        booking: data.data,
+        replayed: Boolean(data.replayed),
       };
-    } catch (error) {
-      /*
-       * Don't re-normalize an error we created ourselves.
-       */
-      if (
-        error &&
-        typeof error === "object" &&
-        "code" in error &&
-        "status" in error
-      ) {
-        throw error;
-      }
-
-      throw normalizeApiError(error);
+    } catch (err) {
+      throw normalizeApiError(err);
     }
   },
 
-  async verifyPayment(
-    bookingId: string,
-    result: RazorpaySuccess
-  ): Promise<void> {
-    try {
-      console.log(
-        "[bookingApi] Verifying payment:",
-        {
-          bookingId,
-          paymentId:
-            result.razorpay_payment_id,
-          orderId:
-            result.razorpay_order_id,
-        }
-      );
-
-      await api.post("/payments/verify", {
-        bookingId,
-
-        razorpay_payment_id:
-          result.razorpay_payment_id,
-
-        razorpay_order_id:
-          result.razorpay_order_id,
-
-        razorpay_signature:
-          result.razorpay_signature,
-      });
-    } catch (error) {
-      throw normalizeApiError(error);
-    }
-  },
-
+  /**
+   * Fetch a single booking for the logged-in customer.
+   *
+   * GET /bookings/:id
+   */
   async getBooking(
-    id: string
+    id: string,
   ): Promise<BookingView> {
     try {
-      const response = await api.get(
-        `/bookings/${id}`
-      );
+      const { data } =
+        await http.get<ApiResponse<BookingView>>(
+          `/bookings/${id}`,
+        );
 
-      return response.data.data;
-    } catch (error) {
-      throw normalizeApiError(error);
+      return data.data;
+    } catch (err) {
+      throw normalizeApiError(err);
     }
   },
 
+  /**
+   * Fetch all live bookings for the logged-in customer.
+   *
+   * GET /bookings
+   */
   async getBookings(): Promise<BookingView[]> {
     try {
-      const response =
-        await api.get("/bookings");
+      const { data } =
+        await http.get<ApiResponse<BookingView[]>>(
+          "/bookings",
+        );
 
-      return response.data.data ?? [];
-    } catch (error) {
-      throw normalizeApiError(error);
+      return data.data ?? [];
+    } catch (err) {
+      throw normalizeApiError(err);
+    }
+  },
+
+  // =========================================================================
+  // ADMIN BOOKINGS MODULE
+  // Day 4 - Issue #77
+  // =========================================================================
+
+  /**
+   * Fetch complete booking details for the Admin Booking Drawer.
+   *
+   * GET /admin/bookings/:id
+   *
+   * Includes:
+   * - booking information
+   * - customer information
+   * - assigned partner
+   * - service information
+   * - address
+   * - pricing
+   * - payment status
+   * - booking timeline
+   */
+  async getAdminBooking(
+    id: string,
+  ): Promise<BookingDetail> {
+    try {
+      const { data } =
+        await http.get<ApiResponse<BookingDetail>>(
+          `/admin/bookings/${id}`,
+        );
+
+      return data.data;
+    } catch (err) {
+      throw normalizeApiError(err);
+    }
+  },
+
+  /**
+   * Assign or reassign a service partner to a booking.
+   *
+   * PATCH /admin/bookings/:id/assign
+   *
+   * The backend receives:
+   * {
+   *   partnerId,
+   *   reason
+   * }
+   */
+  async assignPartner(
+    id: string,
+    partnerId: string,
+    reason: string,
+  ): Promise<void> {
+    try {
+      await http.patch(
+        `/admin/bookings/${id}/assign`,
+        {
+          partnerId,
+          reason,
+        },
+      );
+    } catch (err) {
+      throw normalizeApiError(err);
+    }
+  },
+
+  /**
+   * Fetch partners eligible for assignment/reassignment.
+   *
+   * GET /admin/bookings/:bookingId/eligible-partners
+   *
+   * The backend is responsible for checking:
+   * - partner approval
+   * - active account
+   * - category/service match
+   * - service area
+   * - availability
+   * - booking conflicts
+   */
+  async getEligiblePartners(
+    bookingId: string,
+  ): Promise<PartnerOption[]> {
+    try {
+      const { data } =
+        await http.get<ApiResponse<PartnerOption[]>>(
+          `/admin/bookings/${bookingId}/eligible-partners`,
+        );
+
+      return data.data ?? [];
+    } catch (err) {
+      throw normalizeApiError(err);
     }
   },
 };

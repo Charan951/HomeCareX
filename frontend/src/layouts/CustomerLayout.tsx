@@ -32,7 +32,7 @@ export default function CustomerLayout() {
   const hideBottomNav = pathname.replace(/\/+$/, "").toLowerCase() === customerPath("/profile");
 
   return (
-    <div className="flex min-h-screen bg-canvas">
+    <div className="flex min-h-screen overflow-x-clip bg-canvas">
       <a
         href="#customer-main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-brand focus:px-3 focus:py-2 focus:text-white"
@@ -40,7 +40,7 @@ export default function CustomerLayout() {
         Skip to content
       </a>
 
-      <Sidebar open={sidebarOpen} />
+      <Sidebar open={sidebarOpen} onClose={toggleSidebar} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className={hideBottomNav ? "hidden md:block" : undefined}>

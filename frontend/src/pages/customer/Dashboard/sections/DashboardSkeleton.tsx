@@ -5,11 +5,11 @@ export default function DashboardSkeleton() {
   return (
     <div className="space-y-6" role="status" aria-busy="true">
       <span className="sr-only">Loading your dashboard…</span>
-      <div className="space-y-3 rounded-lg border border-line bg-panel p-5">
-        <Skeleton className="h-6 w-56" />
-        <Skeleton className="h-4 w-64" />
-        <Skeleton className="h-4 w-40" />
-        <Skeleton className="h-10 w-full" />
+      <div className="mx-auto max-w-[1180px] space-y-3 rounded-[22px] bg-brand/10 p-5 md:p-8">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-72" />
+        <Skeleton className="h-12 w-full max-w-xl rounded-2xl" />
+        <Skeleton className="h-6 w-80" />
       </div>
 
       <div className="space-y-3 rounded-lg border border-line bg-panel p-5">
