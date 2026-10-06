@@ -155,7 +155,7 @@ export const PartnerFormModal: React.FC<Props> = ({ open, suspended, partner, de
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="block text-sm font-medium">
             Phone
             <input className={inputClass} inputMode="numeric" maxLength={10} placeholder="10-digit mobile" value={form.phone} onChange={set('phone')} required />
