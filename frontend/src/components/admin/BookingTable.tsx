@@ -11,8 +11,22 @@ interface BookingTableProps {
   onBookingSelect?: (booking: AdminBooking) => void;
 }
 
+function formatBookingId(id: string): string {
+  if (!id) {
+    return "-";
+  }
+
+  if (id.length <= 16) {
+    return id;
+  }
+
+  return `${id.slice(0, 8)}...${id.slice(-7)}`;
+}
+
 function formatDate(value: string): string {
-  if (!value) return "-";
+  if (!value) {
+    return "-";
+  }
 
   const date = new Date(value);
 
@@ -28,7 +42,9 @@ function formatDate(value: string): string {
 }
 
 function formatDateTime(value: string): string {
-  if (!value) return "-";
+  if (!value) {
+    return "-";
+  }
 
   const date = new Date(value);
 
@@ -85,6 +101,9 @@ function getStatusLabel(status: BookingStatus): string {
     case "cancelled_by_partner":
       return "Cancelled by Partner";
 
+    case "cancelled_by_admin":
+      return "Cancelled by Admin";
+
     case "no_show":
       return "No Show";
 
@@ -104,6 +123,7 @@ function getStatusClass(status: BookingStatus): string {
 
     case "cancelled_by_customer":
     case "cancelled_by_partner":
+    case "cancelled_by_admin":
     case "no_show":
       return "booking-table__status booking-table__status--cancelled";
 
@@ -418,6 +438,7 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                 }
                 onClick={() => onBookingSelect?.(booking)}
               >
+                {/* BOOKING ID */}
                 <td className="booking-table__booking-id">
                   {onBookingSelect ? (
                     <button
@@ -427,52 +448,63 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                         event.stopPropagation();
                         onBookingSelect(booking);
                       }}
-                      aria-label={`Open booking ${booking.id}`}
+                      aria-label={`Open booking ${formatBookingId(
+                        booking.id,
+                      )}`}
                     >
-                      {booking.id}
+                      {formatBookingId(booking.id)}
                     </button>
                   ) : (
-                    booking.id
+                    formatBookingId(booking.id)
                   )}
                 </td>
 
+                {/* CUSTOMER */}
                 <td>
                   <div className="booking-table__primary">
-                    {booking.customer.name}
+                    {booking.customer?.name || "-"}
+                  </div>
+
+                  {booking.customer?.phone && (
+                    <div className="booking-table__secondary">
+                      {booking.customer.phone}
+                    </div>
+                  )}
+
+                  {booking.customer?.email && (
+                    <div className="booking-table__secondary">
+                      {booking.customer.email}
+                    </div>
+                  )}
+                </td>
+
+                {/* SERVICE */}
+                <td>
+                  <div className="booking-table__primary">
+                    {booking.service?.name || "-"}
                   </div>
 
                   <div className="booking-table__secondary">
-                    {booking.customer.phone || "-"}
+                    {booking.service?.category || "-"}
                   </div>
 
                   <div className="booking-table__secondary">
-                    {booking.customer.email || "-"}
+                    {booking.service?.durationMinutes
+                      ? `${booking.service.durationMinutes} min`
+                      : "-"}
                   </div>
                 </td>
 
-                <td>
-                  <div className="booking-table__primary">
-                    {booking.service.name}
-                  </div>
-
-                  <div className="booking-table__secondary">
-                    {booking.service.category}
-                  </div>
-
-                  <div className="booking-table__secondary">
-                    {booking.service.durationMinutes} min
-                  </div>
-                </td>
-
+                {/* PARTNER */}
                 <td>
                   {booking.partner ? (
                     <>
                       <div className="booking-table__primary">
-                        {booking.partner.name}
+                        {booking.partner.name || "-"}
                       </div>
 
                       <div className="booking-table__secondary">
-                        {booking.partner.category}
+                        {booking.partner.category || "-"}
                       </div>
                     </>
                   ) : (
@@ -482,52 +514,73 @@ export const BookingTable: React.FC<BookingTableProps> = ({
                   )}
                 </td>
 
+                {/* CITY */}
                 <td>
                   <div className="booking-table__primary">
-                    {booking.city || "-"}
+                    {booking.city ||
+                      booking.address?.city ||
+                      "-"}
                   </div>
 
                   <div className="booking-table__secondary">
-                    {booking.address.area || "-"}
+                    {booking.address?.area || "-"}
                   </div>
                 </td>
 
+                {/* SCHEDULED */}
                 <td>
                   <div className="booking-table__primary">
-                    {formatDate(booking.slot.date)}
+                    {formatDate(booking.slot?.date || "")}
                   </div>
 
                   <div className="booking-table__secondary">
-                    {booking.slot.startTime} -{" "}
-                    {booking.slot.endTime}
+                    {booking.slot?.startTime || "-"}
+                    {" - "}
+                    {booking.slot?.endTime || "-"}
                   </div>
                 </td>
 
+                {/* AMOUNT */}
                 <td className="booking-table__amount">
-                  {formatAmount(booking.pricing.totalAmount)}
+                  {formatAmount(
+                    Number(
+                      booking.pricing?.totalAmount ?? 0,
+                    ),
+                  )}
                 </td>
 
+                {/* STATUS */}
                 <td>
                   <span
-                    className={getStatusClass(booking.status)}
+                    className={getStatusClass(
+                      booking.status,
+                    )}
                   >
-                    {getStatusLabel(booking.status)}
+                    {getStatusLabel(
+                      booking.status,
+                    )}
                   </span>
                 </td>
 
+                {/* PAYMENT */}
                 <td>
                   <span
                     className={getPaymentClass(
-                      booking.payment.status,
+                      booking.payment?.status ||
+                        "Pending",
                     )}
                   >
-                    {booking.payment.status}
+                    {booking.payment?.status ||
+                      "Pending"}
                   </span>
                 </td>
 
+                {/* CREATED */}
                 <td>
                   <span className="booking-table__created">
-                    {formatDateTime(booking.createdAt)}
+                    {formatDateTime(
+                      booking.createdAt,
+                    )}
                   </span>
                 </td>
               </tr>

@@ -201,7 +201,7 @@ export const bookingApi = {
 
   // =========================================================================
   // ADMIN BOOKINGS MODULE
-  // Day 4 - Issue #77
+  // Day 4 / Day 5 - Issue #95
   // =========================================================================
 
   /**
@@ -239,7 +239,7 @@ export const bookingApi = {
    *
    * PATCH /admin/bookings/:id/assign
    *
-   * The backend receives:
+   * Backend payload:
    * {
    *   partnerId,
    *   reason
@@ -268,7 +268,7 @@ export const bookingApi = {
    *
    * GET /admin/bookings/:bookingId/eligible-partners
    *
-   * The backend is responsible for checking:
+   * Backend eligibility rules:
    * - partner approval
    * - active account
    * - category/service match
