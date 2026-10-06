@@ -25,41 +25,11 @@
   min-width: 0;
 }
 
-.bookings-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 18px;
-
-  color: #8a9ab5;
-  font-size: 13px;
-}
-
-.bookings-breadcrumb__home {
-  display: inline-flex;
-  width: 18px;
-  height: 18px;
-}
-
-.bookings-breadcrumb__home svg {
-  width: 100%;
-  height: 100%;
-}
-
-.bookings-breadcrumb__arrow {
-  color: #b8c3d3;
-  font-size: 17px;
-}
-
-.bookings-breadcrumb strong {
-  color: #263b61;
-  font-weight: 600;
-}
-
 .bookings-page__title-section h1 {
   margin: 0;
 
   color: #13294b;
+
   font-size: 32px;
   line-height: 1.15;
   font-weight: 750;
@@ -70,6 +40,7 @@
   margin: 8px 0 0;
 
   color: #8192ad;
+
   font-size: 14px;
   line-height: 1.5;
 }
@@ -90,6 +61,7 @@
   gap: 8px;
 
   min-height: 44px;
+
   padding: 0 17px;
 
   border: 1px solid #1769e0;
@@ -163,6 +135,7 @@
 
 .bookings-alert button {
   border: 0;
+
   background: transparent;
 
   color: inherit;
@@ -199,6 +172,7 @@
   justify-content: space-between;
 
   min-height: 70px;
+
   padding: 0 21px;
 
   box-sizing: border-box;
@@ -224,7 +198,7 @@
 }
 
 /* =========================================================
-   SEARCH + FILTER ROW
+   SEARCH + FILTER
 ========================================================= */
 
 .booking-toolbar {
@@ -588,7 +562,7 @@
 }
 
 /* =========================================================
-   TABLE AREA
+   TABLE
 ========================================================= */
 
 .booking-results__table {
@@ -596,6 +570,26 @@
   min-width: 0;
 
   background: #fff;
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+.booking-top-button:focus-visible,
+.booking-filter-button:focus-visible,
+.booking-filter-close:focus-visible,
+.booking-filter-clear:focus-visible,
+.booking-filter-apply:focus-visible,
+.bookings-alert button:focus-visible {
+  outline: 2px solid #1769e0;
+  outline-offset: 2px;
+}
+
+.booking-search input:focus-visible,
+.booking-filter-field input:focus-visible,
+.booking-filter-field select:focus-visible {
+  outline: none;
 }
 
 /* =========================================================
