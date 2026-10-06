@@ -22,6 +22,16 @@ export interface LoginInput {
   password: string;
 }
 
+export interface RegisterInput {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword?: string;
+  referralCode?: string;
+  role?: "customer" | "partner";
+}
+
 export type ProfilePatch = Partial<Pick<AuthUser, "name" | "email" | "phone">>;
 
 export interface AuthContextValue {
@@ -30,6 +40,8 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   /** Signs in and returns the user so the caller can redirect by role. */
   login: (input: LoginInput) => Promise<AuthUser>;
+  /** Registers a new account and establishes a session. */
+  register: (input: RegisterInput) => Promise<AuthUser>;
   /** Shared logout: ends the session on the server and clears local state. */
   logout: () => Promise<void>;
   /** Updates the signed-in user's editable details in the local session (no backend endpoint yet). */

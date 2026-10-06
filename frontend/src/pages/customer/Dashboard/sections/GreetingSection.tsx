@@ -1,36 +1,29 @@
-import type { ReactNode } from "react";
-import { Sparkles } from "lucide-react";
-import { Icon3D } from "@/components/customer";
+import type { CSSProperties } from "react";
 import { greetingForHour } from "@/features/customer";
 
 interface GreetingSectionProps {
   firstName: string;
   isNewCustomer: boolean;
-  /** Search box (and quick-search chips) go inside the hero. */
-  children: ReactNode;
 }
 
-/** Indigo hero: greeting, search and a floating 3D house. */
-export default function GreetingSection({ firstName, isNewCustomer, children }: GreetingSectionProps) {
+const step = (i: number) => ({ "--i": i }) as CSSProperties;
+
+/** Greeting and name only. The category banner and search box now sit below it (see HeroBanner). Entrance motion is in index.css (.hero-rise, reduced-motion safe). */
+export default function GreetingSection({ firstName }: GreetingSectionProps) {
   return (
-    <section className="relative isolate overflow-hidden rounded-[22px] bg-brand p-5 text-white shadow-[0_18px_42px_rgba(67,56,202,.25)] md:rounded-[28px] md:p-8">
-      <span aria-hidden="true" className="hero-orb pointer-events-none absolute -right-14 -top-16 h-52 w-52 rounded-full bg-accent/30 md:h-72 md:w-72" />
-      <span aria-hidden="true" className="hero-orb pointer-events-none absolute -bottom-20 left-1/3 h-44 w-44 rounded-full bg-white/10 [animation-delay:-3s]" />
-      <Sparkles aria-hidden="true" className="absolute right-[42%] top-6 hidden h-5 w-5 text-white/40 md:block" />
-
-      <div className="pointer-events-none absolute bottom-3 right-6 hidden md:block lg:right-12">
-        <Icon3D hints={["🏡"]} size={168} className="opacity-95" />
+    <section aria-labelledby="dashboard-greeting" className="px-1 text-ink md:px-2">
+      <div className="hero-rise" style={step(0)}>
+        <span className="inline-flex items-center gap-2 rounded-full border border-[#D9DCF7] bg-white py-1 pl-2.5 pr-3.5 text-xs font-semibold text-ink">
+          <span aria-hidden="true" className="hero-live-dot relative h-2 w-2 rounded-full bg-emerald-500 text-emerald-500" />
+          {greetingForHour(new Date().getHours())}
+        </span>
       </div>
-
-      <div className="relative z-[1] max-w-xl">
-        <h1 className="text-2xl font-semibold leading-tight md:text-3xl">
-          {greetingForHour(new Date().getHours())}, {firstName}
-        </h1>
-        <p className="mt-1 text-sm text-white/80 md:text-base">
-          {isNewCustomer ? "What can we help you with at home today?" : "What would you like to get done today?"}
-        </p>
-        {children}
-      </div>
+      <h1 id="dashboard-greeting" className="hero-rise mt-3 max-w-3xl text-[27px] font-bold leading-[1.15] tracking-tight md:text-[40px]" style={step(1)}>
+        Welcome, {firstName}
+      </h1>
+      <p className="hero-rise mt-2 text-sm text-muted md:text-[15px]" style={step(2)}>
+        Trusted professionals at your door. Transparent prices, no surprises.
+      </p>
     </section>
   );
 }

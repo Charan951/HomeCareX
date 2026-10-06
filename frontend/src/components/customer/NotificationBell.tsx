@@ -16,7 +16,7 @@ export default function NotificationBell({ count = 0 }: NotificationBellProps) {
       to={customerPath("/notifications")}
       aria-label={count > 0 ? `Notifications, ${count} unread` : "Notifications"}
       className={clsx(
-        "group relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line bg-white text-ink transition-colors hover:border-brand/30 hover:bg-brand-soft/40",
+        "group relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full  bg-white text-ink transition-colors hover:border-brand/30 hover:bg-brand-soft/40",
         FOCUS_RING,
       )}
     >

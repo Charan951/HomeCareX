@@ -18,6 +18,7 @@ import { categoriesRoutes } from '../modules/categories/categories.routes';
 import { servicesRoutes } from '../modules/services/services.routes';
 import { catalogRoutes } from '../modules/catalog/catalog.routes';
 import { incentivesRoutes } from '../modules/incentives/incentives.routes';
+import { adminCustomersRoutes } from '../modules/admin-customers/admin-customers.routes';
 
 import leadsRoutes from '../modules/leads/leads.routes';
 
@@ -61,4 +62,5 @@ rootRouter.use('/payments', paymentRoutes); // GET /payments, POST /payments/ord
 rootRouter.use('/wallet', walletRoutes); // GET /wallet
 rootRouter.use(reviewsRoutes); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
 rootRouter.use('/partner/incentives', incentivesRoutes); // GET /partner/incentives, GET /partner/incentives/:id
+rootRouter.use('/admin/customers', adminCustomersRoutes);
 export default rootRouter;

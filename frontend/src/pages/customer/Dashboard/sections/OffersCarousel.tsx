@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { Icon3D } from "@/components/customer";
 import type { Offer } from "@/mocks/customerMockData";
 
-/** Offer banners: scroll on phones, two-up grid from md. The brand offer is solid indigo, the other soft orange. */
+/** Offer banners: scroll on phones, two-up grid from md. The brand offer is soft lavender, the other soft orange. */
 export default function OffersCarousel({ offers }: { offers: Offer[] }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -27,17 +27,17 @@ export default function OffersCarousel({ offers }: { offers: Offer[] }) {
             key={o.id}
             className={clsx(
               "dashboard-offer group relative flex min-h-[150px] w-[286px] shrink-0 snap-start flex-col justify-between overflow-hidden rounded-[20px] p-4 shadow-[0_10px_28px_rgba(30,27,46,.08)] md:w-auto md:min-h-[160px] md:p-5",
-              solid ? "bg-brand text-white" : "border border-accent/20 bg-accent-soft text-ink",
+              solid ? "border border-[#D9DCF7] bg-[#EEF0FF] text-ink" : "border border-accent/20 bg-accent-soft text-ink",
             )}
           >
             <span aria-hidden="true" className="dashboard-offer__shine" />
             <Icon3D hints={[index % 2 === 0 ? "🎁" : "✨"]} size={84} delay={index * -1.4} className="absolute -bottom-2 right-3" />
             <div className="relative z-[1] max-w-[68%]">
               <div className="text-sm font-semibold md:text-base">{o.title}</div>
-              <p className={clsx("mt-1 text-xs leading-relaxed", solid ? "text-white/80" : "text-muted")}>{o.description}</p>
+              <p className={clsx("mt-1 text-xs leading-relaxed", "text-muted")}>{o.description}</p>
             </div>
             <div className="relative z-[1] mt-3 flex items-center gap-2">
-              <span className={clsx("rounded-lg border border-dashed px-2.5 py-1 text-xs font-bold tracking-wider", solid ? "border-white/50 bg-white/10" : "border-brand/30 bg-white/80")}>
+              <span className={clsx("rounded-lg border border-dashed px-2.5 py-1 text-xs font-bold tracking-wider", "border-brand/30 bg-white/80")}>
                 {o.code}
               </span>
               <button

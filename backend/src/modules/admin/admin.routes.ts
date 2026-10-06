@@ -44,3 +44,10 @@ adminRoutes.patch(
     adminBookingsController.overrideStatus(req, res),
   ),
 );
+
+adminRoutes.post(
+  '/bookings/:bookingId/cancel',
+  asyncHandler((req, res) =>
+    adminBookingsController.cancelBooking(req, res),
+  ),
+);

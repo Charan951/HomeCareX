@@ -83,6 +83,10 @@ export const PARTNER_BOTTOM_NAV: PartnerNavItem[] = [
 ];
 
 /** Top-bar title for the current path. */
-export function getPartnerTitle(_pathname: string): string {
+export function getPartnerTitle(pathname: string): string {
+  const path = pathname.replace(/\/+$/, "");
+  if (path === partnerPath("/earnings/payouts") || path === partnerPath("/payouts")) {
+    return "Partner Payouts";
+  }
   return "Partner Dashboard";
 }

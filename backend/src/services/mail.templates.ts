@@ -1,3 +1,5 @@
+import type { UserRole } from '../models/User';
+
 /**
  * HTML + plain-text email templates. Layout uses nested tables and inline styles only,
  * because Outlook/Gmail strip <style> blocks and ignore flexbox/grid.
@@ -7,7 +9,7 @@ export const BRAND = {
   name: 'HomeCareX',
   indigo: '#4338ca',
   indigoDark: '#312e81',
-  orange: '#f97316',
+  orange: '#ff8a3d',
   text: '#1e293b',
   muted: '#64748b',
   border: '#e2e8f0',
@@ -78,6 +80,119 @@ export interface PartnerCredentialsData {
   loginUrl: string;
   logoSrc?: string;
   supportEmail?: string;
+}
+
+export interface AccountCreatedEmailData {
+  name: string;
+  email: string;
+  role: UserRole;
+  createdAt: Date;
+  loginUrl: string;
+  profileUrl: string;
+  logoSrc?: string;
+  supportEmail?: string;
+}
+
+const ROLE_DISPLAY_NAMES: Record<UserRole, string> = {
+  admin: 'Administrator',
+  customer: 'Customer',
+  partner: 'Partner',
+};
+
+const PROFILE_PATHS: Record<UserRole, string> = {
+  admin: '/admin/profile',
+  customer: '/customer/profile',
+  partner: '/partner/profile',
+};
+
+export function getRoleDisplayName(role: UserRole): string {
+  return ROLE_DISPLAY_NAMES[role];
+}
+
+export function getProfilePath(role: UserRole): string {
+  return PROFILE_PATHS[role];
+}
+
+export function accountCreatedUrls(role: UserRole, frontendUrl: string) {
+  const baseUrl = frontendUrl.endsWith('/') ? frontendUrl : `${frontendUrl}/`;
+  return {
+    loginUrl: new URL('login', baseUrl).toString(),
+    profileUrl: new URL(getProfilePath(role).slice(1), baseUrl).toString(),
+  };
+}
+
+export function accountCreatedEmail(d: AccountCreatedEmailData) {
+  const role = getRoleDisplayName(d.role);
+  const createdAt = d.createdAt.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+    timeZoneName: 'short',
+  });
+
+  const bodyHtml = `
+<h1 style="margin:12px 0 6px;font:700 24px ${FONT};color:${BRAND.indigoDark};text-align:center">Welcome to ${BRAND.name}!</h1>
+<p style="margin:0 0 22px;text-align:center;color:${BRAND.muted}">Your account has been successfully created.</p>
+
+<p style="margin:0 0 18px">Hi ${esc(d.name)},</p>
+<p style="margin:0 0 22px">You can now sign in to your ${BRAND.name} account and access the services available to you.</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${BRAND.border};border-radius:12px;border-collapse:separate;background:#f8fafc">
+  ${row('Name', esc(d.name))}
+  ${row('Email', esc(d.email))}
+  ${row('Role', esc(role))}
+  ${row('Account created', esc(createdAt), true)}
+</table>
+
+${button(d.loginUrl, 'Go to HomeCareX')}
+<p style="margin:0 0 18px;text-align:center;font-size:12px;color:${BRAND.muted}">Button not working? Copy this link into your browser:<br /><a href="${esc(d.loginUrl)}" style="color:${BRAND.indigo};word-break:break-all">${esc(d.loginUrl)}</a></p>
+
+<p style="margin:0 0 8px;text-align:center">You can review or update your profile after signing in.</p>
+${button(d.profileUrl, 'Edit Profile')}
+<p style="margin:0 0 26px;text-align:center;font-size:12px;color:${BRAND.muted}">Profile link: <a href="${esc(d.profileUrl)}" style="color:${BRAND.indigo};word-break:break-all">${esc(d.profileUrl)}</a></p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fff7ed;border-left:4px solid ${BRAND.orange};border-radius:6px">
+  <tr><td style="padding:14px 18px;font:14px/1.6 ${FONT};color:#7c2d12">
+    If you did not create this account, please contact ${BRAND.name} support immediately.
+  </td></tr>
+</table>
+
+<p style="margin:26px 0 0">Regards,<br /><strong>${BRAND.name} Team</strong></p>`;
+
+  const html = layout({
+    preheader: `Your ${BRAND.name} account has been successfully created.`,
+    logoSrc: d.logoSrc,
+    bodyHtml,
+    footerNote: `You are receiving this email because an account was created using ${d.email}.`,
+    supportEmail: d.supportEmail,
+  });
+
+  const text = [
+    `Hi ${d.name},`,
+    '',
+    `Welcome to ${BRAND.name}!`,
+    '',
+    'Your account has been successfully created.',
+    '',
+    'Account details:',
+    `Name: ${d.name}`,
+    `Email: ${d.email}`,
+    `Role: ${role}`,
+    `Account created: ${createdAt}`,
+    '',
+    `Go to HomeCareX: ${d.loginUrl}`,
+    `Edit Profile: ${d.profileUrl}`,
+    '',
+    'If you did not create this account, please contact HomeCareX support immediately.',
+    '',
+    'Regards,',
+    'HomeCareX Team',
+  ].join('\n');
+
+  return { subject: 'Welcome to HomeCareX — Your account has been created', html, text };
 }
 
 export function partnerCredentialsEmail(d: PartnerCredentialsData) {

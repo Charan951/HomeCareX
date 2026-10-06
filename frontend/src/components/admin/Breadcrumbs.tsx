@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { findAdminPage } from '@/config/adminNav';
+import { adminCustomerApi } from '@/services/adminCustomerApi';
 
 /**
  * Group > Page (> detail segment).
@@ -12,6 +14,16 @@ export const Breadcrumbs: React.FC = () => {
   const { pathname } = useLocation();
   const page = findAdminPage(pathname);
   const detail = page && pathname !== page.path ? pathname.slice(page.path.length + 1).split('/')[0] : '';
+
+  // /admin/customers/:id shows the customer's name. Same query key as the details page, so it is one shared request.
+  const customerId = page?.path === '/admin/customers' && detail ? decodeURIComponent(detail) : '';
+  const customer = useQuery({
+    queryKey: ['admin', 'customers', 'detail', customerId],
+    queryFn: ({ signal }) => adminCustomerApi.get(customerId, signal),
+    enabled: Boolean(customerId),
+    retry: false,
+  });
+  const detailLabel = customerId ? customer.data?.overview.name ?? '…' : decodeURIComponent(detail);
 
   const sep = (key: string) => <ChevronRight key={key} className="breadcrumbs__separator" aria-hidden />;
 
@@ -31,7 +43,7 @@ export const Breadcrumbs: React.FC = () => {
           {page.label}
         </Link>,
         <span key="detail" className="breadcrumbs__current" aria-current="page">
-          {decodeURIComponent(detail)}
+          {detailLabel}
         </span>,
       );
     } else {

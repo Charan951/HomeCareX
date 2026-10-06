@@ -28,7 +28,7 @@ export const initialsOf = (name: string) =>
     .toUpperCase() || "?";
 
 /**
- * Mobile profile header: gradient card, animated avatar ring, contact line and three live,
+ * Mobile profile header: flat lavender card, animated avatar ring, contact line and three live,
  * tappable stats (active / upcoming bookings, saved addresses) taken from the real API data.
  */
 export default function ProfileHero({ name, email, phone, stats }: ProfileHeroProps) {
@@ -36,14 +36,11 @@ export default function ProfileHero({ name, email, phone, stats }: ProfileHeroPr
   return (
     <section
       aria-labelledby="profile-name"
-      className="profile-rise relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[#3730A3] via-brand to-[#7C6CF6] p-5 text-white shadow-[0_20px_44px_-14px_rgba(67,56,202,.55)] md:hidden"
+      className="profile-rise relative overflow-hidden rounded-[28px] border border-[#D9DCF7] bg-[#E9EBFF] p-5 text-ink md:hidden"
     >
-      <span aria-hidden="true" className="dashboard-hero__orb dashboard-hero__orb--one" />
-      <span aria-hidden="true" className="dashboard-hero__orb dashboard-hero__orb--two" />
-
       <div className="relative flex items-center gap-4">
         <span className="profile-avatar-ring relative flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full" aria-hidden="true">
-          <span className="relative z-[1] flex h-[66px] w-[66px] items-center justify-center rounded-full bg-gradient-to-br from-white to-brand-soft text-2xl font-bold text-brand shadow-inner">
+          <span className="relative z-[1] flex h-[66px] w-[66px] items-center justify-center rounded-full border-[3px] border-white bg-brand text-2xl font-bold text-white">
             {initialsOf(name)}
           </span>
         </span>
@@ -53,17 +50,17 @@ export default function ProfileHero({ name, email, phone, stats }: ProfileHeroPr
           </h1>
           {contact.length > 0 ? (
             contact.map((c) => (
-              <p key={c} className="truncate text-[13px] leading-snug text-white/80">
+              <p key={c} className="truncate text-[13px] leading-snug text-muted">
                 {c}
               </p>
             ))
           ) : (
-            <p className="text-[13px] text-white/80">HomeCareX customer</p>
+            <p className="text-[13px] text-muted">HomeCareX customer</p>
           )}
           <Link
             to={customerPath("/profile/edit")}
             className={clsx(
-              "group mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 py-1 pl-2.5 pr-3 text-[13px] font-semibold text-white ring-1 ring-white/25 backdrop-blur-sm transition-all duration-200 hover:bg-white/25 motion-safe:active:scale-95",
+              "group mt-2 inline-flex min-h-9 items-center gap-1.5 rounded-full border-[1.5px] border-[#B9BFF2] bg-[#E9EBFF] py-1 pl-3 pr-3.5 text-[13px] font-semibold text-brand transition-all duration-200 hover:bg-white motion-safe:active:scale-95",
               FOCUS_RING,
             )}
           >
@@ -81,16 +78,16 @@ export default function ProfileHero({ name, email, phone, stats }: ProfileHeroPr
             <Link
               to={s.to}
               className={clsx(
-                "group flex min-h-[64px] flex-col items-center justify-center rounded-2xl bg-white/15 px-2 py-2 text-center ring-1 ring-white/20 backdrop-blur-sm transition-all duration-200 hover:bg-white/25 motion-safe:active:scale-95",
+                "group flex min-h-[64px] flex-col items-center justify-center rounded-2xl border border-[#D9DCF7] bg-white px-2 py-2 text-center transition-all duration-200 hover:border-brand motion-safe:active:scale-95",
                 FOCUS_RING,
               )}
             >
               {s.value === undefined ? (
-                <span className="h-6 w-8 animate-pulse rounded-md bg-white/30" role="status" aria-label={`Loading ${s.label}`} />
+                <span className="h-6 w-8 animate-pulse rounded-md bg-line" role="status" aria-label={`Loading ${s.label}`} />
               ) : (
                 <span className="profile-pop text-xl font-bold leading-none">{s.value ?? "–"}</span>
               )}
-              <span className="mt-1.5 text-[11px] font-medium leading-none text-white/85">{s.label}</span>
+              <span className="mt-1.5 text-[11px] font-medium leading-none text-muted">{s.label}</span>
             </Link>
           </li>
         ))}
