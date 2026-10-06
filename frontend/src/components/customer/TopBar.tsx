@@ -14,7 +14,7 @@ interface TopBarProps {
 }
 
 const HAMBURGER =
-  "group relative h-10 w-10 shrink-0 rounded-[14px] border border-line  from-white to-brand-soft  transition-[box-shadow,transform] duration-200  active:scale-95";
+  "group relative h-10 w-10 shrink-0 rounded-[14px]   from-white to-brand-soft  transition-[box-shadow,transform] duration-200  active:scale-95";
 /** Centred bars; the short middle one grows to full width on hover. */
 const BAR = "absolute left-1/2 h-[2.5px] -translate-x-1/2 rounded-full bg-brand transition-all duration-200";
 
@@ -29,7 +29,7 @@ export default function TopBar({ sidebarOpen, onToggleSidebar }: TopBarProps) {
   const unread = useUnreadNotifications();
 
   return (
-    <header className="customer-topbar sticky top-0 z-30 flex h-[64px] items-center justify-between gap-3 border-b border-line/70 bg-white/85 px-3 shadow-[0_6px_16px_-14px_rgba(30,27,46,.28)] backdrop-blur-xl md:h-[68px] md:px-8">
+    <header className="customer-topbar sticky top-0 z-30 flex h-[64px] items-center justify-between gap-3  bg-white/85 px-3 shadow-[0_6px_16px_-14px_rgba(30,27,46,.28)] backdrop-blur-xl md:h-[68px] md:px-8">
       <div className="flex min-w-0 flex-1 items-center gap-1">
         {/* Only shown while the sidebar is collapsed; when it is open, its own close (X) button lives in the sidebar. */}
         {!sidebarOpen && (

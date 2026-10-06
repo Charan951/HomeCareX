@@ -5,7 +5,7 @@ export default function DashboardSkeleton() {
   return (
     <div className="space-y-6" role="status" aria-busy="true">
       <span className="sr-only">Loading your dashboard…</span>
-      <div className="mx-auto max-w-[1180px] space-y-3 rounded-[22px] bg-brand/10 p-5 md:p-8">
+      <div className="mx-auto max-w-[1440px] space-y-3 rounded-[22px] bg-brand/10 p-5 md:p-8">
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-4 w-72" />
         <Skeleton className="h-12 w-full max-w-xl rounded-2xl" />

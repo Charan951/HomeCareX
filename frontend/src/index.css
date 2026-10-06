@@ -606,6 +606,9 @@ body {
   inset: -24px -16px auto;
   height: 330px;
   pointer-events: none;
+  /* Fade the wash out at the sides so it never ends in a visible edge when the sidebar is closed. */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
   background:
     radial-gradient(circle at 12% 12%, rgba(67, 56, 202, .10), transparent 32%),
     radial-gradient(circle at 92% 0%, rgba(255, 138, 61, .13), transparent 30%);
@@ -996,4 +999,20 @@ body {
   .service-card-enter {
     animation: serviceCardIn .45s cubic-bezier(.22,1,.36,1) both;
   }
+}
+
+/* ---------- Dashboard hero (flat lavender): live dot, mic ring, Search shine, entrance ---------- */
+.hero-live-dot::after { content: ""; position: absolute; inset: -4px; border-radius: 9999px; background: currentColor; opacity: .35; }
+.hero-mic::after { content: ""; position: absolute; inset: 0; border-radius: 9999px; border: 2px solid #4338CA; opacity: 0; pointer-events: none; }
+.hero-shine { overflow: hidden; } /* position comes from the element (absolute), so the ::after shine stays clipped inside */
+.hero-shine::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: rgba(255,255,255,.4); transform: skewX(-20deg); pointer-events: none; }
+@keyframes heroRise { from { opacity: 0; transform: translateY(18px); } }
+@keyframes heroPing { 70%, 100% { transform: scale(2.2); opacity: 0; } }
+@keyframes heroRing { 0% { transform: scale(1); opacity: .6; } 60%, 100% { transform: scale(1.7); opacity: 0; } }
+@keyframes heroShine { 0%, 60% { left: -60%; } 100% { left: 130%; } }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-rise { animation: heroRise .7s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 90ms); }
+  .hero-live-dot::after { animation: heroPing 1.8s ease-out infinite; }
+  .hero-mic::after { animation: heroRing 2.8s ease-out infinite 1.5s; }
+  .hero-shine::after { animation: heroShine 4.5s ease-in-out infinite 2s; }
 }
