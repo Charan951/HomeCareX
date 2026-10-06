@@ -1,36 +1,34 @@
 import { Link } from "react-router-dom";
-import { PartyPopper } from "lucide-react";
+import clsx from "clsx";
 import { customerPath } from "@/routes/customerPath";
 import { FOCUS_RING } from "@/components/customer/focusRing";
+import { Icon3D, tintAt } from "@/components/customer";
 import type { DashboardCategoryDto } from "@/features/customer";
-import CategoryIcon from "./CategoryIcon";
 
 /** Shown instead of the booking-related sections when a customer has never booked. */
 export default function NewCustomerEmptyState({ categories }: { categories: DashboardCategoryDto[] }) {
   return (
-    <div className="rounded border border-dashed border-line bg-panel px-6 py-10 text-center">
-      <PartyPopper className="mx-auto h-8 w-8 text-brand" aria-hidden="true" />
-      <h2 className="mt-3 font-semibold text-ink">Welcome to HomeCareX!</h2>
+    <div className="rounded-[20px] border border-dashed border-brand/25 bg-white px-6 py-10 text-center shadow-[0_9px_26px_rgba(30,27,46,.05)]">
+      <Icon3D hints={["🎉"]} size={72} className="mx-auto" />
+      <h2 className="mt-3 text-lg font-semibold text-ink">Welcome to HomeCareX!</h2>
       <p className="mx-auto mt-1 max-w-sm text-sm text-muted">
         You haven't booked a service yet. Pick a category below to get started.
       </p>
-      <div className="mx-auto mt-5 grid max-w-sm grid-cols-2 gap-3 text-left sm:grid-cols-3">
-        {categories.slice(0, 3).map((c) => (
+      <div className="mx-auto mt-5 grid max-w-md grid-cols-3 gap-3 text-center">
+        {categories.slice(0, 3).map((c, i) => (
           <Link
             key={c.id}
             to={customerPath("/services")}
-            className={`rounded border border-line bg-canvas p-3 hover:border-brand ${FOCUS_RING}`}
+            className={clsx("group rounded-2xl p-3 transition-transform duration-300 hover:-translate-y-1", tintAt(i), FOCUS_RING)}
           >
-            <div className="text-xl">
-              <CategoryIcon icon={c.icon} />
-            </div>
-            <div className="mt-1 truncate text-xs font-medium text-ink">{c.name}</div>
+            <Icon3D hints={[c.icon, c.name, c.slug]} size={44} delay={i * -0.8} className="mx-auto" />
+            <div className="mt-1.5 truncate text-xs font-medium text-ink">{c.name}</div>
           </Link>
         ))}
       </div>
       <Link
         to={customerPath("/categories")}
-        className={`mt-5 inline-block rounded bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90 ${FOCUS_RING}`}
+        className={`mt-5 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03] ${FOCUS_RING}`}
       >
         Browse all categories
       </Link>

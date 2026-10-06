@@ -23,6 +23,10 @@ import EditProfile from "@/pages/customer/Profile/EditProfile";
 
 import BookingSuccess from "../pages/customer/BookingSuccess";
 import BookingFailed from "../pages/customer/BookingFailed";
+
+// ✅ 1. Import your new ServiceBooked component here:
+import ServiceBooked from "../pages/customer/BookingSuccess/ServiceBooked";
+
 /**
  * CustomerRoutes — every route the Customer Dashboard serves,
  * nested inside CustomerLayout.
@@ -40,7 +44,7 @@ export default function CustomerRoutes() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/profile" element={<Profile />} />
-         <Route path="/profile/edit" element={<EditProfile />} />
+        <Route path="/profile/edit" element={<EditProfile />} />
 
         <Route path="/referrals" element={<Referrals />} />
         <Route path="/reviews" element={<Reviews />} />
@@ -49,8 +53,13 @@ export default function CustomerRoutes() {
         <Route path="/support/tickets" element={<Tickets />} />
         <Route path="/tracking" element={<Tracking />} />
         <Route path="/wallet" element={<Wallet />} />
-          <Route path="/booking/success/:bookingId" element={<BookingSuccess />} />
-  <Route path="/booking/failed/:bookingId" element={<BookingFailed />} />
+        
+        {/* ✅ 2. Changed :bookingId to :id to perfectly match your component logic */}
+        <Route path="/booking/success/:id" element={<BookingSuccess />} />
+        <Route path="/booking/failed/:id" element={<BookingFailed />} />
+        
+        {/* ✅ 3. Added the brand new route for Cash on Service */}
+        <Route path="/booking/booked/:id" element={<ServiceBooked />} />
       </Route>
     </Routes>
   );

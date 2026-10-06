@@ -1,5 +1,5 @@
 const TITLES: Record<string, string> = {
-  "/": "Customer Dashboard",
+  "/": "Overview",
   "/addresses": "Customer Dashboard",
   "/bookings": "Customer Dashboard",
   "/categories": "Customer Dashboard",
