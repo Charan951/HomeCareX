@@ -154,7 +154,7 @@ export const SERVICE_DETAILS_SEED: Record<string, ServiceDetailsSeed> = {
     ],
   },
   'full-body-massage': {
-    images: [ `${IMG}Home-spa-women-banner.jpg`, `${IMG}Home-spa-women.png`],
+    images: [`${IMG}full-body-massage.png`, `${IMG}Home-spa-women-banner.jpg`],
     inclusions: ['Swedish or deep-tissue massage of your choice', 'Session of about 90 minutes', 'Certified therapist'],
     exclusions: ['Medical or physiotherapy treatment', 'Time beyond the booked duration'],
     faqs: [

@@ -1,5 +1,5 @@
-import { MOCK_SERVICE_CATALOG } from "@/pages/customer/Book/serviceCatalog.mock";
 import type { NormalizedApiError } from "./bookingApi";
+import { fetchServiceDetail } from "./catalogApi";
 import {
   COUPON_ERROR,
   type CouponErrorCode,
@@ -14,6 +14,8 @@ import {
 /**
  * STAND-IN FOR THE SERVER until POST /pricing/quote and POST /coupons/validate are merged.
  * It plays the role of the backend: all price maths lives here, the UI only displays the result.
+ * Service and add-on data (ids, base price, add-on prices) is the REAL catalog (GET /services/:id),
+ * the same rows POST /bookings validates against. Only fees, GST, surge and coupons are simulated.
  * Delete this file (and the PRICING_IS_MOCK branch in pricingApi.ts) when the real endpoints ship.
  */
 
@@ -51,9 +53,18 @@ function fail(status: number, code: string, message: string, details?: unknown):
   throw err;
 }
 
-function priceLines(req: QuoteRequest) {
-  const service = MOCK_SERVICE_CATALOG.find((s) => s.id === req.serviceId);
-  if (!service) fail(404, "SERVICE_NOT_FOUND", "That service was not found");
+/** Reads the service from the real catalog. GET /services/:idOrSlug accepts the id the wizard sends. */
+async function loadService(serviceId: string) {
+  try {
+    return await fetchServiceDetail(serviceId);
+  } catch (err) {
+    if ((err as Partial<NormalizedApiError>)?.status === 404) fail(404, "SERVICE_NOT_FOUND", "That service was not found");
+    throw err;
+  }
+}
+
+async function priceLines(req: QuoteRequest) {
+  const service = await loadService(req.serviceId);
 
   const lines: QuoteLine[] = [
     {
@@ -101,8 +112,10 @@ function evaluateCoupon(
   return { ok: true, discount };
 }
 
-function buildQuote(req: QuoteRequest): PriceQuote {
-  const { service, lines } = priceLines(req);
+type PricedOrder = Awaited<ReturnType<typeof priceLines>>;
+
+function buildQuote(req: QuoteRequest, priced: PricedOrder): PriceQuote {
+  const { service, lines } = priced;
   const baseAmount = lines[0].amount;
   const addOnsTotal = lines.slice(1).reduce((sum, l) => sum + l.amount, 0);
   const hasSurge = Number.parseInt(req.slot.slice(0, 2), 10) >= SURGE_FROM_HOUR;
@@ -143,13 +156,14 @@ function buildQuote(req: QuoteRequest): PriceQuote {
 export const pricingMock = {
   async quote(req: QuoteRequest): Promise<PriceQuote> {
     await wait(LATENCY_MS);
-    return buildQuote(req);
+    return buildQuote(req, await priceLines(req));
   },
 
   async listCoupons(req: QuoteRequest): Promise<AvailableCoupon[]> {
     await wait(LATENCY_MS / 2);
-    const { service } = priceLines(req);
-    const orderValue = buildQuote({ ...req, couponCode: undefined }).subtotal;
+    const priced = await priceLines(req);
+    const { service } = priced;
+    const orderValue = buildQuote({ ...req, couponCode: undefined }, priced).subtotal;
     return Object.entries(MOCK_COUPONS).map(([code, c]) => {
       const result = evaluateCoupon(code, service.slug, orderValue);
       return {
@@ -164,8 +178,9 @@ export const pricingMock = {
 
   async validateCoupon(req: CouponValidateRequest): Promise<CouponValidateResponse> {
     await wait(LATENCY_MS);
-    const { service } = priceLines(req);
-    const orderValue = buildQuote({ ...req, couponCode: undefined }).subtotal;
+    const priced = await priceLines(req);
+    const { service } = priced;
+    const orderValue = buildQuote({ ...req, couponCode: undefined }, priced).subtotal;
     const result = evaluateCoupon(req.couponCode, service.slug, orderValue);
     if (!result.ok) {
       fail(422, result.code, "Coupon cannot be applied", result.minOrder ? { minOrder: result.minOrder } : undefined);

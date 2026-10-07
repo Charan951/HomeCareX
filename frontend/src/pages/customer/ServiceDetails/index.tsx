@@ -16,7 +16,9 @@ import InclusionList from "./components/InclusionList";
 import ReviewPreview from "./components/ReviewPreview";
 import SectionNav, { type SectionLink } from "./components/SectionNav";
 import ServiceDetailsSkeleton from "./components/ServiceDetailsSkeleton";
+import MobileInfo from "./components/MobileInfo";
 import ServiceInfo from "./components/ServiceInfo";
+import StickyCTA, { StickyCTASpacer } from "./components/StickyCTA";
 import ServiceNotFound from "./components/ServiceNotFound";
 
 const COLLAPSED_CHARS = 240;
@@ -75,6 +77,10 @@ function Details({ service: s }: { service: ServiceDetail }) {
               </div>
             }
           />
+          {/* Phones: info sits straight under the gallery (no card); the sticky bar below holds the only Book now. */}
+          <div className="mt-4">
+            <MobileInfo service={s} />
+          </div>
         </div>
 
         <aside aria-label="Pricing and booking" className="hidden min-w-0 xl:sticky xl:top-[92px] xl:col-start-2 xl:row-span-2 xl:row-start-1 xl:block xl:self-start">
@@ -86,8 +92,8 @@ function Details({ service: s }: { service: ServiceDetail }) {
           <Description text={s.description} />
           <InclusionList inclusions={s.inclusions} exclusions={s.exclusions} />
           <AddOnList addOns={s.addOns} />
-          {/* Below xl the booking card sits just above the FAQs; on xl it lives in the sticky side column. */}
-          <div className="xl:hidden">
+          {/* Tablet: the booking card sits just above the FAQs. Phones use MobileInfo + the sticky bar; xl uses the side column. */}
+          <div className="hidden md:block xl:hidden">
             <ServiceInfo service={s} />
           </div>
           <FaqAccordion faqs={s.faqs} />
@@ -95,6 +101,8 @@ function Details({ service: s }: { service: ServiceDetail }) {
         </div>
       </div>
 
+      <StickyCTASpacer />
+      <StickyCTA slug={s.slug} name={s.name} price={s.basePrice} />
     </div>
   );
 }
