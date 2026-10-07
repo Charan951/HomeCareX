@@ -3,7 +3,7 @@ import { Briefcase, Home, MapPin } from "lucide-react";
 import clsx from "clsx";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import type { AddressDto, AddressInput } from "@/features/customer";
-import AddressMap from "./AddressMap";
+import MapAddressPicker, { type PickedLocation } from "@/components/customer/maps/MapAddressPicker";
 
 const LABEL_CHOICES = [
   { name: "Home", icon: Home },
@@ -51,6 +51,19 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
   const [state, setState] = useState(initial?.state ?? "");
   const [pincode, setPincode] = useState(initial?.pincode ?? "");
   const [makeDefault, setMakeDefault] = useState(false);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | undefined>(initial?.location);
+  // Once the customer types their own house / street, the map stops overwriting it.
+  const [line1Edited, setLine1Edited] = useState(Boolean(initial?.line1));
+
+  function applyPick(p: PickedLocation) {
+    setLocation({ lat: p.lat, lng: p.lng });
+    if (!line1Edited && p.line1) setLine1(p.line1);
+    setArea(p.area);
+    if (p.city) setCity(p.city);
+    if (p.state) setState(p.state);
+    if (p.pincode) setPincode(p.pincode.slice(0, 6));
+    setErrors({});
+  }
   const [errors, setErrors] = useState<Errors>({});
 
   function submit(e: FormEvent) {
@@ -66,6 +79,7 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
       city: city.trim(),
       state: state.trim(),
       pincode: pincode.trim(),
+      ...(location ? { location } : {}),
       ...(makeDefault && !initial?.isDefault ? { isDefault: true } : {}),
     });
   }
@@ -79,11 +93,12 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
 
   return (
     <form onSubmit={submit} noValidate aria-label={initial ? "Edit address" : "Add a new address"} className="overflow-hidden rounded-xl border border-line bg-panel shadow-sm">
-      <div className="relative h-24 sm:h-28">
-        <AddressMap seed={initial?.id ?? "new-address"} className="h-full w-full" />
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-panel to-transparent px-4 pb-2 pt-8 sm:px-5">
+      <div className="space-y-3 p-4 pb-0 sm:p-5 sm:pb-0">
+        <div>
           <h2 className="text-base font-semibold text-ink">{initial ? "Edit address" : "Add a new address"}</h2>
+          <p className="text-xs text-muted">Drag the map so the pin sits on your exact location, or search for it.</p>
         </div>
+        <MapAddressPicker value={initial?.location ?? null} onPick={applyPick} autoLocate={!initial} className="h-[300px] sm:h-[360px]" />
       </div>
       <div className="space-y-4 p-4 pt-3 sm:p-5 sm:pt-3">
 
@@ -115,7 +130,7 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
 
       <div>
         <label htmlFor="addr-line1" className="mb-1 block text-sm font-medium text-ink">House / flat, street</label>
-        <input id="addr-line1" value={line1} onChange={(e) => setLine1(e.target.value)} maxLength={200} placeholder="Flat 302, Manjeera Trinity" aria-invalid={!!errors.line1} aria-describedby={errors.line1 ? "addr-line1-err" : undefined} className={inputClass(!!errors.line1)} />
+        <input id="addr-line1" value={line1} onChange={(e) => { setLine1(e.target.value); setLine1Edited(true); }} maxLength={200} placeholder="Flat 302, Manjeera Trinity" aria-invalid={!!errors.line1} aria-describedby={errors.line1 ? "addr-line1-err" : undefined} className={inputClass(!!errors.line1)} />
         {err("addr-line1-err", errors.line1)}
       </div>
 

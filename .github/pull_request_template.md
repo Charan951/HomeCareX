@@ -20,3 +20,6 @@ Closes #
 
 ## Screenshots / API proof
 <!-- UI screenshots or Postman response -->
+
+## Package files
+- [ ] This PR does **not** change `package.json` / `package-lock.json` (CI fails otherwise). New tests (`*.test.ts`) and seeds (`src/scripts/seed-<name>.ts`, run with `npm run seed -- <name>`) are picked up automatically. Need a new dependency? Ask a maintainer for the `dependencies` label.

@@ -12,7 +12,7 @@ const PAGE_SEARCH: Record<string, string> = {
   '/admin/audit-logs': 'Search actor, action, entity, ID or IP…',
 };
 
-/** Search bar shown in the row below the header, beside the breadcrumbs. */
+/** Search bar shown in the row below the header. */
 export const AdminSearch: React.FC = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();

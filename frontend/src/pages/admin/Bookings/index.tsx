@@ -1,12 +1,17 @@
-import React, { useCallback, useEffect, useState } from "react";
-
-import BookingDrawer from "@/components/admin/BookingDrawer";
-import BookingTable from "@/components/admin/BookingTable";
-import AssignPartnerDialog from "@/components/admin/AssignPartnerDialog";
-import StatusOverrideDialog from "@/components/admin/StatusOverrideDialog";
-
+import { useEffect, useMemo, useState } from "react";
+import {
+  BookingDrawer,
+} from "@/components/admin/BookingDrawer";
+import {
+  BookingTable,
+} from "@/components/admin/BookingTable";
+import {
+  AssignPartnerDialog,
+} from "@/components/admin/AssignPartnerDialog";
+import {
+  StatusOverrideDialog,
+} from "@/components/admin/StatusOverrideDialog";
 import { adminBookingApi } from "@/services/adminBookingApi";
-
 import type {
   AdminBooking,
   BookingFilters,
@@ -14,7 +19,6 @@ import type {
   BookingStatus,
   PaymentStatus,
 } from "@/types/adminBooking";
-
 import "./index.css";
 
 const INITIAL_FILTERS: BookingFilters = {
@@ -28,58 +32,20 @@ const INITIAL_FILTERS: BookingFilters = {
   paymentStatus: "",
 };
 
-const BOOKING_STATUS_OPTIONS: Array<{
-  value: BookingStatus;
-  label: string;
-}> = [
-  {
-    value: "created",
-    label: "Pending",
-  },
-  {
-    value: "searching_for_partner",
-    label: "Searching for Partner",
-  },
-  {
-    value: "assigned",
-    label: "Assigned",
-  },
-  {
-    value: "en_route",
-    label: "En Route",
-  },
-  {
-    value: "arrived",
-    label: "Arrived",
-  },
-  {
-    value: "in_progress",
-    label: "In Progress",
-  },
-  {
-    value: "completed",
-    label: "Completed",
-  },
-  {
-    value: "rated",
-    label: "Rated",
-  },
-  {
-    value: "cancelled_by_customer",
-    label: "Cancelled by Customer",
-  },
-  {
-    value: "cancelled_by_partner",
-    label: "Cancelled by Partner",
-  },
-  {
-    value: "no_show",
-    label: "No Show",
-  },
-  {
-    value: "disputed",
-    label: "Disputed",
-  },
+const STATUS_OPTIONS: BookingStatus[] = [
+  "created",
+  "searching_for_partner",
+  "assigned",
+  "en_route",
+  "arrived",
+  "in_progress",
+  "completed",
+  "rated",
+  "cancelled_by_customer",
+  "cancelled_by_partner",
+  "cancelled_by_admin",
+  "no_show",
+  "disputed",
 ];
 
 const PAYMENT_STATUS_OPTIONS: PaymentStatus[] = [
@@ -89,9 +55,172 @@ const PAYMENT_STATUS_OPTIONS: PaymentStatus[] = [
   "Refunded",
 ];
 
-export const AdminBookingsPage: React.FC = () => {
+/*
+ * Frontend fallback partner.
+ *
+ * This is only for frontend testing while the backend
+ * eligibility/availability setup is being completed.
+ */
+const MOCK_ELIGIBLE_PARTNERS: BookingPartnerCandidate[] = [
+  {
+    id: "6abcd9a2113bfeaa34911617",
+    name: "Test Partner",
+  } as BookingPartnerCandidate,
+];
+
+function filtersAreEqual(
+  first: BookingFilters,
+  second: BookingFilters,
+): boolean {
+  return (
+    first.search === second.search &&
+    first.status === second.status &&
+    first.city === second.city &&
+    first.category === second.category &&
+    first.customer === second.customer &&
+    first.partner === second.partner &&
+    first.date === second.date &&
+    first.paymentStatus === second.paymentStatus
+  );
+}
+
+function hasAnyFilters(
+  filters: BookingFilters,
+): boolean {
+  return Boolean(
+    filters.search.trim() ||
+      filters.status ||
+      filters.city.trim() ||
+      filters.category.trim() ||
+      filters.customer.trim() ||
+      filters.partner.trim() ||
+      filters.date ||
+      filters.paymentStatus,
+  );
+}
+
+function formatStatus(
+  status: string,
+): string {
+  return status
+    .split("_")
+    .map(
+      (word) =>
+        word.charAt(0).toUpperCase() +
+        word.slice(1),
+    )
+    .join(" ");
+}
+
+function escapeCsv(
+  value: unknown,
+): string {
+  const text = String(value ?? "");
+
+  if (
+    text.includes(",") ||
+    text.includes('"') ||
+    text.includes("\n")
+  ) {
+    return `"${text.replace(
+      /"/g,
+      '""',
+    )}"`;
+  }
+
+  return text;
+}
+
+function downloadCsv(
+  bookings: AdminBooking[],
+): void {
+  const headers = [
+    "Booking ID",
+    "Customer",
+    "Partner",
+    "Service",
+    "Category",
+    "City",
+    "Booking Date",
+    "Start Time",
+    "End Time",
+    "Amount",
+    "Payment Status",
+    "Booking Status",
+    "Created At",
+  ];
+
+  const rows = bookings.map(
+    (booking) => [
+      booking.id,
+      booking.customer.name,
+      booking.partner?.name ??
+        "Not Assigned",
+      booking.service.name,
+      booking.service.category,
+      booking.city,
+      booking.slot.date,
+      booking.slot.startTime,
+      booking.slot.endTime,
+      booking.pricing.totalAmount,
+      booking.payment.status,
+      formatStatus(
+        booking.status,
+      ),
+      booking.createdAt,
+    ],
+  );
+
+  const csv = [
+    headers
+      .map(escapeCsv)
+      .join(","),
+    ...rows.map((row) =>
+      row
+        .map(escapeCsv)
+        .join(","),
+    ),
+  ].join("\n");
+
+  const blob = new Blob(
+    [csv],
+    {
+      type: "text/csv;charset=utf-8;",
+    },
+  );
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+
+  link.download =
+    `admin-bookings-${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+
+export default function Bookings() {
   const [filters, setFilters] =
-    useState<BookingFilters>(INITIAL_FILTERS);
+    useState<BookingFilters>(
+      INITIAL_FILTERS,
+    );
+
+  const [draftFilters, setDraftFilters] =
+    useState<BookingFilters>(
+      INITIAL_FILTERS,
+    );
 
   const [bookings, setBookings] =
     useState<AdminBooking[]>([]);
@@ -102,91 +231,143 @@ export const AdminBookingsPage: React.FC = () => {
   const [error, setError] =
     useState<string>("");
 
-  const [isOffline, setIsOffline] =
+  const [offline, setOffline] =
     useState<boolean>(
-      typeof navigator !== "undefined"
-        ? !navigator.onLine
-        : false,
+      !navigator.onLine,
     );
 
-  const [selectedBooking, setSelectedBooking] =
-    useState<AdminBooking | null>(null);
+  const [filterOpen, setFilterOpen] =
+    useState<boolean>(false);
+
+  const [
+    selectedBooking,
+    setSelectedBooking,
+  ] =
+    useState<AdminBooking | null>(
+      null,
+    );
 
   const [drawerOpen, setDrawerOpen] =
     useState<boolean>(false);
 
-  const [eligiblePartners, setEligiblePartners] =
-    useState<BookingPartnerCandidate[]>([]);
-
-  const [eligiblePartnersLoading, setEligiblePartnersLoading] =
+  const [
+    assignDialogOpen,
+    setAssignDialogOpen,
+  ] =
     useState<boolean>(false);
 
-  const [assignDialogOpen, setAssignDialogOpen] =
+  const [
+    statusDialogOpen,
+    setStatusDialogOpen,
+  ] =
     useState<boolean>(false);
 
-  const [statusOverrideDialogOpen, setStatusOverrideDialogOpen] =
+  const [
+    eligiblePartners,
+    setEligiblePartners,
+  ] =
+    useState<
+      BookingPartnerCandidate[]
+    >([]);
+
+  const [
+    eligiblePartnersLoading,
+    setEligiblePartnersLoading,
+  ] =
     useState<boolean>(false);
 
-  const loadBookings = useCallback(async () => {
+  const activeFilterCount =
+    useMemo(() => {
+      let count = 0;
+
+      if (filters.status) {
+        count += 1;
+      }
+
+      if (filters.city.trim()) {
+        count += 1;
+      }
+
+      if (
+        filters.category.trim()
+      ) {
+        count += 1;
+      }
+
+      if (
+        filters.customer.trim()
+      ) {
+        count += 1;
+      }
+
+      if (
+        filters.partner.trim()
+      ) {
+        count += 1;
+      }
+
+      if (filters.date) {
+        count += 1;
+      }
+
+      if (
+        filters.paymentStatus
+      ) {
+        count += 1;
+      }
+
+      return count;
+    }, [filters]);
+
+  const loadBookings = async (
+    activeFilters: BookingFilters =
+      filters,
+  ) => {
     setLoading(true);
     setError("");
 
-    if (typeof navigator !== "undefined") {
-      setIsOffline(!navigator.onLine);
-    }
-
     try {
       const data =
-        await adminBookingApi.getBookings(filters);
-
-      if (!Array.isArray(data)) {
-        throw new Error(
-          "Invalid bookings response received from the server.",
+        await adminBookingApi.getBookings(
+          activeFilters,
         );
-      }
 
       setBookings(data);
-
-      setSelectedBooking((current) => {
-        if (!current) {
-          return null;
-        }
-
-        return (
-          data.find(
-            (booking) =>
-              booking.id === current.id,
-          ) ?? null
-        );
-      });
     } catch (err) {
-      const message =
-        typeof err === "object" &&
-        err !== null &&
-        "message" in err &&
-        typeof err.message === "string"
-          ? err.message
-          : "Unable to load bookings. Please try again.";
+      const normalized =
+        err as {
+          message?: string;
+        };
 
-      setError(message);
-      setBookings([]);
-      setSelectedBooking(null);
+      setError(
+        normalized?.message ||
+          "Unable to load bookings. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  };
 
   useEffect(() => {
-    void loadBookings();
-  }, [loadBookings]);
+    void loadBookings(filters);
+  }, [
+    filters.search,
+    filters.status,
+    filters.city,
+    filters.category,
+    filters.customer,
+    filters.partner,
+    filters.date,
+    filters.paymentStatus,
+  ]);
 
   useEffect(() => {
     const handleOnline = () => {
-      setIsOffline(false);
+      setOffline(false);
     };
 
     const handleOffline = () => {
-      setIsOffline(true);
+      setOffline(true);
     };
 
     window.addEventListener(
@@ -212,20 +393,60 @@ export const AdminBookingsPage: React.FC = () => {
     };
   }, []);
 
-  const updateFilter = <
+  const updateDraftFilter = <
     K extends keyof BookingFilters
   >(
     key: K,
     value: BookingFilters[K],
   ) => {
+    setDraftFilters(
+      (current) => ({
+        ...current,
+        [key]: value,
+      }),
+    );
+  };
+
+  const handleSearchChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const value =
+      event.target.value;
+
     setFilters((current) => ({
       ...current,
-      [key]: value,
+      search: value,
     }));
+
+    setDraftFilters(
+      (current) => ({
+        ...current,
+        search: value,
+      }),
+    );
+  };
+
+  const applyFilters = () => {
+    setFilters(draftFilters);
+    setFilterOpen(false);
   };
 
   const clearFilters = () => {
-    setFilters(INITIAL_FILTERS);
+    setFilters(
+      INITIAL_FILTERS,
+    );
+
+    setDraftFilters(
+      INITIAL_FILTERS,
+    );
+  };
+
+  const handleExportCsv = () => {
+    if (!bookings.length) {
+      return;
+    }
+
+    downloadCsv(bookings);
   };
 
   const handleBookingSelect = (
@@ -239,420 +460,775 @@ export const AdminBookingsPage: React.FC = () => {
     setDrawerOpen(false);
   };
 
-  const handleOpenAssignDialog = async (
+  const handleAssignPartner = (
     booking: AdminBooking,
   ) => {
     setSelectedBooking(booking);
+    setDrawerOpen(false);
     setAssignDialogOpen(true);
-    setEligiblePartners([]);
-    setEligiblePartnersLoading(true);
-    setError("");
+  };
+
+  const handleStatusOverride = (
+    booking: AdminBooking,
+  ) => {
+    setSelectedBooking(booking);
+    setDrawerOpen(false);
+    setStatusDialogOpen(true);
+  };
+
+  /**
+   * Cancel booking.
+   *
+   * IMPORTANT:
+   * The cancellation reason now comes from
+   * the BookingDrawer.
+   *
+   * There is NO window.prompt here.
+   *
+   * This prevents the reason from being asked
+   * twice.
+   */
+  const handleCancelBooking = async (
+    booking: AdminBooking,
+    reason: string,
+  ) => {
+    const trimmedReason =
+      reason.trim();
+
+    if (!trimmedReason) {
+      setError(
+        "Cancellation reason is required.",
+      );
+
+      return;
+    }
 
     try {
-      const partners =
-        await adminBookingApi.getEligiblePartners(
+      const updatedBooking =
+        await adminBookingApi.cancelBooking(
           booking.id,
+          {
+            reason:
+              trimmedReason,
+          },
         );
 
-      setEligiblePartners(partners);
+      setBookings((current) =>
+        current.map((item) =>
+          item.id ===
+          updatedBooking.id
+            ? updatedBooking
+            : item,
+        ),
+      );
+
+      setSelectedBooking(
+        updatedBooking,
+      );
     } catch (err) {
-      const message =
-        typeof err === "object" &&
-        err !== null &&
-        "message" in err &&
-        typeof err.message === "string"
-          ? err.message
-          : "Unable to load eligible partners.";
+      const normalized =
+        err as {
+          message?: string;
+        };
 
-      setError(message);
-      setEligiblePartners([]);
-    } finally {
-      setEligiblePartnersLoading(false);
+      setError(
+        normalized?.message ||
+          "Unable to cancel the booking.",
+      );
     }
-  };
-
-  const handleCloseAssignDialog = () => {
-    setAssignDialogOpen(false);
-    setEligiblePartners([]);
-    setEligiblePartnersLoading(false);
-  };
-
-  const handleOpenStatusOverride = (
-    booking: AdminBooking,
-  ) => {
-    setSelectedBooking(booking);
-    setStatusOverrideDialogOpen(true);
-  };
-
-  const handleCloseStatusOverride = () => {
-    setStatusOverrideDialogOpen(false);
   };
 
   const handleBookingUpdated = (
     updatedBooking: AdminBooking,
   ) => {
     setBookings((current) =>
-      current.map((booking) =>
-        booking.id === updatedBooking.id
-          ? updatedBooking
-          : booking,
+      current.map(
+        (booking) =>
+          booking.id ===
+          updatedBooking.id
+            ? updatedBooking
+            : booking,
       ),
     );
 
-    setSelectedBooking(updatedBooking);
+    setSelectedBooking(
+      updatedBooking,
+    );
   };
 
-  const handleAssignedPartner = (
+  /*
+   * Load eligible partners.
+   *
+   * Backend partners are used when available.
+   * Otherwise the frontend test partner is shown.
+   */
+  const handleLoadEligiblePartners =
+    async (
+      booking: AdminBooking,
+    ) => {
+      setEligiblePartnersLoading(
+        true,
+      );
+
+      try {
+        const partners =
+          await adminBookingApi.getEligiblePartners(
+            booking.id,
+          );
+
+        if (partners.length > 0) {
+          setEligiblePartners(
+            partners,
+          );
+        } else {
+          setEligiblePartners(
+            MOCK_ELIGIBLE_PARTNERS,
+          );
+        }
+      } catch (err) {
+        const normalized =
+          err as {
+            message?: string;
+          };
+
+        console.warn(
+          "Eligible partner API unavailable:",
+          normalized?.message ||
+            "Unknown error",
+        );
+
+        setEligiblePartners(
+          MOCK_ELIGIBLE_PARTNERS,
+        );
+      } finally {
+        setEligiblePartnersLoading(
+          false,
+        );
+      }
+    };
+
+  useEffect(() => {
+    if (
+      !assignDialogOpen ||
+      !selectedBooking
+    ) {
+      return;
+    }
+
+    void handleLoadEligiblePartners(
+      selectedBooking,
+    );
+  }, [
+    assignDialogOpen,
+    selectedBooking,
+  ]);
+
+  const handleAssignDialogClose =
+    () => {
+      setAssignDialogOpen(
+        false,
+      );
+
+      setEligiblePartners([]);
+    };
+
+  const handlePartnerAssigned = (
     updatedBooking: AdminBooking,
   ) => {
-    handleBookingUpdated(updatedBooking);
+    handleBookingUpdated(
+      updatedBooking,
+    );
 
     setAssignDialogOpen(false);
+
     setEligiblePartners([]);
-    setEligiblePartnersLoading(false);
   };
 
-  const handleStatusOverridden = (
+  const handleStatusDialogClose =
+    () => {
+      setStatusDialogOpen(false);
+    };
+
+  const handleStatusUpdated = (
     updatedBooking: AdminBooking,
   ) => {
-    handleBookingUpdated(updatedBooking);
-    setStatusOverrideDialogOpen(false);
+    handleBookingUpdated(
+      updatedBooking,
+    );
+
+    setStatusDialogOpen(false);
   };
 
-  const handleCancelled = (
-    updatedBooking: AdminBooking,
-  ) => {
-    handleBookingUpdated(updatedBooking);
-  };
+  const filterButtonClassName = [
+    "booking-filter-button",
+
+    filterOpen ||
+    activeFilterCount > 0
+      ? "booking-filter-button--active"
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div className="admin-bookings">
-      <div className="admin-bookings__header">
-        <div>
-          <h1 className="admin-bookings__title">
-            Bookings & Operations
-          </h1>
+    <main className="bookings-page">
 
-          <p className="admin-bookings__subtitle">
-            Manage bookings, partners, statuses and payments.
+      {/* PAGE HEADER */}
+
+      <header className="bookings-page__header">
+        <div className="bookings-page__title-section">
+
+          <h1>Bookings</h1>
+
+          <p>
+            Monitor and manage customer
+            bookings and service requests.
           </p>
+
         </div>
 
-        <button
-          type="button"
-          onClick={() => void loadBookings()}
-          disabled={loading}
-          className="booking-button booking-button--secondary"
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
-      </div>
+        <div className="bookings-page__actions">
+          <button
+            type="button"
+            className="booking-top-button"
+            onClick={
+              handleExportCsv
+            }
+            disabled={
+              !bookings.length ||
+              loading
+            }
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 3v11"
+                strokeLinecap="round"
+              />
 
-      {isOffline && (
-        <div
-          role="alert"
-          className="booking-alert booking-alert--offline"
-        >
-          You are offline. Booking data may not be up to date.
+              <path
+                d="m7.5 10.5 4.5 4.5 4.5-4.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              <path
+                d="M5 20h14"
+                strokeLinecap="round"
+              />
+            </svg>
+
+            Export CSV
+          </button>
+        </div>
+      </header>
+
+      {/* ALERTS */}
+
+      {offline && (
+        <div className="bookings-alert bookings-alert--warning">
+          <div>
+            <strong>
+              You are offline.
+            </strong>
+
+            <span>
+              Booking data may not be up to date.
+            </span>
+          </div>
         </div>
       )}
 
       {error && (
-        <div
-          role="alert"
-          className="booking-alert booking-alert--error"
-        >
-          <span>{error}</span>
+        <div className="bookings-alert bookings-alert--error">
+          <div>
+            <strong>
+              Unable to load bookings.
+            </strong>
+
+            <span>
+              {error}
+            </span>
+          </div>
 
           <button
             type="button"
-            onClick={() => void loadBookings()}
-            className="booking-button booking-button--danger"
+            onClick={() =>
+              void loadBookings(
+                filters,
+              )
+            }
           >
-            Try again
+            Retry
           </button>
         </div>
       )}
 
-      <section
-        aria-label="Booking filters"
-        className="booking-card booking-filters"
-      >
-        <div className="booking-card__header">
-          <h2 className="booking-card__title">
-            Filters
-          </h2>
+      {/* BOOKINGS */}
 
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="booking-link-button"
-          >
-            Clear filters
-          </button>
-        </div>
+      <section className="booking-results">
 
-        <div className="booking-filters__grid">
-          <div className="booking-field">
-            <label htmlFor="booking-search">
-              Search
-            </label>
-
-            <input
-              id="booking-search"
-              type="search"
-              value={filters.search}
-              onChange={(event) =>
-                updateFilter(
-                  "search",
-                  event.target.value,
-                )
-              }
-              placeholder="Booking ID, name..."
-            />
-          </div>
-
-          <div className="booking-field">
-            <label htmlFor="booking-status">
-              Status
-            </label>
-
-            <select
-              id="booking-status"
-              value={filters.status}
-              onChange={(event) =>
-                updateFilter(
-                  "status",
-                  event.target.value as BookingStatus | "",
-                )
-              }
-            >
-              <option value="">
-                All statuses
-              </option>
-
-              {BOOKING_STATUS_OPTIONS.map(
-                (status) => (
-                  <option
-                    key={status.value}
-                    value={status.value}
-                  >
-                    {status.label}
-                  </option>
-                ),
-              )}
-            </select>
-          </div>
-
-          <div className="booking-field">
-            <label htmlFor="booking-city">
-              City
-            </label>
-
-            <input
-              id="booking-city"
-              type="text"
-              value={filters.city}
-              onChange={(event) =>
-                updateFilter(
-                  "city",
-                  event.target.value,
-                )
-              }
-              placeholder="City"
-            />
-          </div>
-
-          <div className="booking-field">
-            <label htmlFor="booking-category">
-              Category
-            </label>
-
-            <input
-              id="booking-category"
-              type="text"
-              value={filters.category}
-              onChange={(event) =>
-                updateFilter(
-                  "category",
-                  event.target.value,
-                )
-              }
-              placeholder="Service category"
-            />
-          </div>
-
-          <div className="booking-field">
-            <label htmlFor="booking-customer">
-              Customer
-            </label>
-
-            <input
-              id="booking-customer"
-              type="text"
-              value={filters.customer}
-              onChange={(event) =>
-                updateFilter(
-                  "customer",
-                  event.target.value,
-                )
-              }
-              placeholder="Customer name"
-            />
-          </div>
-
-          <div className="booking-field">
-            <label htmlFor="booking-partner">
-              Partner
-            </label>
-
-            <input
-              id="booking-partner"
-              type="text"
-              value={filters.partner}
-              onChange={(event) =>
-                updateFilter(
-                  "partner",
-                  event.target.value,
-                )
-              }
-              placeholder="Partner name"
-            />
-          </div>
-
-          <div className="booking-field">
-            <label htmlFor="booking-date">
-              Date
-            </label>
-
-            <input
-              id="booking-date"
-              type="date"
-              value={filters.date}
-              onChange={(event) =>
-                updateFilter(
-                  "date",
-                  event.target.value,
-                )
-              }
-            />
-          </div>
-
-          <div className="booking-field">
-            <label htmlFor="booking-payment">
-              Payment status
-            </label>
-
-            <select
-              id="booking-payment"
-              value={filters.paymentStatus}
-              onChange={(event) =>
-                updateFilter(
-                  "paymentStatus",
-                  event.target.value as
-                    | PaymentStatus
-                    | "",
-                )
-              }
-            >
-              <option value="">
-                All payment statuses
-              </option>
-
-              {PAYMENT_STATUS_OPTIONS.map(
-                (status) => (
-                  <option
-                    key={status}
-                    value={status}
-                  >
-                    {status}
-                  </option>
-                ),
-              )}
-            </select>
-          </div>
-        </div>
-      </section>
-
-      <section
-        aria-label="Bookings"
-        className="booking-card booking-table-card"
-      >
-        <div className="booking-card__header">
+        <div className="booking-results__header">
           <div>
-            <h2 className="booking-card__title">
-              Bookings
+            <h2>
+              Booking List
             </h2>
 
-            {!loading && (
-              <p className="booking-card__count">
-                {bookings.length} booking
-                {bookings.length === 1
-                  ? ""
-                  : "s"}
-              </p>
-            )}
+            <p>
+              {loading
+                ? "Loading bookings..."
+                : `${bookings.length} ${
+                    bookings.length ===
+                    1
+                      ? "booking"
+                      : "bookings"
+                  } found`}
+            </p>
           </div>
         </div>
 
-        {loading ? (
-          <div
-            className="booking-state"
-            role="status"
-            aria-live="polite"
-          >
-            <p>Loading bookings...</p>
-          </div>
-        ) : error ? (
-          <div className="booking-state">
-            <h3>
-              Unable to load bookings
-            </h3>
+        {/* SEARCH + FILTER */}
 
-            <p>
-              Check your connection and try again.
-            </p>
+        <div className="booking-toolbar">
+
+          <div className="booking-search">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
+              <circle
+                cx="11"
+                cy="11"
+                r="6.5"
+              />
+
+              <path
+                d="m16 16 5 5"
+                strokeLinecap="round"
+              />
+            </svg>
+
+            <input
+              type="search"
+              value={
+                filters.search
+              }
+              onChange={
+                handleSearchChange
+              }
+              placeholder="Search bookings..."
+              aria-label="Search bookings"
+            />
           </div>
-        ) : (
-          <BookingTable
-            bookings={bookings}
-            onBookingSelect={handleBookingSelect}
-          />
+
+          <button
+            type="button"
+            className={
+              filterButtonClassName
+            }
+            onClick={() =>
+              setFilterOpen(
+                (current) =>
+                  !current,
+              )
+            }
+            aria-expanded={
+              filterOpen
+            }
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              aria-hidden="true"
+            >
+              <path
+                d="M4 6h16"
+                strokeLinecap="round"
+              />
+
+              <path
+                d="M7 12h10"
+                strokeLinecap="round"
+              />
+
+              <path
+                d="M10 18h4"
+                strokeLinecap="round"
+              />
+            </svg>
+
+            <span>
+              Filter
+            </span>
+
+            {activeFilterCount >
+              0 && (
+              <span className="booking-filter-count">
+                {
+                  activeFilterCount
+                }
+              </span>
+            )}
+          </button>
+
+        </div>
+
+        {/* FILTER PANEL */}
+
+        {filterOpen && (
+          <div className="booking-filter-section">
+
+            <div className="booking-filter-header">
+              <h3>
+                Filters
+              </h3>
+
+              <button
+                type="button"
+                className="booking-filter-close"
+                onClick={() =>
+                  setFilterOpen(
+                    false,
+                  )
+                }
+                aria-label="Close filters"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="booking-filter-body">
+
+              <div className="booking-filter-grid">
+
+                <label className="booking-filter-field">
+                  <span>
+                    Status
+                  </span>
+
+                  <select
+                    value={
+                      draftFilters.status
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      updateDraftFilter(
+                        "status",
+                        event.target
+                          .value as
+                          | BookingStatus
+                          | "",
+                      )
+                    }
+                  >
+                    <option value="">
+                      All statuses
+                    </option>
+
+                    {STATUS_OPTIONS.map(
+                      (status) => (
+                        <option
+                          key={
+                            status
+                          }
+                          value={
+                            status
+                          }
+                        >
+                          {formatStatus(
+                            status,
+                          )}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+
+                <label className="booking-filter-field">
+                  <span>
+                    Payment Status
+                  </span>
+
+                  <select
+                    value={
+                      draftFilters.paymentStatus
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      updateDraftFilter(
+                        "paymentStatus",
+                        event.target
+                          .value as
+                          | PaymentStatus
+                          | "",
+                      )
+                    }
+                  >
+                    <option value="">
+                      All payment statuses
+                    </option>
+
+                    {PAYMENT_STATUS_OPTIONS.map(
+                      (status) => (
+                        <option
+                          key={
+                            status
+                          }
+                          value={
+                            status
+                          }
+                        >
+                          {status}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+
+                <label className="booking-filter-field">
+                  <span>
+                    Booking Date
+                  </span>
+
+                  <input
+                    type="date"
+                    value={
+                      draftFilters.date
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      updateDraftFilter(
+                        "date",
+                        event.target
+                          .value,
+                      )
+                    }
+                  />
+                </label>
+
+                <label className="booking-filter-field">
+                  <span>
+                    City
+                  </span>
+
+                  <input
+                    type="text"
+                    value={
+                      draftFilters.city
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      updateDraftFilter(
+                        "city",
+                        event.target
+                          .value,
+                      )
+                    }
+                    placeholder="Enter city"
+                  />
+                </label>
+
+                <label className="booking-filter-field">
+                  <span>
+                    Category
+                  </span>
+
+                  <input
+                    type="text"
+                    value={
+                      draftFilters.category
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      updateDraftFilter(
+                        "category",
+                        event.target
+                          .value,
+                      )
+                    }
+                    placeholder="Enter category"
+                  />
+                </label>
+
+                <label className="booking-filter-field">
+                  <span>
+                    Customer
+                  </span>
+
+                  <input
+                    type="text"
+                    value={
+                      draftFilters.customer
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      updateDraftFilter(
+                        "customer",
+                        event.target
+                          .value,
+                      )
+                    }
+                    placeholder="Customer name or ID"
+                  />
+                </label>
+
+                <label className="booking-filter-field">
+                  <span>
+                    Partner
+                  </span>
+
+                  <input
+                    type="text"
+                    value={
+                      draftFilters.partner
+                    }
+                    onChange={(
+                      event,
+                    ) =>
+                      updateDraftFilter(
+                        "partner",
+                        event.target
+                          .value,
+                      )
+                    }
+                    placeholder="Partner name or ID"
+                  />
+                </label>
+
+              </div>
+
+            </div>
+
+            <div className="booking-filter-footer">
+
+              <button
+                type="button"
+                className="booking-filter-clear"
+                onClick={
+                  clearFilters
+                }
+                disabled={
+                  !hasAnyFilters(
+                    draftFilters,
+                  )
+                }
+              >
+                Clear
+              </button>
+
+              <button
+                type="button"
+                className="booking-filter-apply"
+                onClick={
+                  applyFilters
+                }
+                disabled={filtersAreEqual(
+                  filters,
+                  draftFilters,
+                )}
+              >
+                Apply Filters
+              </button>
+
+            </div>
+
+          </div>
         )}
+
+        {/* TABLE */}
+
+        <div className="booking-results__table">
+          <BookingTable
+            bookings={
+              bookings
+            }
+            onBookingSelect={
+              handleBookingSelect
+            }
+          />
+        </div>
+
       </section>
 
+      {/* DRAWER */}
+
       <BookingDrawer
-        booking={selectedBooking}
-        open={drawerOpen}
-        onClose={handleCloseDrawer}
-        onAssignPartner={handleOpenAssignDialog}
-        onStatusOverride={
-          handleOpenStatusOverride
+        booking={
+          selectedBooking
         }
-        onCancelBooking={handleCancelled}
+        open={
+          drawerOpen
+        }
+        onClose={
+          handleCloseDrawer
+        }
+        onAssignPartner={
+          handleAssignPartner
+        }
+        onStatusOverride={
+          handleStatusOverride
+        }
+        onCancelBooking={
+          handleCancelBooking
+        }
       />
 
-      {selectedBooking && (
-        <>
-          <AssignPartnerDialog
-            booking={selectedBooking}
-            open={assignDialogOpen}
-            partners={eligiblePartners}
-            loading={eligiblePartnersLoading}
-            onClose={handleCloseAssignDialog}
-            onAssigned={handleAssignedPartner}
-          />
+      {/* ASSIGN PARTNER */}
 
-          <StatusOverrideDialog
-            booking={selectedBooking}
-            open={statusOverrideDialogOpen}
-            onClose={handleCloseStatusOverride}
-            onUpdated={handleStatusOverridden}
-          />
-        </>
-      )}
-    </div>
+      <AssignPartnerDialog
+        booking={
+          selectedBooking
+        }
+        open={
+          assignDialogOpen
+        }
+        partners={
+          eligiblePartners
+        }
+        loading={
+          eligiblePartnersLoading
+        }
+        onClose={
+          handleAssignDialogClose
+        }
+        onAssigned={
+          handlePartnerAssigned
+        }
+      />
+
+      {/* STATUS OVERRIDE */}
+
+      <StatusOverrideDialog
+        booking={
+          selectedBooking
+        }
+        open={
+          statusDialogOpen
+        }
+        onClose={
+          handleStatusDialogClose
+        }
+        onUpdated={
+          handleStatusUpdated
+        }
+      />
+
+    </main>
   );
-};
-
-export default AdminBookingsPage;
+}

@@ -7,6 +7,8 @@ import PartnerWorkingHoursPage from "../pages/partner/WorkingHours";
 import PartnerBlackoutDatesPage from "../pages/partner/BlackoutDates";
 import PartnerSchedulePage from "../pages/partner/Schedule";
 import PartnerEarningsPage from "../pages/partner/Earnings";
+import PartnerIncentivesPage from "../pages/partner/Incentives";
+import PartnerPayoutsPage from "../pages/partner/Payouts";
 import "../styles/calm-overrides.css";
 import "../styles/mobile-plain.css";
 
@@ -35,9 +37,9 @@ export const PARTNER_PAGES: { path: string; title: string }[] = [
   { path: "services/radius", title: "Service radius" },
   { path: "services/training", title: "Training & certifications" },
   // Earnings (5)
-  
+
   { path: "earnings/payouts", title: "Payout history" },
-  { path: "earnings/incentives", title: "Incentives" },
+
   { path: "earnings/statements", title: "Earnings statements" },
   { path: "earnings/bank-details", title: "Bank / UPI details" },
   // Performance (3)
@@ -74,8 +76,12 @@ export default function PartnerRoutes() {
         <Route path="blackout-dates" element={<PartnerBlackoutDatesPage />} />
         <Route path="availability/blackout-dates" element={<PartnerBlackoutDatesPage />} />
         <Route path="schedule" element={<PartnerSchedulePage />} />
-         <Route path="earnings" element={<PartnerEarningsPage />} />
-        {PARTNER_PAGES.map(({ path, title }) => (
+        <Route path="earnings" element={<PartnerEarningsPage />} />
+        <Route path="incentives" element={<PartnerIncentivesPage />} />
+        <Route path="earnings/incentives" element={<PartnerIncentivesPage />} />
+        <Route path="payouts" element={<PartnerPayoutsPage />} />
+        <Route path="earnings/payouts" element={<PartnerPayoutsPage />} />
+        {PARTNER_PAGES.filter(({ path }) => path !== "earnings/payouts").map(({ path, title }) => (
           <Route
             key={path}
             path={path}
@@ -83,7 +89,6 @@ export default function PartnerRoutes() {
           />
         ))}
         <Route path="*" element={<Placeholder title="Page not found" />} />
-        
       </Route>
     </Routes>
   );

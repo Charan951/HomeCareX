@@ -1,0 +1,27 @@
+/* No sideways page scroll, any width. */
+.mp-page { min-width: 0; max-width: 100%; overflow-x: clip; }
+
+@media (max-width: 767px) {
+  .admin-page-container.mp-page { padding: 16px 14px 28px; }
+  .mp-page .hcx-page-header { margin-bottom: 14px; }
+  .mp-page .hcx-page-header__title { font-size: 20px; }
+  .mp-page .hcx-page-header__actions, .mp-actions { width: 100%; }
+  .mp-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mp-actions .hcx-btn { min-height: 44px; justify-content: center; border-radius: 12px; }
+}
+
+.mp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.mp-card { padding: 14px; background: var(--hcx-surface); border: 1px solid var(--hcx-line); border-radius: 14px; box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04); }
+.mp-card__head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mp-avatar { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; font-size: 15px; font-weight: 700; color: var(--hcx-accent); background: var(--hcx-accent-soft); border-radius: 50%; }
+.mp-card__who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.mp-card__name { font-size: 16px; font-weight: 600; color: var(--hcx-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-card__role { font-size: 13px; color: var(--hcx-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mp-info { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+.mp-info > div { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 5px 0; font-size: 14px; }
+.mp-info dt { flex: 0 0 auto; font-size: 12px; color: var(--hcx-muted); }
+.mp-info dd { margin: 0; min-width: 0; text-align: right; color: var(--hcx-ink); overflow-wrap: anywhere; }
+.mp-card__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.mp-card__actions .hcx-btn { min-height: 42px; justify-content: center; border-radius: 10px; }
+.mp-card__actions .hcx-btn--danger-ghost { color: var(--hcx-danger); }
+.mp-state { padding: 40px 16px; text-align: center; font-size: 14px; color: var(--hcx-muted); background: var(--hcx-surface); border: 1px solid var(--hcx-line); border-radius: 14px; }

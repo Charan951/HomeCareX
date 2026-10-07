@@ -377,12 +377,15 @@ const Home: React.FC = () => {
           className="hcx-img relative h-[calc(100vh-var(--hcx-nav,130px))] overflow-hidden"
           style={{ height: "calc(100svh - var(--hcx-nav, 130px))" }}
         >
+          {/* Photo: sharp, no blur */}
           <img
-            src="/images/home-cleaning.jpg"
-            alt="A professional cleaning a bright living room"
-            className="hcx-zoom absolute inset-0 h-full w-full object-cover"
+            src="/images/background.png"
+            alt="HomeCareX professionals cleaning, repairing and maintaining a bright living room"
+            className="hcx-zoom absolute inset-0 h-full w-full object-cover object-right"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-white/0" />
+
+          {/* Soft light fade only behind the text so it stays readable; the right side of the photo is untouched */}
+          <div className="absolute inset-y-0 left-0 w-full bg-white/75 md:w-[62%] md:bg-transparent md:bg-gradient-to-r md:from-white/90 md:via-white/65 md:to-transparent" />
 
           <div className="relative mx-auto h-full max-w-[1600px] px-6 sm:px-10 lg:px-16">
             <FitToHeight>
@@ -773,7 +776,7 @@ const Home: React.FC = () => {
               </p>
               <div className="mt-8">
                 <Link
-                  to="/register"
+                  to="/contact#partner-interest"
                   className="group inline-flex items-center gap-2 rounded-xl bg-[#4338ca] px-7 py-3.5 font-bold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-[#1e1b6e]"
                 >
                   Join as a professional

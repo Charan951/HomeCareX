@@ -1,4 +1,5 @@
-import { Clock, AlertCircle } from "lucide-react";
+import { AlertCircle, Check, Moon, Sun, Sunrise, type LucideIcon } from "lucide-react";
+import clsx from "clsx";
 import type { SlotAvailability, SlotsResponse } from "@/types/booking";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 
@@ -29,14 +30,18 @@ export interface SlotPickerProps {
   onSelect?: (slot: string) => void;
 }
 
-export function SlotPicker({
-  slots,
-  value,
-  selectedSlot,
-  onChange,
-  onSelectSlot,
-  onSelect,
-}: SlotPickerProps) {
+const PERIODS: { id: string; label: string; hint: string; Icon: LucideIcon; match: (hour: number) => boolean }[] = [
+  { id: "morning", label: "Morning", hint: "Before 12 PM", Icon: Sunrise, match: (h) => h < 12 },
+  { id: "afternoon", label: "Afternoon", hint: "12 PM – 4 PM", Icon: Sun, match: (h) => h >= 12 && h < 16 },
+  { id: "evening", label: "Evening", hint: "After 4 PM", Icon: Moon, match: (h) => h >= 16 },
+];
+
+const startHour = (slot: string): number => {
+  const h = parseInt(slot.split("-")[0] ?? "", 10);
+  return Number.isNaN(h) ? 0 : h;
+};
+
+export function SlotPicker({ slots, value, selectedSlot, onChange, onSelectSlot, onSelect }: SlotPickerProps) {
   const slotList: SlotAvailability[] = Array.isArray(slots)
     ? slots
     : Array.isArray((slots as SlotsResponse)?.slots)
@@ -55,61 +60,94 @@ export function SlotPicker({
 
   if (slotList.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-line bg-panel p-3 text-center text-xs text-muted">
+      <div className="rounded-2xl border border-dashed border-line bg-canvas p-6 text-center text-sm text-muted">
         No time slots available for this date. Please choose another date.
       </div>
     );
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-5">
       {allTaken && (
-        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800">
-          <AlertCircle className="h-3.5 w-3.5 shrink-0 text-amber-600" />
+        <div className="flex items-center gap-2.5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
           <span>All slots are fully booked or have already passed for today. Please pick another date.</span>
         </div>
       )}
 
-      <p className="text-xs font-semibold text-ink">Choose a time</p>
-
-      <div className="grid grid-cols-1 gap-1.5 min-[420px]:grid-cols-2">
-        {slotList.map((slotItem) => {
-          const isSelected = currentSelected === slotItem.slot;
-          const isAvailable = Boolean(slotItem.available);
-
-          return (
-            <button
-              key={slotItem.slot}
-              type="button"
-              disabled={!isAvailable}
-              aria-pressed={isSelected}
-              onClick={() => handleSelect(slotItem.slot)}
-              className={`flex h-9 items-center justify-between gap-2 rounded-lg border px-2.5 text-left text-xs font-medium transition ${FOCUS_RING} ${
-                !isAvailable
-                  ? "cursor-not-allowed border-line bg-gray-50 text-muted/50 opacity-60"
-                  : isSelected
-                  ? "border-brand bg-brand/5 font-semibold text-brand ring-2 ring-brand"
-                  : "cursor-pointer border-line bg-panel text-ink hover:border-brand/40 hover:bg-gray-50/50"
-              }`}
-            >
-              <div className="flex min-w-0 items-center gap-1.5">
-                <Clock className={`h-3.5 w-3.5 shrink-0 ${isSelected ? "text-brand" : "text-muted"}`} />
-                <span className="truncate">{formatSlotLabel(slotItem.slot)}</span>
+      {PERIODS.map(({ id, label, hint, Icon, match }) => {
+        const group = slotList.filter((s) => match(startHour(s.slot)));
+        if (group.length === 0) return null;
+        const open = group.filter((s) => s.available).length;
+        return (
+          <div key={id} role="group" aria-label={`${label} slots`}>
+            <div className="mb-2.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-soft text-brand">
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                </span>
+                <span className="text-sm font-semibold text-ink">{label}</span>
+                <span className="text-xs text-muted">{hint}</span>
               </div>
-
-              <span className="shrink-0 text-[11px]">
-                {!isAvailable ? (
-                  <span className="font-normal text-red-500">Unavailable</span>
-                ) : slotItem.remaining !== undefined && slotItem.remaining <= 2 ? (
-                  <span className="font-normal text-amber-600">{slotItem.remaining} left</span>
-                ) : (
-                  <span className="font-normal text-emerald-600">Available</span>
-                )}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+              <span className="text-xs font-medium text-muted">{open > 0 ? `${open} open` : "Full"}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 xl:grid-cols-3">
+              {group.map((slotItem) => {
+                const isSelected = currentSelected === slotItem.slot;
+                const isAvailable = Boolean(slotItem.available);
+                const fewLeft = isAvailable && slotItem.remaining !== undefined && slotItem.remaining <= 2;
+                return (
+                  <button
+                    key={slotItem.slot}
+                    type="button"
+                    disabled={!isAvailable}
+                    aria-pressed={isSelected}
+                    onClick={() => handleSelect(slotItem.slot)}
+                    className={clsx(
+                      "relative flex min-h-[60px] items-center justify-between gap-3 rounded-2xl border px-4 py-2.5 text-left transition-all duration-200 motion-reduce:transition-none",
+                      FOCUS_RING,
+                      !isAvailable && "cursor-not-allowed border-line bg-canvas text-muted/60",
+                      isAvailable && isSelected && "border-brand bg-brand-soft shadow-[0_12px_24px_-16px_rgba(67,56,202,.9)] ring-1 ring-brand",
+                      isAvailable && !isSelected && "cursor-pointer border-line bg-panel text-ink hover:border-brand/50 motion-safe:hover:-translate-y-px",
+                    )}
+                  >
+                    <span className="min-w-0">
+                      <span className={clsx("block truncate text-sm font-semibold", !isAvailable && "line-through decoration-muted/40", isSelected && "text-brand")}>
+                        {formatSlotLabel(slotItem.slot)}
+                      </span>
+                      <span className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium">
+                        {!isAvailable ? (
+                          <span className="text-danger/80">Fully booked</span>
+                        ) : fewLeft ? (
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true" />
+                            <span className="text-amber-600">Only {slotItem.remaining} left</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                            <span className="text-emerald-600">Available</span>
+                          </>
+                        )}
+                      </span>
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className={clsx(
+                        "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                        isSelected ? "border-brand bg-brand text-white" : "border-line text-transparent",
+                        !isAvailable && "opacity-40",
+                      )}
+                    >
+                      <Check className="h-3.5 w-3.5" strokeWidth={3.5} />
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

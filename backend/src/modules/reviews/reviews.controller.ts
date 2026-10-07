@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { sendSuccess } from '../../utils/response';
 import { ReviewsService } from './reviews.service';
 
 export class ReviewsController {
@@ -16,6 +17,16 @@ export class ReviewsController {
   listCustomerReviews = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       res.json({ success: true, data: await this.reviewsService.listCustomerReviews(res.locals.auth.sub) });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /** Public. data = { summary, reviews }, meta = { page, limit, total, totalPages }. */
+  listServiceReviews = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { summary, reviews, meta } = await this.reviewsService.listServiceReviews(req.params, req.query);
+      sendSuccess(res, { summary, reviews }, { meta: { ...meta } });
     } catch (error) {
       next(error);
     }

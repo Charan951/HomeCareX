@@ -1,4 +1,6 @@
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
+import clsx from "clsx";
 import { customerPath } from "@/routes/customerPath";
 import { ErrorState, OfflineState } from "@/components/customer";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
@@ -7,6 +9,7 @@ import { OFFERS } from "@/mocks/customerMockData"; // no offers endpoint yet —
 import DashboardSkeleton from "./sections/DashboardSkeleton";
 import GreetingSection from "./sections/GreetingSection";
 import SearchBar from "./sections/SearchBar";
+import HeroBanner from "./sections/HeroBanner";
 import ActiveBookingCard from "./sections/ActiveBookingCard";
 import QuickActions from "./sections/QuickActions";
 import UpcomingBookings from "./sections/UpcomingBookings";
@@ -17,8 +20,8 @@ import NewCustomerEmptyState from "./sections/NewCustomerEmptyState";
 
 function SectionHeader({ title, to }: { title: string; to?: string }) {
   return (
-    <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-base font-semibold text-ink">{title}</h2>
+    <div className="mb-3 flex items-center justify-between md:mb-4">
+      <h2 className="text-base font-semibold text-ink md:text-lg">{title}</h2>
       {to && (
         <Link to={to} className="text-sm font-medium text-brand hover:underline">
           View all
@@ -52,20 +55,37 @@ export default function Dashboard() {
   const { activeBookings, upcomingBookings, categories, recommendedServices, isNewCustomer } = data;
 
   return (
-    <div className="dashboard-mobile space-y-6">
-      <GreetingSection firstName={data.greeting.firstName} isNewCustomer={isNewCustomer}>
+    <div className="dashboard-mobile mx-auto w-full min-w-0 max-w-[1440px] space-y-6 md:space-y-5">
+      <GreetingSection firstName={data.greeting.firstName} isNewCustomer={isNewCustomer} />
+
+      <HeroBanner categories={categories}>
         <SearchBar services={recommendedServices} />
-      </GreetingSection>
+        {recommendedServices.length > 0 && (
+          <div className="hero-rise mt-4 hidden flex-wrap justify-center gap-2.5 md:flex" style={{ "--i": 4 } as CSSProperties} aria-label="Popular searches">
+            {recommendedServices.slice(0, 4).map((s) => (
+              <Link
+                key={s.id}
+                to={`${customerPath("/services")}?q=${encodeURIComponent(s.name)}`}
+                className="rounded-full border border-[#D9DCF7] bg-white px-4 py-1.5 text-[13px] font-medium text-ink transition-all hover:-translate-y-0.5 hover:border-brand hover:text-brand hover:shadow-[0_12px_18px_-12px_rgba(67,56,202,.55)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+              >
+                {s.name}
+              </Link>
+            ))}
+          </div>
+        )}
+      </HeroBanner>
 
       {activeBookings.length > 0 && <ActiveBookingCard bookings={activeBookings} />}
 
-      <QuickActions hasActiveBooking={activeBookings.length > 0} hasBookingHistory={!isNewCustomer} />
+      <div className="md:hidden">
+        <QuickActions hasActiveBooking={activeBookings.length > 0} hasBookingHistory={!isNewCustomer} />
+      </div>
 
       {isNewCustomer ? (
         <NewCustomerEmptyState categories={categories} />
       ) : (
         upcomingBookings.length > 0 && (
-          <section className="rounded-lg border border-line bg-panel p-4 shadow-sm sm:p-5">
+          <section className="rounded-[20px] border border-white bg-white p-4 shadow-[0_9px_26px_rgba(30,27,46,.07)] sm:p-5">
             <SectionHeader title="Upcoming" to={customerPath("/bookings")} />
             <UpcomingBookings bookings={upcomingBookings} />
           </section>
@@ -75,9 +95,12 @@ export default function Dashboard() {
       {categories.length > 0 && (
         <section className="dashboard-section dashboard-section--categories">
           <SectionHeader title="Browse categories" to={customerPath("/categories")} />
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {categories.slice(0, 4).map((c) => (
-              <CategoryCard key={c.id} category={c} />
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-6">
+            {categories.slice(0, 6).map((c, i) => (
+              // Phones keep the compact 4; wider screens show all 6.
+              <div key={c.id} className={clsx(i >= 4 && "hidden md:block")}>
+                <CategoryCard category={c} index={i} />
+              </div>
             ))}
           </div>
         </section>

@@ -7,6 +7,7 @@ import AdminDashboardPage from '@/pages/admin/Dashboard';
 import AdminLeadsPage from '@/pages/admin/Leads';
 import AdminBookingsPage from '@/pages/admin/Bookings';
 import AdminCustomersPage from '@/pages/admin/Customers';
+import AdminCustomerDetailsPage from '@/pages/admin/CustomerDetails';
 import AdminPartnersPage from '@/pages/admin/Partners';
 import AdminManagePartnersPage from '@/pages/admin/ManagePartners';
 import AdminSupportPage from '@/pages/admin/Support';
@@ -37,13 +38,14 @@ interface AdminRoute {
   permission?: string;
 }
 
-// 21 routes. To swap a placeholder for a real page, change only its `element` import.
+// 22 routes. To swap a placeholder for a real page, change only its `element` import.
 export const adminRoutes: AdminRoute[] = [
   { path: '', element: <AdminDashboardPage /> },
   // Operations
   { path: 'leads', element: <AdminLeadsPage /> },
   { path: 'bookings', element: <AdminBookingsPage /> },
   { path: 'customers', element: <AdminCustomersPage /> },
+  { path: 'customers/:id', element: <AdminCustomerDetailsPage /> },
   { path: 'partners', element: <AdminPartnersPage /> },
   { path: 'manage-partners', element: <AdminManagePartnersPage /> },
   { path: 'partners/:id', element: <AdminPartnerDetailsPage /> },

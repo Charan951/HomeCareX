@@ -8,6 +8,8 @@ import { seedDefaultSettings } from './modules/settings/settings.service';
 import { seedDefaultDesignations } from './modules/designations/designations.service';
 import { seedDefaultCategories } from './modules/categories/categories.service';
 import { seedDefaultServices } from './modules/services/services.service';
+import { upsertCatalogSeed } from './modules/catalog/catalog.seed';
+import { ServiceModel } from './models/Service';
 
 const server = http.createServer(app);
 initSockets(server);
@@ -21,8 +23,11 @@ const connectDB = async () => {
     const added = await seedDefaultSettings();
     if (added) console.log(`Seeded ${added} default setting(s)`);
     await seedDefaultDesignations();
+    // The full launch catalog only goes into a fresh database, so services an admin deletes stay deleted.
+    const freshCatalog = (await ServiceModel.estimatedDocumentCount()) === 0;
     await seedDefaultCategories(); // categories before services (services reference them)
     await seedDefaultServices();
+    if (freshCatalog) await upsertCatalogSeed(); // 30 launch services with ratings/availability
   } catch (error) {
     console.error('Error connecting to MongoDB:', error);
     process.exit(1);

@@ -9,6 +9,7 @@ export type BookingStatus =
   | "rated"
   | "cancelled_by_customer"
   | "cancelled_by_partner"
+  | "cancelled_by_admin"
   | "no_show"
   | "disputed";
 
@@ -114,8 +115,15 @@ export interface BookingFilters {
   paymentStatus: PaymentStatus | "";
 }
 
+/**
+ * Request payload used when assigning/reassigning
+ * a partner to a booking.
+ *
+ * Reason is required for admin audit purposes.
+ */
 export interface AssignPartnerRequest {
   partnerId: string;
+  reason: string;
 }
 
 export interface StatusOverrideRequest {
