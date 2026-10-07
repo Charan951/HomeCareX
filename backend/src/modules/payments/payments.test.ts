@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { signWebhookBody, toPaise, verifyCheckoutSignature, verifyWebhookSignature } from './payments.crypto';
+import { isCodOnlinePayableStatus } from './payments.constants';
 import { orderBodySchema, verifyBodySchema } from './payments.validation';
 import { processWebhook, type WebhookStore } from './payments.service';
 import type { RazorpayPaymentEntity } from './payments.types';
@@ -143,4 +144,13 @@ test('validation: client can never send an amount; ids and fields are required',
   const v = { bookingId: id, razorpay_order_id: 'o', razorpay_payment_id: 'p', razorpay_signature: 's' };
   assert.equal(verifyBodySchema.safeParse(v).success, true);
   assert.equal(verifyBodySchema.safeParse({ ...v, razorpay_signature: undefined }).success, false);
+});
+
+test('cash-on-service bookings can pay online until the job is finished or cancelled', () => {
+  for (const s of ['confirmed', 'searching_for_partner', 'assigned', 'en_route', 'arrived', 'in_progress']) {
+    assert.equal(isCodOnlinePayableStatus(s), true, s);
+  }
+  for (const s of ['pending_payment', 'completed', 'rated', 'cancelled_by_customer', 'cancelled_by_partner', 'no_show', 'disputed']) {
+    assert.equal(isCodOnlinePayableStatus(s), false, s);
+  }
 });

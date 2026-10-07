@@ -1,7 +1,7 @@
 import { BookingModel, type IBooking } from '../../models/Booking';
 import { PaymentModel, type IPayment } from '../../models/Payment';
 import { BOOKING_STATUS } from '../bookings/bookings.constants';
-import { codOrderId } from './payments.constants';
+import { codOrderId, isCodOnlinePayableStatus } from './payments.constants';
 
 export type SettleOutcome =
   | { kind: 'confirmed'; booking: IBooking }
@@ -104,7 +104,7 @@ export async function settleCapturedPayment(input: SettleInput): Promise<SettleO
   }
 
   // Customer chose Cash on Service, but an earlier online order still got paid: upgrade to PAID.
-  if (fresh.status === BOOKING_STATUS.CONFIRMED && fresh.paymentStatus === 'PENDING') {
+  if (isCodOnlinePayableStatus(fresh.status) && fresh.paymentStatus === 'PENDING') {
     const cod = await PaymentModel.findOne({ bookingId: fresh._id, razorpayOrderId: codOrderId(String(fresh._id)), status: 'PENDING' });
     if (cod) {
       const upgraded = await BookingModel.findOneAndUpdate(

@@ -134,6 +134,14 @@ export interface BookingView {
 
   holdExpiresAt?: string;
 
+  /** Razorpay refs for the customer checkout. status is 'FAILED' after a failed online attempt (until retried or paid). */
+  paymentDetails?: {
+    orderId?: string;
+    paymentId?: string;
+    status?: string;
+    paidAt?: string;
+  };
+
   createdAt: string;
   updatedAt: string;
 }

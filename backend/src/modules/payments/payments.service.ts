@@ -8,7 +8,7 @@ import { getRazorpay } from '../../integrations/razorpay';
 import { AppError } from '../../utils/AppError';
 import { BOOKING_HOLD_MS, BOOKING_STATUS } from '../bookings/bookings.constants';
 import { withSlotLock } from '../bookings/bookings.lock';
-import { PAYMENT_MAX_ATTEMPTS, WEBHOOK_EVENTS, codOrderId } from './payments.constants';
+import { PAYMENT_MAX_ATTEMPTS, WEBHOOK_EVENTS, codOrderId, isCodOnlinePayableStatus } from './payments.constants';
 import { toPaise, verifyCheckoutSignature, verifyWebhookSignature } from './payments.crypto';
 import { settleCapturedPayment, type SettleOutcome } from './payments.settle';
 import type { ListQuery } from './payments.validation';
@@ -42,6 +42,36 @@ async function loadOwnedBooking(bookingId: string, customerId: string): Promise<
   return booking;
 }
 
+/**
+ * Remember on the booking that the last online payment attempt failed, so My Bookings can say "Payment failed".
+ * Only while payment is still PENDING: a paid booking is never flagged. A later successful payment overwrites this
+ * with 'PAID' (see settleCapturedPayment) and a new order resets it to 'PENDING'.
+ */
+async function markPaymentFailed(bookingId: string): Promise<void> {
+  await BookingModel.updateOne({ _id: bookingId, paymentStatus: 'PENDING' }, { $set: { 'paymentDetails.status': 'FAILED' } });
+}
+
+function validTotal(booking: IBooking): number {
+  const total = Number(booking.priceSnapshot?.total);
+  if (!Number.isFinite(total) || total <= 0) throw new AppError(422, 'INVALID_AMOUNT', 'Invalid booking amount');
+  return total;
+}
+
+/**
+ * Like assertPayable, but also lets a Cash-on-Service booking (already CONFIRMED or later, payment still PENDING)
+ * pay online from My Bookings. The amount still comes from the stored price snapshot.
+ */
+async function assertOrderable(booking: IBooking): Promise<number> {
+  if (booking.paymentStatus === 'PAID') throw new AppError(409, 'ALREADY_PAID', 'This booking is already paid');
+  if (booking.status === BOOKING_STATUS.PENDING_PAYMENT) return assertPayable(booking);
+  const codPending =
+    booking.paymentStatus === 'PENDING' &&
+    isCodOnlinePayableStatus(booking.status) &&
+    (await PaymentModel.exists({ bookingId: booking._id, razorpayOrderId: codOrderId(String(booking._id)), status: 'PENDING' }));
+  if (!codPending) throw new AppError(409, 'BOOKING_NOT_PAYABLE', 'This booking can no longer be paid. Please start a new booking.');
+  return validTotal(booking);
+}
+
 function assertPayable(booking: IBooking): number {
   if (booking.paymentStatus === 'PAID') throw new AppError(409, 'ALREADY_PAID', 'This booking is already paid');
   if (booking.status !== BOOKING_STATUS.PENDING_PAYMENT) {
@@ -50,9 +80,7 @@ function assertPayable(booking: IBooking): number {
   if (booking.holdExpiresAt && booking.holdExpiresAt.getTime() <= Date.now()) {
     throw new AppError(409, 'HOLD_EXPIRED', 'Your slot reservation expired. Please try again.');
   }
-  const total = Number(booking.priceSnapshot?.total);
-  if (!Number.isFinite(total) || total <= 0) throw new AppError(422, 'INVALID_AMOUNT', 'Invalid booking amount');
-  return total;
+  return validTotal(booking);
 }
 
 export const paymentsService = {
@@ -61,7 +89,8 @@ export const paymentsService = {
     // Serialise per booking so a double click can never create two Razorpay orders.
     return withSlotLock(`payment-order:${bookingId}`, async () => {
       const booking = await loadOwnedBooking(bookingId, customerId);
-      const totalInr = assertPayable(booking);
+      const totalInr = await assertOrderable(booking);
+      await BookingModel.updateOne({ _id: booking._id, 'paymentDetails.status': 'FAILED' }, { $set: { 'paymentDetails.status': 'PENDING' } });
 
       const history = await PaymentModel.find({ bookingId: booking._id, razorpayOrderId: { $not: /^cod_/ } }).select('attempts').lean();
       const used = history.reduce((sum, p) => sum + (p.attempts ?? 0), 0);
@@ -180,6 +209,7 @@ export const paymentsService = {
       { bookingId: body.bookingId, status: 'PENDING', ...(body.orderId ? { razorpayOrderId: body.orderId } : {}) },
       { $set: { errorReason: `${body.kind}: ${body.reason ?? 'no reason'}` } },
     );
+    if (body.kind === 'FAILED') await markPaymentFailed(body.bookingId);
   },
 
   /** POST /payments/cod: booking CONFIRMED, payment stays PENDING until the partner collects cash. */
@@ -237,7 +267,12 @@ export const paymentsService = {
 
   /** GET /payments: the signed-in customer's transactions only. */
   async list(customerId: string, query: ListQuery): Promise<PaymentListResult> {
-    const filter = { customerId: new Types.ObjectId(customerId), ...(query.status ? { status: query.status } : {}) };
+    const filter = {
+      customerId: new Types.ObjectId(customerId),
+      // A Cash-on-Service placeholder replaced by an online payment is bookkeeping, not a failed payment.
+      errorReason: { $ne: 'Superseded by online payment' },
+      ...(query.status ? { status: query.status } : {}),
+    };
     const [total, rows] = await Promise.all([
       PaymentModel.countDocuments(filter),
       PaymentModel.find(filter).sort({ createdAt: -1 }).skip((query.page - 1) * query.limit).limit(query.limit).lean(),
@@ -321,10 +356,11 @@ export const mongoWebhookStore: WebhookStore = {
   async noteFailed(entity) {
     if (!entity.order_id) return;
     // The order stays payable (customer can retry inside Razorpay), so we only record why it failed.
-    await PaymentModel.updateOne(
+    const payment = await PaymentModel.findOneAndUpdate(
       { razorpayOrderId: entity.order_id, status: 'PENDING' },
       { $set: { errorReason: `FAILED: ${(entity.error_description ?? 'payment failed').slice(0, 200)}` } },
     );
+    if (payment) await markPaymentFailed(String(payment.bookingId));
   },
 };
 

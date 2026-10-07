@@ -1,165 +1,336 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { Plus } from "lucide-react";
+import clsx from "clsx";
 import { bookingApi, type NormalizedApiError } from "@/services/bookingApi";
 import { EmptyState, ErrorState, LoadingState } from "@/components/customer";
 import { FOCUS_RING } from "@/components/customer/focusRing";
+import { NO_SCROLLBAR } from "@/components/customer/noScrollbar";
+import { PaymentResult } from "@/components/customer/payments";
+import { canPayOnline, usePayBooking } from "@/features/payments";
+import { customerPath } from "@/routes/customerPath";
 import type { BookingView } from "@/types/booking";
+import {
+  BTN_OUTLINE,
+  BTN_PRIMARY,
+  HistoryList,
+  HistoryRow,
+  LiveCard,
+  SectionHeading,
+  UpcomingCard,
+} from "./BookingCards";
+import {
+  cancelNote,
+  getBookingCode,
+  getBookingId,
+  getServiceName,
+  getTotal,
+  phaseOf,
+  rupees,
+  whenKey,
+  type BookingListItem,
+  type Phase,
+} from "./bookingModel";
 
-type TabType = "upcoming" | "live" | "completed" | "cancelled";
+type TabId = "all" | Phase;
 
-const TABS: { id: TabType; label: string }[] = [
-  { id: "upcoming", label: "Upcoming" },
+const TABS: { id: TabId; label: string }[] = [
+  { id: "all", label: "All" },
   { id: "live", label: "Live" },
+  { id: "upcoming", label: "Upcoming" },
   { id: "completed", label: "Completed" },
   { id: "cancelled", label: "Cancelled" },
 ];
 
-export default function MyBookingsPage() {
-  const [activeTab, setActiveTab] = useState<TabType>("live");
+/** Section order, used by the "All" tab; a single tab just shows its own section. */
+const SECTIONS: { phase: Phase; title: string }[] = [
+  { phase: "live", title: "Happening now" },
+  { phase: "upcoming", title: "Coming up" },
+  { phase: "completed", title: "Completed" },
+  { phase: "cancelled", title: "Cancelled" },
+];
 
-  // Fetch real customer bookings from MongoDB via API
-  const {
-    data: bookings = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery<BookingView[], NormalizedApiError>({
+const EMPTY_COPY: Record<TabId, { title: string; description: string }> = {
+  all: {
+    title: "No bookings yet",
+    description:
+      "Book a service and you can follow it here from confirmation to completion.",
+  },
+  live: {
+    title: "Nothing happening right now",
+    description:
+      "When a partner is on the way or working, you can follow it live here.",
+  },
+  upcoming: {
+    title: "No upcoming bookings",
+    description: "Services you've scheduled will show up here.",
+  },
+  completed: {
+    title: "No completed bookings",
+    description: "Finished services will show up here.",
+  },
+  cancelled: {
+    title: "No cancelled bookings",
+    description: "Cancelled bookings and their refunds will show up here.",
+  },
+};
+
+type Grouped = Record<Phase, BookingListItem[]>;
+
+export default function MyBookingsPage() {
+  const [selectedTab, setSelectedTab] = useState<TabId | null>(null);
+  const { state: payState, pay, reset, busy: payBusy } = usePayBooking();
+
+  const { data, isLoading, isError, error, refetch } = useQuery<
+    BookingView[],
+    NormalizedApiError
+  >({
     queryKey: ["customer-bookings"],
     queryFn: () => bookingApi.getBookings(),
   });
 
-  // Filter real MongoDB bookings by tab status
-  const filteredBookings = useMemo(() => {
-    return bookings.filter((b: any) => {
-      const status = (b.status || "").toUpperCase();
+  // Sort into sections once per fetch. `now` is shared so every card agrees on what has expired.
+  const { grouped, now } = useMemo(() => {
+    const nowMs = Date.now();
+    const groups: Grouped = {
+      live: [],
+      upcoming: [],
+      completed: [],
+      cancelled: [],
+    };
+    for (const b of (data ?? []) as unknown as BookingListItem[]) {
+      const phase = phaseOf(b, nowMs);
+      if (phase) groups[phase].push(b);
+    }
+    // Soonest first for what's still to come; history keeps the API's newest-first order.
+    groups.live.sort((a, b) => whenKey(a).localeCompare(whenKey(b)));
+    groups.upcoming.sort((a, b) => whenKey(a).localeCompare(whenKey(b)));
+    return { grouped: groups, now: nowMs };
+  }, [data]);
 
-      switch (activeTab) {
-        case "live":
-          // Live / in-progress statuses
-          return (
-            status === "IN_PROGRESS" ||
-            status === "IN-PROGRESS" ||
-            status === "STARTED" ||
-            status === "EN_ROUTE" ||
-            status === "ARRIVED"
-          );
-        case "upcoming":
-          // Confirmed, pending, or scheduled
-          return (
-            status === "CONFIRMED" ||
-            status === "PENDING" ||
-            status === "PENDING_PAYMENT" ||
-            status === "CREATED" ||
-            status === "SEARCHING_FOR_PARTNER" ||
-            status === "ASSIGNED"
-          );
-        case "completed":
-          return status === "COMPLETED" || status === "RATED";
-        case "cancelled":
-          return status.startsWith("CANCEL");
-        default:
-          return false;
-      }
-    });
-  }, [bookings, activeTab]);
-
-  // Helper to format service name from snapshot or fallback
-  const getServiceName = (b: any): string => {
-    const baseLine = b.priceSnapshot?.lines?.find((l: any) => l.kind === "BASE");
-    return baseLine?.name || b.serviceName || "Home Service";
+  const counts: Record<TabId, number> = {
+    all:
+      grouped.live.length +
+      grouped.upcoming.length +
+      grouped.completed.length +
+      grouped.cancelled.length,
+    live: grouped.live.length,
+    upcoming: grouped.upcoming.length,
+    completed: grouped.completed.length,
+    cancelled: grouped.cancelled.length,
   };
 
-  // Helper to display short booking reference code (e.g. BK-10231)
-  const getBookingCode = (b: any): string => {
-    if (b.bookingNumber) return b.bookingNumber;
-    const rawId = String(b._id || b.id || "");
-    return `BK-${rawId.slice(-5).toUpperCase()}`;
-  };
+  // Until the customer picks a tab: lead with what's live, otherwise show everything.
+  const activeTab: TabId = selectedTab ?? (counts.live > 0 ? "live" : "all");
+  const ready = !isLoading && !isError;
+  const visible = SECTIONS.filter(
+    (s) =>
+      (activeTab === "all" || activeTab === s.phase) &&
+      grouped[s.phase].length > 0,
+  );
 
-  // Helper to display human-readable date & time
-  const formatSlotTime = (dateStr: string, slotStr: string): string => {
-    if (!dateStr) return slotStr || "Scheduled";
-    const today = new Date().toISOString().slice(0, 10);
-    const prefix = dateStr === today ? "Today" : dateStr;
-    return `${prefix}, ${slotStr}`;
-  };
+  /** Pay-now strip and the payment result for one booking. Kept here so payment state lives in one place. */
+  const renderFooter = (b: BookingListItem): ReactNode => {
+    const id = getBookingId(b);
+    const payable = canPayOnline(b, now);
+    const result =
+      payState.bookingId === id && payState.phase !== "idle" ? payState : null;
+    if (!payable && !result) return null;
 
-  // Badge appearance by status
-  const getStatusBadge = (status: string) => {
-    const s = (status || "").toUpperCase();
-    if (s.includes("PROGRESS") || s === "STARTED" || s === "EN_ROUTE" || s === "ARRIVED") {
-      return (
-        <span className="rounded-full bg-orange-100 px-3 py-0.5 text-xs font-semibold text-orange-700">
-          In Progress
-        </span>
-      );
-    }
-    if (s === "CONFIRMED" || s === "CREATED" || s === "SEARCHING_FOR_PARTNER" || s === "ASSIGNED") {
-      return (
-        <span className="rounded-full bg-blue-100 px-3 py-0.5 text-xs font-semibold text-blue-700">
-          Confirmed
-        </span>
-      );
-    }
-    if (s === "COMPLETED" || s === "RATED") {
-      return (
-        <span className="rounded-full bg-green-100 px-3 py-0.5 text-xs font-semibold text-green-700">
-          Completed
-        </span>
-      );
-    }
-    if (s.includes("CANCEL")) {
-      return (
-        <span className="rounded-full bg-red-100 px-3 py-0.5 text-xs font-semibold text-red-700">
-          Cancelled
-        </span>
-      );
-    }
+    const name = getServiceName(b);
+    const thisBusy =
+      result?.phase === "pending" || result?.phase === "processing";
+    const retry = result?.phase === "failed" || result?.phase === "cancelled";
+    const awaitingPayment = b.status === "pending_payment";
+
     return (
-      <span className="rounded-full bg-gray-100 px-3 py-0.5 text-xs font-semibold text-gray-700">
-        {status}
-      </span>
+      <>
+        {payable && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5">
+            <p className="text-sm text-muted">
+              {awaitingPayment ? "Payment pending" : "Cash on service"} ·{" "}
+              <span className="font-semibold text-ink">
+                {rupees(getTotal(b))}
+              </span>{" "}
+              due
+            </p>
+            <button
+              type="button"
+              onClick={() => void pay(id)}
+              disabled={payBusy}
+              className={clsx(
+                "inline-flex min-h-[44px] items-center justify-center rounded-xl bg-brand px-5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60",
+                FOCUS_RING,
+              )}
+            >
+              {thisBusy ? "Please wait…" : retry ? "Try again" : "Pay now"}
+              <span className="sr-only">
+                {" "}
+                for {name}, {getBookingCode(b)}
+              </span>
+            </button>
+          </div>
+        )}
+        {result && result.phase !== "idle" && (
+          <div className="px-4 pb-4 pt-1 sm:px-5">
+            <PaymentResult
+              phase={result.phase}
+              message={result.message}
+              actions={
+                !thisBusy && (
+                  <button
+                    type="button"
+                    onClick={reset}
+                    className={clsx(
+                      "min-h-[44px] rounded border border-line bg-white px-3 text-sm font-medium text-ink hover:bg-canvas",
+                      FOCUS_RING,
+                    )}
+                  >
+                    Dismiss
+                  </button>
+                )
+              }
+            />
+          </div>
+        )}
+      </>
+    );
+  };
+
+  const renderSection = (phase: Phase, title: string) => {
+    const items = grouped[phase];
+    const headingId = `bookings-${phase}`;
+    return (
+      <section key={phase} aria-labelledby={headingId} className="space-y-3">
+        <SectionHeading id={headingId} title={title} count={items.length} />
+
+        {phase === "live" && (
+          <div className="space-y-4">
+            {items.map((b, i) => (
+              <LiveCard
+                key={getBookingId(b)}
+                booking={b}
+                now={now}
+                index={i}
+                footer={renderFooter(b)}
+              />
+            ))}
+          </div>
+        )}
+
+        {phase === "upcoming" && (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {items.map((b, i) => (
+              <UpcomingCard
+                key={getBookingId(b)}
+                booking={b}
+                now={now}
+                index={i}
+                footer={renderFooter(b)}
+              />
+            ))}
+          </div>
+        )}
+
+        {(phase === "completed" || phase === "cancelled") && (
+          <HistoryList labelledBy={headingId}>
+            {items.map((b, i) => (
+              <HistoryRow
+                key={getBookingId(b)}
+                booking={b}
+                now={now}
+                index={i}
+                footer={renderFooter(b)}
+                actionLabel={phase === "completed" ? "Book again" : "Rebook"}
+                note={phase === "cancelled" ? cancelNote(b, now) : undefined}
+              />
+            ))}
+          </HistoryList>
+        )}
+      </section>
     );
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+    <div className="mx-auto w-full max-w-6xl">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Bookings</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Track, manage, and revisit your service bookings.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
+            Bookings
+          </h1>
+          <p className="mt-1 text-sm text-muted">
+            Track what&apos;s happening now, what&apos;s next and what&apos;s
+            done.
+          </p>
+        </div>
+        <Link to={customerPath("/services")} className={BTN_PRIMARY}>
+          <Plus
+            className="mr-1.5 h-4 w-4"
+            strokeWidth={2.5}
+            aria-hidden="true"
+          />
+          Book a service
+        </Link>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="mt-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+      {/* Tabs */}
+      <nav
+        aria-label="Booking filters"
+        className={clsx(
+          "mt-6 overflow-x-auto border-b border-line",
+          NO_SCROLLBAR,
+        )}
+      >
+        <ul className="flex min-w-max gap-6 sm:gap-8">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`whitespace-nowrap border-b-2 pb-3 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "border-indigo-600 text-indigo-600"
-                    : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                } ${FOCUS_RING}`}
-              >
-                {tab.label}
-              </button>
+              <li key={tab.id}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTab(tab.id)}
+                  aria-current={isActive ? "true" : undefined}
+                  className={clsx(
+                    "-mb-px flex items-center gap-2 whitespace-nowrap border-b-2 px-0.5 pb-3 text-sm font-medium transition-colors",
+                    isActive
+                      ? "border-brand text-brand"
+                      : "border-transparent text-muted hover:text-ink",
+                    FOCUS_RING,
+                  )}
+                >
+                  {tab.id === "live" && (
+                    <span className="relative flex h-2 w-2" aria-hidden="true">
+                      {counts.live > 0 && (
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 motion-safe:animate-ping" />
+                      )}
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+                    </span>
+                  )}
+                  {tab.label}
+                  {ready && (
+                    <span
+                      className={clsx(
+                        "rounded-full px-2 py-0.5 text-xs font-medium",
+                        isActive
+                          ? "bg-brand-soft text-brand"
+                          : "bg-canvas text-muted",
+                      )}
+                    >
+                      {counts[tab.id]}
+                    </span>
+                  )}
+                </button>
+              </li>
             );
           })}
-        </nav>
-      </div>
+        </ul>
+      </nav>
 
-      {/* Content Section */}
-      <div className="mt-6">
-        {isLoading && <LoadingState label="Loading your bookings from database…" />}
+      {/* Content */}
+      <div className="mt-6 space-y-8">
+        {isLoading && <LoadingState label="Loading your bookings…" />}
 
         {isError && (
           <ErrorState
@@ -169,59 +340,21 @@ export default function MyBookingsPage() {
           />
         )}
 
-        {!isLoading && !isError && filteredBookings.length === 0 && (
+        {ready && visible.length === 0 && (
           <EmptyState
-            title={`No ${activeTab} bookings`}
-            description={`You don't have any ${activeTab} service bookings right now.`}
+            title={EMPTY_COPY[activeTab].title}
+            description={EMPTY_COPY[activeTab].description}
+            action={
+              activeTab === "all" || activeTab === "upcoming" ? (
+                <Link to={customerPath("/services")} className={BTN_OUTLINE}>
+                  Book a service
+                </Link>
+              ) : undefined
+            }
           />
         )}
 
-        {!isLoading && !isError && filteredBookings.length > 0 && (
-          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
-            {filteredBookings.map((booking: any) => {
-              const serviceName = getServiceName(booking);
-              const bookingCode = getBookingCode(booking);
-              const totalAmount = booking.priceSnapshot?.total ?? 0;
-              const slotDisplay = formatSlotTime(booking.date, booking.slot);
-              const partner = booking.partnerId || booking.partner;
-
-              return (
-                <Link
-                  key={booking._id || booking.id}
-                  to={`/customer/bookings/${booking._id || booking.id}`}
-                  className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-indigo-300 hover:shadow-md"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{serviceName}</h3>
-                      <p className="mt-0.5 text-xs text-gray-500">
-                        {booking.categoryName || "Home Service"} · {bookingCode}
-                      </p>
-                    </div>
-                    <div>{getStatusBadge(booking.status)}</div>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{slotDisplay}</span>
-                    <span className="font-semibold text-gray-900">₹{totalAmount}</span>
-                  </div>
-
-                  {partner && (
-                    <div className="mt-3 border-t border-gray-100 pt-3 text-xs text-gray-500">
-                      Partner:{" "}
-                      <span className="font-medium text-gray-800">
-                        {partner.name || "Assigned Partner"}
-                      </span>
-                      {partner.rating && (
-                        <span className="ml-1 text-amber-500">★ {partner.rating}</span>
-                      )}
-                    </div>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        {ready && visible.map((s) => renderSection(s.phase, s.title))}
       </div>
     </div>
   );
