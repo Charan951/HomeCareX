@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import { fileURLToPath, URL } from 'node:url';
+import path from 'node:path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -74,17 +74,10 @@ export default defineConfig({
       },
     }),
   ],
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
-import path from "path";
-
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
 
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "./src"),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
 
@@ -94,8 +87,8 @@ export default defineConfig({
 
     // Same-origin API calls in dev, so the refresh cookie works without CORS.
     proxy: {
-      "/api": {
-        target: "http://localhost:5000",
+      '/api': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
     },
@@ -106,12 +99,11 @@ export default defineConfig({
       '/api': { target: 'http://localhost:5000', changeOrigin: true },
     },
   },
-});
 
   // Vitest configuration
   test: {
     globals: true,
-    environment: "jsdom",
-    setupFiles: "./src/test/setup.ts",
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
   },
 });

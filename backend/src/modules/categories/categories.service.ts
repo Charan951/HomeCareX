@@ -3,7 +3,7 @@ import { ServiceModel } from '../../models/Service';
 import { HttpError } from '../auth/auth.types';
 import { slugify, uniqueSlug } from '../../utils/slug';
 import { SEED_CATEGORIES } from './categories.constants';
-import { categoryCreateSchema, categoryUpdateSchema } from './categories.validation';
+import { categoryCreateSchema, categoryReorderSchema, categoryUpdateSchema } from './categories.validation';
 import type { CategoryDto } from './categories.types';
 
 const CI = { collation: { locale: 'en', strength: 2 } } as const;
@@ -63,6 +63,17 @@ export const categoriesService = {
     existing.set(data); // slug stays stable so existing links keep working
     await existing.save();
     return toDto(existing, await ServiceModel.countDocuments({ categoryId: existing._id }));
+  },
+
+  /** Saves a whole new order in one atomic-ish bulk write, so the public site never sees a half-applied order. */
+  async reorder(input: unknown): Promise<CategoryDto[]> {
+    const { items } = categoryReorderSchema.parse(input);
+    const found = await CategoryModel.countDocuments({ _id: { $in: items.map((i) => i.id) } });
+    if (found !== items.length) throw new HttpError(404, 'One or more categories were not found', 'NOT_FOUND');
+    await CategoryModel.bulkWrite(
+      items.map((i) => ({ updateOne: { filter: { _id: i.id }, update: { $set: { sortOrder: i.sortOrder } } } })),
+    );
+    return this.list();
   },
 
   /** Blocked while services still belong to it; move or delete them first (or just deactivate the category). */
