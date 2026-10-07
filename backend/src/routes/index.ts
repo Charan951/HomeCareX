@@ -55,9 +55,15 @@ import {
   couponCustomerRoutes,
 } from '../modules/coupons/coupons.routes';
 
+import {
+  marketingRoutes,
+  publicMarketingRoutes,
+} from '../modules/marketing/marketing.routes';
+
 export const rootRouter = Router();
 
-// Routes are registered under /api/v1. Add new modules here; don't replace the list.
+// Routes are registered under /api/v1.
+// Add new modules here; don't replace the list.
 
 rootRouter.use('/auth', authRoutes);
 
@@ -187,6 +193,7 @@ rootRouter.use(
 // POST   /api/v1/admin/coupons
 // PATCH  /api/v1/admin/coupons/:id
 // DELETE /api/v1/admin/coupons/:id
+
 rootRouter.use(
   '/admin/coupons',
   couponsRoutes,
@@ -195,9 +202,35 @@ rootRouter.use(
 // Customer coupon APIs
 // POST /api/v1/coupons/validate
 // POST /api/v1/coupons/available
+
 rootRouter.use(
   '/coupons',
   couponCustomerRoutes,
+);
+
+// =========================================================
+// Marketing & Banners
+// =========================================================
+
+// Admin banner CRUD
+// GET    /api/v1/admin/banners
+// GET    /api/v1/admin/banners/:id
+// POST   /api/v1/admin/banners
+// PATCH  /api/v1/admin/banners/:id
+// DELETE /api/v1/admin/banners/:id
+
+rootRouter.use(
+  '/admin/banners',
+  marketingRoutes,
+);
+
+// Public banners
+// GET /api/v1/banners
+// GET /api/v1/banners?placement=HOME
+
+rootRouter.use(
+  '/banners',
+  publicMarketingRoutes,
 );
 
 export default rootRouter;
