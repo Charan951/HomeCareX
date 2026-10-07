@@ -55,7 +55,7 @@ export default function Dashboard() {
   const { activeBookings, upcomingBookings, categories, recommendedServices, isNewCustomer } = data;
 
   return (
-    <div className="dashboard-mobile mx-auto w-full min-w-0 max-w-[1440px] space-y-6 md:space-y-8">
+    <div className="dashboard-mobile mx-auto w-full min-w-0 max-w-[1440px] space-y-6 md:space-y-5">
       <GreetingSection firstName={data.greeting.firstName} isNewCustomer={isNewCustomer} />
 
       <HeroBanner categories={categories}>

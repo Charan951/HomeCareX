@@ -9,6 +9,7 @@ import {
   Sidebar,
   TopBar,
 } from "@/components/customer";
+import FirstAddressGate from "@/components/customer/FirstAddressGate";
 import { useHiddenPageScrollbar } from "@/hooks/useHiddenPageScrollbar";
 import { useSidebarOpen } from "@/hooks/useSidebarOpen";
 import { customerPath } from "@/routes/customerPath";
@@ -39,6 +40,8 @@ export default function CustomerLayout() {
       >
         Skip to content
       </a>
+
+      <FirstAddressGate />
 
       <Sidebar open={sidebarOpen} onClose={toggleSidebar} />
 

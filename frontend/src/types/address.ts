@@ -24,6 +24,8 @@ export interface CreateAddressRequest {
   city: string;
   state: string;
   pincode: string;
+  /** Coordinates picked on the map. Optional: manual entry still works. */
+  location?: { lat: number; lng: number };
   isDefault?: boolean;
 }
 

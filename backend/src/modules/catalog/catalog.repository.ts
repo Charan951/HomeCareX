@@ -31,10 +31,15 @@ export interface ServiceRow {
   ratingCount?: number;
   availability?: ServiceAvailability;
   addOns?: { _id: Types.ObjectId; name: string; price: number }[];
+  media?: { url: string; alt?: string }[];
+  inclusions?: string[];
+  exclusions?: string[];
+  faqs?: { _id: Types.ObjectId; question: string; answer: string }[];
 }
 
 const CATEGORY_FIELDS = 'name slug description icon sortOrder';
 const LIST_FIELDS = 'slug name description icon categoryId basePrice durationMinutes ratingAvg ratingCount availability';
+const DETAIL_FIELDS = `${LIST_FIELDS} addOns media inclusions exclusions faqs`;
 
 /** Only layer that talks to Mongo. Tests swap these methods for in-memory versions. */
 export const catalogRepository = {
@@ -69,6 +74,6 @@ export const catalogRepository = {
 
   findService(idOrSlug: string): Promise<ServiceRow | null> {
     const where = Types.ObjectId.isValid(idOrSlug) ? { _id: idOrSlug } : { slug: idOrSlug };
-    return ServiceModel.findOne({ ...where, active: { $ne: false } }, `${LIST_FIELDS} addOns`).lean<ServiceRow>().exec();
+    return ServiceModel.findOne({ ...where, active: { $ne: false } }, DETAIL_FIELDS).lean<ServiceRow>().exec();
   },
 };

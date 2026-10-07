@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { ERROR_CODES } from '../../constants/errorCodes';
 import { HttpError } from '../auth/auth.types';
+import { summarizeAvailability } from './catalog.availability';
 import { buildServiceQuery } from './catalog.query';
 import { catalogRepository as repo, type CategoryRow, type ServiceRow } from './catalog.repository';
 import type { PageMeta, PublicCategoryDto, PublicServiceDetailDto, PublicServiceDto } from './catalog.types';
@@ -74,9 +75,16 @@ export const catalogService = {
     const row = await repo.findService(idOrSlug);
     const cat = row && (await repo.activeCategories()).find((c) => String(c._id) === String(row.categoryId));
     if (!row || !cat) throw new HttpError(404, 'Service not found', ERROR_CODES.NOT_FOUND);
+    // Only for services that exist and are active, so 404s never touch the slot service.
+    const slotAvailability = await summarizeAvailability(String(row._id));
     return {
       ...toService(row, toCategoryLite(cat)),
+      media: (row.media ?? []).map((m) => ({ url: m.url, alt: m.alt ?? '' })),
+      inclusions: row.inclusions ?? [],
+      exclusions: row.exclusions ?? [],
       addOns: (row.addOns ?? []).map((a) => ({ id: String(a._id), name: a.name, price: a.price })),
+      faqs: (row.faqs ?? []).map((f) => ({ id: String(f._id), question: f.question, answer: f.answer })),
+      slotAvailability,
     };
   },
 };

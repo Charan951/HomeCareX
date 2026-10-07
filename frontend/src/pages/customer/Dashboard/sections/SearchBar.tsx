@@ -103,7 +103,7 @@ export default function SearchBar({ services }: { services: DashboardServiceDto[
   function goToService(service: DashboardServiceDto) {
     setOpen(false);
     setQuery("");
-    navigate(customerPath(`/book/${service.slug}`));
+    navigate(customerPath(`/services/${service.slug}`));
   }
 
   function goToResults() {

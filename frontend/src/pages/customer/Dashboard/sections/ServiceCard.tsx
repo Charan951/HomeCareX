@@ -9,7 +9,7 @@ import { formatDuration, type DashboardServiceDto } from "@/features/customer";
 import { servicePhoto } from "./dashboardImages";
 
 /**
- * Links straight into the booking flow: /customer/book/:serviceSlug.
+ * Opens the service details page: /customer/services/:slug (its Book now button starts the booking flow).
  * The top of the card is the service photo; with no photo (or a failed load) it is a tinted tile with a 3D icon.
  */
 export default function ServiceCard({ service: s, index = 0 }: { service: DashboardServiceDto; index?: number }) {
@@ -19,7 +19,7 @@ export default function ServiceCard({ service: s, index = 0 }: { service: Dashbo
 
   return (
     <Link
-      to={customerPath(`/book/${s.slug}`)}
+      to={customerPath(`/services/${s.slug}`)}
       className={clsx(
         "dashboard-service group relative w-[188px] shrink-0 overflow-hidden rounded-[20px] border border-white bg-white p-2.5 shadow-[0_9px_26px_rgba(30,27,46,.07)] md:w-auto",
         FOCUS_RING,

@@ -61,7 +61,7 @@ export function MostBooked() {
           return (
             <li key={s.id} className="relative w-[232px] shrink-0 snap-start">
               <Link
-                to={`${customerPath(`/book/${s.slug}`)}?step=1`}
+                to={customerPath(`/services/${s.slug}`)}
                 className={clsx(
                   "group block h-full rounded-[22px] border border-line bg-panel p-2 transition-shadow duration-200 hover:shadow-[0_18px_30px_-18px_rgba(67,56,202,.5)]",
                   FOCUS_RING,
