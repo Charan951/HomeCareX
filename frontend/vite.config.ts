@@ -1,15 +1,15 @@
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      injectRegister: null, // Registered explicitly at application entry point (src/main.tsx)
+      injectRegister: null,
       manifest: {
         name: 'HomeCareX',
         short_name: 'HomeCareX',
@@ -36,15 +36,10 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-        // Precache HTML, scripts, styles, fonts, and required images (like /images/home-cleaning.jpg and /logo.png)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2,jpg,jpeg}'],
-        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // 3MB limit
-        // Offline App-Shell Navigation Fallback:
-        // Serves cached index.html for SPA page navigation (/login, /register, /forgot-password)
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: '/index.html',
-        // Crucial: NEVER intercept API routes with navigateFallback
         navigateFallbackDenylist: [/^\/api/],
-        // Cache external Google Fonts stylesheets and font binaries for offline rendering
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -66,7 +61,7 @@ export default defineConfig({
               },
               expiration: {
                 maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365,
               },
             },
           },
@@ -74,44 +69,37 @@ export default defineConfig({
       },
     }),
   ],
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
-import path from "path";
-
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
 
   resolve: {
     alias: {
-      "@": path.resolve(import.meta.dirname, "./src"),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
 
   server: {
     port: 3000,
     open: true,
-
-    // Same-origin API calls in dev, so the refresh cookie works without CORS.
     proxy: {
-      "/api": {
-        target: "http://localhost:5000",
+      '/api': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
     },
   },
+
   preview: {
     port: 3000,
     proxy: {
-      '/api': { target: 'http://localhost:5000', changeOrigin: true },
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
     },
   },
-});
 
-  // Vitest configuration
   test: {
     globals: true,
-    environment: "jsdom",
-    setupFiles: "./src/test/setup.ts",
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
   },
 });

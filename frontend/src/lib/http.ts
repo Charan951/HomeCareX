@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { SESSION_EXPIRED_EVENT, tokenStore } from "./tokenStore";
+import type { AuthUser } from "@/types/auth";
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -15,67 +16,147 @@ export interface ApiError {
   details?: { field: string; message: string }[];
 }
 
+export interface SessionPayload {
+  user: AuthUser;
+  accessToken: string;
+}
+
 const API_TIMEOUT_MS = 15000;
 
-const http = axios.create({
+export const http = axios.create({
   baseURL: "/api/v1",
   withCredentials: true,
   timeout: API_TIMEOUT_MS,
   headers: { "Content-Type": "application/json" },
 });
 
+// Inject current in-memory access token
 http.interceptors.request.use((config) => {
   const token = tokenStore.get();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    if (typeof (config.headers as any).set === "function") {
+      (config.headers as any).set("Authorization", `Bearer ${token}`);
+    } else {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
   return config;
 });
 
-// One refresh in flight at a time; parallel 401s wait for the same promise.
-let refreshing: Promise<string | null> | null = null;
+// Single-flight promise so concurrent refresh calls wait for the same request.
+// AuthProvider also uses this function on startup, so there is only ever ONE
+// refresh request in flight (important when refresh tokens are single-use).
+let refreshingPromise: Promise<SessionPayload | null> | null = null;
 
-export function refreshAccessToken(): Promise<string | null> {
-  refreshing ??= axios
-    .post<ApiResponse<{ accessToken: string }>>("/api/v1/auth/refresh", null, {
-      withCredentials: true,
-      timeout: API_TIMEOUT_MS,
-    })
-    .then((res) => {
-      tokenStore.set(res.data.data.accessToken);
-      return res.data.data.accessToken;
-    })
-    .catch(() => {
-      tokenStore.set(null);
-      return null;
-    })
-    .finally(() => {
-      refreshing = null;
-    });
-  return refreshing;
+export function refreshAccessToken(): Promise<SessionPayload | null> {
+  if (!refreshingPromise) {
+    refreshingPromise = axios
+      .post<ApiResponse<SessionPayload>>("/api/v1/auth/refresh", null, {
+        withCredentials: true,
+        timeout: API_TIMEOUT_MS,
+      })
+      .then((res) => {
+        const payload = res.data?.data;
+        if (payload?.accessToken) {
+          tokenStore.set(payload.accessToken);
+          return payload;
+        }
+        tokenStore.set(null);
+        return null;
+      })
+      .catch((err: AxiosError<{ message?: string; code?: string }>) => {
+        // DEV ONLY: the refresh call uses bare axios, so log its failure reason here.
+        if (import.meta.env.DEV) {
+          console.warn(
+            "[auth-debug] refresh failed " +
+              JSON.stringify({
+                status: err.response?.status,
+                serverCode: err.response?.data?.code,
+                serverMessage: err.response?.data?.message,
+              }),
+          );
+        }
+        tokenStore.set(null);
+        return null;
+      })
+      .finally(() => {
+        refreshingPromise = null;
+      });
+  }
+  return refreshingPromise;
 }
 
-const isAuthCall = (url?: string) => !!url && /\/auth\/(login|register|refresh|logout)/.test(url);
+const isAuthCall = (url?: string) =>
+  !!url && /\/auth\/(login|register|refresh|logout)/.test(url);
 
 http.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError<{ message?: string; code?: string; details?: ApiError["details"] }>) => {
-    const original = error.config as (InternalAxiosRequestConfig & { _retried?: boolean }) | undefined;
+  async (
+    error: AxiosError<{ message?: string; code?: string; details?: ApiError["details"] }>
+  ) => {
+    const original = error.config as
+      | (InternalAxiosRequestConfig & { _retried?: boolean })
+      | undefined;
 
-    // 401 on a normal call: refresh once, then replay the request.
-    if (error.response?.status === 401 && original && !original._retried && !isAuthCall(original.url)) {
-      original._retried = true;
-      const token = await refreshAccessToken();
-      if (token) return http(original);
-      window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+    // DEV ONLY: say exactly why a 401 happened (no tokens are printed).
+    if (import.meta.env.DEV && error.response?.status === 401) {
+      const h = original?.headers as any;
+      const sentAuth = Boolean(h?.Authorization || h?.get?.("Authorization"));
+      console.warn(
+        "[auth-debug] 401 " +
+          JSON.stringify({
+            url: original?.url,
+            sentAuthorizationHeader: sentAuth,
+            tokenInMemory: Boolean(tokenStore.get()),
+            serverCode: error.response.data?.code,
+            serverMessage: error.response.data?.message,
+          }),
+      );
     }
 
-    const isTimeout = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || /timeout/i.test(error.message);
+    // 401 on an unauthenticated call: refresh once, inject the new token, then replay
+    if (
+      error.response?.status === 401 &&
+      original &&
+      !original._retried &&
+      !isAuthCall(original.url)
+    ) {
+      original._retried = true;
+
+      // Capture BEFORE refreshing: a failed refresh clears the token store.
+      const hadSession = Boolean(tokenStore.get());
+
+      const session = await refreshAccessToken();
+
+      if (session?.accessToken) {
+        if (original.headers) {
+          if (typeof (original.headers as any).set === "function") {
+            (original.headers as any).set("Authorization", `Bearer ${session.accessToken}`);
+          } else {
+            original.headers.Authorization = `Bearer ${session.accessToken}`;
+          }
+        }
+        return http(original);
+      }
+
+      // Refresh failed. Only announce "session expired" if the user actually
+      // had a session; a logged-out visitor should not see that message.
+      if (hadSession && typeof window !== "undefined") {
+        window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+      }
+    }
+
+    const isTimeout =
+      error.code === "ECONNABORTED" ||
+      error.code === "ETIMEDOUT" ||
+      /timeout/i.test(error.message);
 
     const apiError: ApiError = {
       message: error.response
         ? error.response.data?.message || "Something went wrong. Please try again."
         : isTimeout
         ? "The server is taking too long to respond. Please check your connection and try again."
-        : typeof navigator !== 'undefined' && !navigator.onLine
+        : typeof navigator !== "undefined" && !navigator.onLine
         ? "Unable to reach the server. Please check your internet connection."
         : "Unable to reach the server. Please check your connection and try again.",
       status: error.response?.status,
@@ -83,8 +164,9 @@ http.interceptors.response.use(
       isTimeout,
       details: error.response?.data?.details,
     };
+
     return Promise.reject(apiError);
-  },
+  }
 );
 
 export default http;
