@@ -9,6 +9,8 @@ import PartnerSchedulePage from "../pages/partner/Schedule";
 import PartnerEarningsPage from "../pages/partner/Earnings";
 import PartnerIncentivesPage from "../pages/partner/Incentives";
 import PartnerPayoutsPage from "../pages/partner/Payouts";
+import PartnerWalletPage from "../pages/partner/Wallet";
+import PartnerTransactionsPage from "../pages/partner/Transactions";
 import "../styles/calm-overrides.css";
 import "../styles/mobile-plain.css";
 
@@ -81,6 +83,8 @@ export default function PartnerRoutes() {
         <Route path="earnings/incentives" element={<PartnerIncentivesPage />} />
         <Route path="payouts" element={<PartnerPayoutsPage />} />
         <Route path="earnings/payouts" element={<PartnerPayoutsPage />} />
+        <Route path="wallet" element={<PartnerWalletPage />} />
+        <Route path="transactions" element={<PartnerTransactionsPage />} />
         {PARTNER_PAGES.filter(({ path }) => path !== "earnings/payouts").map(({ path, title }) => (
           <Route
             key={path}
