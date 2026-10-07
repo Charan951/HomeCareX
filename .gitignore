@@ -38,18 +38,17 @@ docs/
 *.pdf
 MEMORY.md
 
-package.json
 
-package-lock.json
 
 .postman/
 postman/
 
 # Package files
-package.json
-
 backend/package.json
 backend/package-lock.json
 frontend/package.json
 frontend/package-lock.json
 **/package.json
+**/package.json
+**/package-lock.json
+

@@ -1,6 +1,8 @@
 import { CategoryModel } from '../../models/Category';
 import { ServiceModel } from '../../models/Service';
 import { seedDefaultCategories } from '../categories/categories.service';
+import { SERVICE_DESCRIPTIONS } from './catalog.descriptionsSeedData';
+import { SERVICE_DETAILS_SEED } from './catalog.detailsSeedData';
 import { CATALOG_SEED_SERVICES } from './catalog.seedData';
 
 /**
@@ -9,8 +11,11 @@ import { CATALOG_SEED_SERVICES } from './catalog.seedData';
  * touched. `$setOnInsert` is used for fields admins may edit, so re-seeding never overwrites an
  * admin's changes. Services that already exist (e.g. from services.constants.ts) only gain the
  * catalog stats (rating, bookings, availability) while they have no ratings yet.
+ * The details-page content (gallery, inclusions, exclusions, FAQs) is filled in only for fields that
+ * are still empty, so an admin's edits are never overwritten and re-running is safe. The same goes for the
+ * description: it is upgraded to the full text only while it is empty or still the original one-line seed.
  */
-export async function upsertCatalogSeed(): Promise<{ categories: number; services: number }> {
+export async function upsertCatalogSeed(opts: BackfillOptions = {}): Promise<{ categories: number; services: number }> {
   await seedDefaultCategories();
   const cats = await CategoryModel.find({}, '_id slug').lean();
   const categoryIds = new Map(cats.map((c) => [c.slug, c._id]));
@@ -36,5 +41,40 @@ export async function upsertCatalogSeed(): Promise<{ categories: number; service
     );
     services += 1;
   }
+  await backfillServiceDetails(opts);
   return { categories: categoryIds.size, services };
+}
+
+export interface BackfillOptions {
+  /**
+   * Replace each launch service's gallery with the seed photos even when it already has some. Off by default so an
+   * admin's own photos are never overwritten; turn it on (`--refresh-media`) after the seed photo sets change.
+   */
+  refreshMedia?: boolean;
+}
+
+/** Matches a field that is missing or an empty array. */
+const isEmpty = (field: string) => ({ $or: [{ [field]: { $exists: false } }, { [field]: { $size: 0 } }] });
+
+/** One bulk write: each launch service gets its details content for every field that is still empty. */
+export async function backfillServiceDetails({ refreshMedia = false }: BackfillOptions = {}): Promise<number> {
+  const ops = CATALOG_SEED_SERVICES.flatMap((sv) => {
+    const full = SERVICE_DESCRIPTIONS[sv.slug];
+    const describe = full
+      ? [{ updateOne: { filter: { slug: sv.slug, $or: [{ description: { $exists: false } }, { description: '' }, { description: sv.description }] }, update: { $set: { description: full } } } }]
+      : [];
+    const d = SERVICE_DETAILS_SEED[sv.slug];
+    if (!d) return describe;
+    const fill = (field: string, value: unknown, force = false) => ({ updateOne: { filter: { slug: sv.slug, ...(force ? {} : isEmpty(field)) }, update: { $set: { [field]: value } } } });
+    return [
+      ...describe,
+      fill('media', d.images.map((url, i) => ({ url, alt: `${sv.name} (photo ${i + 1})` })), refreshMedia),
+      fill('inclusions', d.inclusions),
+      fill('exclusions', d.exclusions),
+      fill('faqs', d.faqs.map(([question, answer]) => ({ question, answer }))),
+    ];
+  });
+  if (ops.length === 0) return 0;
+  const res = await ServiceModel.bulkWrite(ops);
+  return res.modifiedCount;
 }

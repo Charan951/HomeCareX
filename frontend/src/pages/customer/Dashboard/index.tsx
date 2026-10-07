@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import clsx from "clsx";
 import { customerPath } from "@/routes/customerPath";
@@ -8,6 +9,7 @@ import { OFFERS } from "@/mocks/customerMockData"; // no offers endpoint yet —
 import DashboardSkeleton from "./sections/DashboardSkeleton";
 import GreetingSection from "./sections/GreetingSection";
 import SearchBar from "./sections/SearchBar";
+import HeroBanner from "./sections/HeroBanner";
 import ActiveBookingCard from "./sections/ActiveBookingCard";
 import QuickActions from "./sections/QuickActions";
 import UpcomingBookings from "./sections/UpcomingBookings";
@@ -53,23 +55,25 @@ export default function Dashboard() {
   const { activeBookings, upcomingBookings, categories, recommendedServices, isNewCustomer } = data;
 
   return (
-    <div className="dashboard-mobile mx-auto max-w-[1180px] space-y-6 md:space-y-8">
-      <GreetingSection firstName={data.greeting.firstName} isNewCustomer={isNewCustomer}>
+    <div className="dashboard-mobile mx-auto w-full min-w-0 max-w-[1440px] space-y-6 md:space-y-5">
+      <GreetingSection firstName={data.greeting.firstName} isNewCustomer={isNewCustomer} />
+
+      <HeroBanner categories={categories}>
         <SearchBar services={recommendedServices} />
         {recommendedServices.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2" aria-label="Popular searches">
+          <div className="hero-rise mt-4 hidden flex-wrap justify-center gap-2.5 md:flex" style={{ "--i": 4 } as CSSProperties} aria-label="Popular searches">
             {recommendedServices.slice(0, 4).map((s) => (
               <Link
                 key={s.id}
                 to={`${customerPath("/services")}?q=${encodeURIComponent(s.name)}`}
-                className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-white/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                className="rounded-full border border-[#D9DCF7] bg-white px-4 py-1.5 text-[13px] font-medium text-ink transition-all hover:-translate-y-0.5 hover:border-brand hover:text-brand hover:shadow-[0_12px_18px_-12px_rgba(67,56,202,.55)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
               >
                 {s.name}
               </Link>
             ))}
           </div>
         )}
-      </GreetingSection>
+      </HeroBanner>
 
       {activeBookings.length > 0 && <ActiveBookingCard bookings={activeBookings} />}
 

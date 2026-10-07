@@ -606,6 +606,9 @@ body {
   inset: -24px -16px auto;
   height: 330px;
   pointer-events: none;
+  /* Fade the wash out at the sides so it never ends in a visible edge when the sidebar is closed. */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
   background:
     radial-gradient(circle at 12% 12%, rgba(67, 56, 202, .10), transparent 32%),
     radial-gradient(circle at 92% 0%, rgba(255, 138, 61, .13), transparent 30%);
@@ -996,4 +999,67 @@ body {
   .service-card-enter {
     animation: serviceCardIn .45s cubic-bezier(.22,1,.36,1) both;
   }
+}
+
+/* ---------- Dashboard hero (flat lavender): live dot, mic ring, Search shine, entrance ---------- */
+.hero-live-dot::after { content: ""; position: absolute; inset: -4px; border-radius: 9999px; background: currentColor; opacity: .35; }
+.hero-mic::after { content: ""; position: absolute; inset: 0; border-radius: 9999px; border: 2px solid #4338CA; opacity: 0; pointer-events: none; }
+.hero-shine { overflow: hidden; } /* position comes from the element (absolute), so the ::after shine stays clipped inside */
+.hero-shine::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: rgba(255,255,255,.4); transform: skewX(-20deg); pointer-events: none; }
+@keyframes heroRise { from { opacity: 0; transform: translateY(18px); } }
+@keyframes heroPing { 70%, 100% { transform: scale(2.2); opacity: 0; } }
+@keyframes heroRing { 0% { transform: scale(1); opacity: .6; } 60%, 100% { transform: scale(1.7); opacity: 0; } }
+@keyframes heroShine { 0%, 60% { left: -60%; } 100% { left: 130%; } }
+@media (prefers-reduced-motion: no-preference) {
+  .hero-rise { animation: heroRise .7s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 90ms); }
+  .hero-live-dot::after { animation: heroPing 1.8s ease-out infinite; }
+  .hero-mic::after { animation: heroRing 2.8s ease-out infinite 1.5s; }
+  .hero-shine::after { animation: heroShine 4.5s ease-in-out infinite 2s; }
+}
+
+/* ---------- Service details page (sd-*) ---------- */
+@keyframes sdRise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes sdReveal { from { clip-path: inset(0 0 100% 0 round 24px); } to { clip-path: inset(0 0 0 0 round 24px); } }
+@keyframes sdKen { from { transform: scale(1); } to { transform: scale(1.06); } }
+@keyframes sdPing { 0% { transform: scale(1); opacity: .55; } 80%, 100% { transform: scale(2.6); opacity: 0; } }
+@keyframes sdShine { 0%, 55% { transform: translateX(-130%) skewX(-20deg); } 100% { transform: translateX(380%) skewX(-20deg); } }
+@keyframes sdLightboxIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sdLightboxPop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes sdDraw { to { stroke-dashoffset: 0; } }
+@keyframes sdPop { 0% { transform: scale(.5); opacity: 0; } 70% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
+
+/* Accordion body: height animates via grid rows; hidden content leaves the tab order once closed. */
+.sd-faq-body { visibility: hidden; transition: visibility 0s linear .32s; }
+.sd-faq-open .sd-faq-body { visibility: visible; transition-delay: 0s; }
+
+/* Rating bars and check marks start collapsed and play when their section scrolls into view. */
+.sd-bar { width: 0; }
+.sd-in .sd-bar { width: var(--w, 0%); transition: width 900ms cubic-bezier(.22, 1, .36, 1); transition-delay: calc(var(--i, 0) * 90ms); }
+.sd-check-path { stroke-dasharray: 24; stroke-dashoffset: 24; }
+.sd-in .sd-check-path { animation: sdDraw .5s ease-out forwards; animation-delay: calc(var(--i, 0) * 110ms + 120ms); }
+.sd-check-badge { opacity: 0; transform: scale(.5); }
+.sd-in .sd-check-badge { animation: sdPop .45s cubic-bezier(.3, 1.4, .5, 1) forwards; animation-delay: calc(var(--i, 0) * 110ms); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .sd-rise { animation: sdRise .7s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--i, 0) * 90ms); }
+  .sd-gallery-reveal { animation: sdReveal .9s cubic-bezier(.65, 0, .25, 1) both; }
+  .sd-ken { animation: sdKen 9s ease-out forwards; }
+  .sd-ping::after { content: ""; position: absolute; inset: 0; border-radius: 9999px; background: currentColor; animation: sdPing 1.9s ease-out infinite; }
+  .sd-shine::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 26%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .32), transparent); pointer-events: none; transform: translateX(-130%) skewX(-20deg); animation: sdShine 4.2s ease-in-out infinite 1.6s; }
+  .sd-lightbox { animation: sdLightboxIn .25s ease-out both; }
+  .sd-lightbox-stage { animation: sdLightboxPop .35s cubic-bezier(.2, .8, .2, 1) both; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sd-bar, .sd-in .sd-bar { width: var(--w, 0%); transition: none; }
+  .sd-check-path, .sd-in .sd-check-path { stroke-dashoffset: 0; animation: none; }
+  .sd-check-badge, .sd-in .sd-check-badge { opacity: 1; transform: none; animation: none; }
+  .sd-faq-body { transition: none; }
+}
+
+/* ---------- Booking wizard (bk-*) ---------- */
+@keyframes bkTick { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .bk-tick { animation: bkTick .28s cubic-bezier(.2, .8, .2, 1) both; }
+  .bk-check-on { animation: sdPop .4s cubic-bezier(.3, 1.4, .5, 1) both; }
 }

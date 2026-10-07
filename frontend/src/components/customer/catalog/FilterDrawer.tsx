@@ -16,7 +16,7 @@ interface Props {
   children: ReactNode;
 }
 
-/** Bottom sheet for mobile / tablet (desktop uses FilterBar). Escape closes, focus is trapped inside and restored on close, page scroll is locked. */
+/** Filters panel: bottom sheet on mobile / tablet, right-hand side panel on desktop. Escape closes, focus is trapped inside and restored on close, page scroll is locked. */
 export function FilterDrawer({ open, onClose, doneLabel, subtitle, onClear, children }: Props) {
   const titleId = useId();
   const panelRef = useOverlay<HTMLDivElement>(open, onClose);
@@ -30,7 +30,7 @@ export function FilterDrawer({ open, onClose, doneLabel, subtitle, onClear, chil
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[85vh] max-w-lg flex-col rounded-t-3xl bg-panel shadow-2xl outline-none"
+        className="absolute inset-x-0 bottom-0 mx-auto flex max-h-[85vh] max-w-lg flex-col rounded-t-3xl bg-panel shadow-2xl outline-none lg:inset-x-auto lg:inset-y-0 lg:right-0 lg:mx-0 lg:max-h-none lg:w-[400px] lg:max-w-[92vw] lg:rounded-none lg:rounded-l-3xl"
       >
         <div className="flex items-center justify-between border-b border-line px-4 py-3">
           <div>

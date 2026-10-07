@@ -10,6 +10,34 @@ export interface ServiceAddOn {
   price: number;
 }
 
+/** One gallery item. Array order is display order: the first item is the main image. */
+export interface ServiceMedia {
+  url: string;
+  alt: string;
+}
+
+export interface ServiceFaq {
+  _id: Types.ObjectId;
+  question: string;
+  answer: string;
+}
+
+const MediaSchema = new Schema(
+  {
+    url: { type: String, required: true, trim: true, maxlength: 500 },
+    alt: { type: String, trim: true, default: '', maxlength: 160 },
+  },
+  { _id: false },
+);
+
+const FaqSchema = new Schema(
+  {
+    question: { type: String, required: true, trim: true, maxlength: 200 },
+    answer: { type: String, required: true, trim: true, maxlength: 1000 },
+  },
+  { _id: true },
+);
+
 const AddOnSchema = new Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 60 },
@@ -37,6 +65,11 @@ const ServiceSchema = new Schema(
     /** Used to rank "Most booked" / "Recommended for you". */
     bookingsCount: { type: Number, default: 0, min: 0 },
     availability: { type: String, enum: SERVICE_AVAILABILITY, default: 'scheduled' },
+    /** Service details page (n04). All optional with empty defaults, so existing documents stay valid. */
+    media: { type: [MediaSchema], default: [] },
+    inclusions: { type: [{ type: String, trim: true, maxlength: 200 }], default: [] },
+    exclusions: { type: [{ type: String, trim: true, maxlength: 200 }], default: [] },
+    faqs: { type: [FaqSchema], default: [] },
   },
   { timestamps: true },
 );

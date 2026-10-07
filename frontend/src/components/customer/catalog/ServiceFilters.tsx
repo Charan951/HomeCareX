@@ -1,11 +1,12 @@
 import clsx from "clsx";
 import { Star } from "lucide-react";
-import type { CatalogCategory, ServiceListParams } from "@/types/catalog";
+import type { CatalogCategory, ServiceListParams, ServiceSort } from "@/types/catalog";
 import {
   AVAILABILITY_OPTIONS,
   DURATION_OPTIONS,
   PRICE_OPTIONS,
   RATING_OPTIONS,
+  SORT_OPTIONS,
   priceChoiceId,
 } from "@/pages/customer/Services/serviceParams";
 import { FOCUS_RING } from "../focusRing";
@@ -98,15 +99,44 @@ interface Props {
   onChange: (patch: Partial<ServiceListParams>) => void;
 }
 
-/** Filter groups as chips and segmented controls. Lives inside the mobile / tablet FilterDrawer. */
+/** Sort + filter groups as chips and segmented controls. Lives inside the FilterDrawer (side panel on desktop, bottom sheet on mobile). */
 export function ServiceFilters({ params, categories, onChange }: Props) {
   const groups = buildFilterGroups(params, categories, onChange);
+  const hasQuery = !!params.q;
+  const sortValue: ServiceSort = params.sort ?? (hasQuery ? "relevance" : "popular");
+  const sortOptions = SORT_OPTIONS.filter((o) => o.id !== "relevance" || hasQuery);
   return (
     <div>
+      <section className="border-b border-line pb-4">
+        <h3 id="filter-sort" className="mb-2.5 text-[13px] font-semibold text-ink">
+          Sort by
+        </h3>
+        <div role="radiogroup" aria-labelledby="filter-sort" className="flex flex-wrap gap-2">
+          {sortOptions.map((o) => {
+            const on = sortValue === o.id;
+            return (
+              <button
+                key={o.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => onChange({ sort: o.id })}
+                className={clsx(
+                  "inline-flex min-h-[38px] items-center rounded-full border px-3.5 text-[13px] transition-colors",
+                  on ? "border-brand bg-brand-soft font-medium text-brand" : "border-line bg-panel text-ink hover:bg-canvas",
+                  FOCUS_RING,
+                )}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+      </section>
       {groups.map((g, i) => {
         const segmented = g.key === "availability" || g.key === "duration";
         return (
-          <section key={g.key} className={clsx("py-4", i > 0 && "border-t border-line", i === 0 && "pt-0")}>
+          <section key={g.key} className={clsx("py-4", i > 0 && "border-t border-line")}>
             <h3 id={`filter-${g.key}`} className="mb-2.5 text-[13px] font-semibold text-ink">
               {g.label}
             </h3>

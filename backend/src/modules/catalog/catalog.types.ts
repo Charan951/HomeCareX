@@ -30,8 +30,38 @@ export interface PublicServiceDto {
   availability: ServiceAvailability;
 }
 
+export interface PublicMediaDto {
+  url: string;
+  alt: string;
+}
+
+export interface PublicFaqDto {
+  id: string;
+  question: string;
+  answer: string;
+}
+
+/**
+ * Next-7-days slot summary from the bookings slot service. Named `slotAvailability` because
+ * `availability` on a service is the older card label (today / tomorrow / scheduled).
+ */
+export interface SlotAvailabilityDto {
+  windowDays: number;
+  /** true / false, or null when the slot service could not be reached (the page should not claim "no slots"). */
+  hasSlots: boolean | null;
+  /** First date (YYYY-MM-DD, Asia/Kolkata) in the window with a free slot; null when none or unknown. */
+  nextAvailableDate: string | null;
+}
+
+/** GET /services/:slug. The rating summary is `rating` + `ratingCount`; the star distribution comes from GET /services/:id/reviews. */
 export interface PublicServiceDetailDto extends PublicServiceDto {
+  /** Gallery in display order; the first item is the main image. Empty when none are set. */
+  media: PublicMediaDto[];
+  inclusions: string[];
+  exclusions: string[];
   addOns: { id: string; name: string; price: number }[];
+  faqs: PublicFaqDto[];
+  slotAvailability: SlotAvailabilityDto;
 }
 
 export interface PageMeta {

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { Breadcrumbs } from '@/components/admin/Breadcrumbs';
 
 export interface HeaderNotification {
   id: string;
@@ -16,9 +17,12 @@ interface HeaderProps {
   notifications?: HeaderNotification[];
 }
 
-/** Sticky admin header: menu/collapse and notifications. */
+/** Sticky admin header: menu/collapse, breadcrumbs and notifications. */
 export const Header: React.FC<HeaderProps> = ({ notifications = [] }) => {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // /admin/customers/:id -> breadcrumbs are hidden on mobile only (CSS handles the breakpoint)
+  const isCustomerDetails = /^\/admin\/customers\/[^/]+/.test(pathname);
   const isCollapsed = useUIStore((s) => s.isSidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const toggleMobileMenu = useUIStore((s) => s.toggleMobileMenu);
@@ -40,6 +44,10 @@ export const Header: React.FC<HeaderProps> = ({ notifications = [] }) => {
       >
         {isCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
       </button>
+
+      <div className={`admin-topbar__crumbs${isCustomerDetails ? ' admin-topbar__crumbs--hide-mobile' : ''}`}>
+        <Breadcrumbs />
+      </div>
 
       <div className="topbar-right">
         <div className="popover" ref={bellRef}>

@@ -40,6 +40,14 @@ const PAGE_TITLES: Record<string, string> = {
   "/partner/earnings": "Earnings",
 };
 
+// Titles that only change the heading (they don't hide the status pill / bell on mobile)
+const EXTRA_TITLES: Record<string, string> = {
+  "/partner/incentives": "Partner Incentives",
+  "/partner/earnings/incentives": "Partner Incentives",
+  "/partner/payouts": "Partner Payouts",
+  "/partner/earnings/payouts": "Partner Payouts",
+};
+
 // Bottom tabs. Every other page is reached from the Profile tab (see ProfileMenu).
 // ---- Mobile bottom navigation (Instagram-style: hides on scroll down, shows on scroll up) ----
 const BOTTOM_NAV = [
@@ -228,9 +236,11 @@ export default function PartnerLayout() {
 
   const cleanPath = pathname.replace(/\/+$/, "") || "/";
   const current = NAV.find((n) => (n.end ? pathname === n.to : pathname.startsWith(n.to)));
-  const title = PAGE_TITLES[cleanPath] ?? current?.label ?? "Partner";
+  const title = PAGE_TITLES[cleanPath] ?? EXTRA_TITLES[cleanPath] ?? current?.label ?? "Partner";
   // Availability / Working Hours / Blackout Dates / Schedule / Earnings on mobile: header shows only [Back] + page name
   const minimalHeader = Object.keys(PAGE_TITLES).includes(cleanPath);
+  // Partner Incentives / Partner Payouts pages: no Online/Offline pill (every other page keeps it)
+  const hideStatusPill = Object.keys(EXTRA_TITLES).includes(cleanPath);
 
   // Mobile back button: shown on every page except Home.
   const showBack = cleanPath !== "/partner";
@@ -266,7 +276,7 @@ export default function PartnerLayout() {
               <h1 className="truncate text-base font-semibold text-[#4338ca] sm:text-lg">{title}</h1>
             </div>
             <div className={`shrink-0 items-center gap-0.5 sm:gap-3 ${minimalHeader ? "hidden lg:flex" : "flex"}`}>
-              <OnlineIndicator online={online} onChange={setOnline} />
+              {!hideStatusPill && <OnlineIndicator online={online} onChange={setOnline} />}
               <button aria-label="Notifications"
                 className="relative rounded-full p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#4338ca]">
                 <Bell size={20} />
