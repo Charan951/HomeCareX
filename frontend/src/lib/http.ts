@@ -11,12 +11,16 @@ export interface ApiError {
   message: string;
   status?: number;
   code?: string;
+  isTimeout?: boolean;
   details?: { field: string; message: string }[];
 }
+
+const API_TIMEOUT_MS = 15000;
 
 const http = axios.create({
   baseURL: "/api/v1",
   withCredentials: true,
+  timeout: API_TIMEOUT_MS,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -31,7 +35,10 @@ let refreshing: Promise<string | null> | null = null;
 
 export function refreshAccessToken(): Promise<string | null> {
   refreshing ??= axios
-    .post<ApiResponse<{ accessToken: string }>>("/api/v1/auth/refresh", null, { withCredentials: true })
+    .post<ApiResponse<{ accessToken: string }>>("/api/v1/auth/refresh", null, {
+      withCredentials: true,
+      timeout: API_TIMEOUT_MS,
+    })
     .then((res) => {
       tokenStore.set(res.data.data.accessToken);
       return res.data.data.accessToken;
@@ -61,12 +68,19 @@ http.interceptors.response.use(
       window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
     }
 
+    const isTimeout = error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || /timeout/i.test(error.message);
+
     const apiError: ApiError = {
       message: error.response
         ? error.response.data?.message || "Something went wrong. Please try again."
-        : "Can't reach the server. Check your connection and try again.",
+        : isTimeout
+        ? "The server is taking too long to respond. Please check your connection and try again."
+        : typeof navigator !== 'undefined' && !navigator.onLine
+        ? "Unable to reach the server. Please check your internet connection."
+        : "Unable to reach the server. Please check your connection and try again.",
       status: error.response?.status,
-      code: error.response?.data?.code,
+      code: error.code || error.response?.data?.code,
+      isTimeout,
       details: error.response?.data?.details,
     };
     return Promise.reject(apiError);

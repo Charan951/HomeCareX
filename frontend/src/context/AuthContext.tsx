@@ -45,6 +45,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Restore the existing session when the application loads.
   useEffect(() => {
     let cancelled = false;
+    const settleUnauthenticated = () => {
+      if (cancelled) return;
+      cancelled = true;
+      applySession(null, null, "unauthenticated");
+    };
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      settleUnauthenticated();
+      return;
+    }
+
+    window.addEventListener("offline", settleUnauthenticated);
 
     authApi
       .refresh()
@@ -57,10 +69,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!cancelled) {
           applySession(null, null, "unauthenticated");
         }
+      })
+      .finally(() => {
+        window.removeEventListener("offline", settleUnauthenticated);
       });
 
     return () => {
       cancelled = true;
+      window.removeEventListener("offline", settleUnauthenticated);
     };
   }, [applySession]);
 

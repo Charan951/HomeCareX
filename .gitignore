@@ -37,6 +37,55 @@ Thumbs.db
 docs/
 *.pdf
 MEMORY.md
+.postman/
+postman/
+
+# Package files
+package.json
+package-lock.json
+frontend/package.json
+backend/package.json
+*/package.json
+*/package-lock.json
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production Build
+dist/
+build/
+
+# Environment Variables
+.env
+.env.example
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Internal planning docs (kept local only)
+docs/
+*.pdf
+MEMORY.md
 
 
 

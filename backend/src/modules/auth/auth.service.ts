@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authRepository } from './auth.repository';
@@ -10,7 +11,7 @@ import {
   ROLE_PERMISSIONS,
 } from './auth.constants';
 import { HttpError, type AccessTokenPayload, type AuthUserDto, type RefreshTokenPayload } from './auth.types';
-import type { LoginInput, RegisterInput } from './auth.validation';
+import type { ForgotPasswordInput, LoginInput, RegisterInput, ResetPasswordInput } from './auth.validation';
 import type { UserRole } from '../../models/User';
 import { mailService } from '../../services/mail.service';
 
@@ -101,7 +102,7 @@ export const authService = {
     return { user: toAuthUser(user), ...issueTokens(user) };
   },
 
-  /** Verifies the refresh cookie and issues a new pair (rotation). */
+  /** Verifies the refresh cookie, rotates the token pair, and detects reuse. */
   async refresh(refreshToken?: string) {
     if (!refreshToken) throw sessionExpired('NO_REFRESH_TOKEN');
     let payload: RefreshTokenPayload;
@@ -111,9 +112,29 @@ export const authService = {
       throw sessionExpired('INVALID_REFRESH_TOKEN');
     }
     const user = await authRepository.findById(payload.sub);
-    if (!user || user.status === 'blocked' || user.tokenVersion !== payload.v) {
+    if (!user || user.status === 'blocked') {
       throw sessionExpired('REVOKED_REFRESH_TOKEN');
     }
+
+    const currentVersion = user.tokenVersion ?? 0;
+
+    // Reuse detection: If token version is older than current, the token was already rotated.
+    // Invalidate the session / token family by bumping tokenVersion so any subsequent
+    // tokens in this family are also invalidated.
+    if (payload.v < currentVersion) {
+      user.tokenVersion = currentVersion + 1;
+      await user.save();
+      throw sessionExpired('REVOKED_REFRESH_TOKEN');
+    }
+
+    if (payload.v !== currentVersion) {
+      throw sessionExpired('REVOKED_REFRESH_TOKEN');
+    }
+
+    // Normal rotation: increment token version and persist
+    user.tokenVersion = currentVersion + 1;
+    await user.save();
+
     return { user: toAuthUser(user), ...issueTokens(user) };
   },
 
@@ -144,5 +165,59 @@ export const authService = {
     const user = await authRepository.findById(userId);
     if (!user || user.status === 'blocked') throw sessionExpired('USER_NOT_FOUND');
     return toAuthUser(user);
+  },
+
+  async forgotPassword({ email }: ForgotPasswordInput) {
+    const user = await authRepository.findByEmail(email);
+    if (user && user.status !== 'blocked') {
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+      user.passwordResetTokenHash = tokenHash;
+      user.passwordResetExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+      await user.save();
+
+      const frontendUrl = process.env.FRONTEND_URL
+        || (process.env.APP_LOGIN_URL ? new URL(process.env.APP_LOGIN_URL).origin : 'http://localhost:3000');
+      const resetUrl = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${rawToken}`;
+
+      try {
+        await mailService.sendPasswordResetEmail({
+          name: user.name,
+          email: user.email,
+          resetUrl,
+        });
+      } catch (err) {
+        console.error('Password-reset email failed for user', user.id, err);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'If an account exists for this email, a password reset link has been sent.',
+    };
+  },
+
+  async resetPassword({ token, newPassword }: ResetPasswordInput) {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await authRepository.findByResetTokenHash(tokenHash);
+
+    if (!user || user.status === 'blocked') {
+      throw new HttpError(400, 'This password reset link is invalid or has expired.', 'INVALID_RESET_TOKEN');
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    user.passwordHash = passwordHash;
+    user.passwordResetTokenHash = undefined;
+    user.passwordResetExpiresAt = undefined;
+    user.tokenVersion = (user.tokenVersion ?? 0) + 1; // Invalidate all previous sessions
+    user.failedLogins = 0;
+    user.lockedUntil = undefined;
+    await user.save();
+
+    return {
+      success: true,
+      message: 'Your password has been reset successfully.',
+    };
   },
 };

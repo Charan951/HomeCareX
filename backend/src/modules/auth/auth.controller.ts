@@ -1,6 +1,6 @@
 import type { CookieOptions, NextFunction, Request, Response } from 'express';
 import { authService } from './auth.service';
-import { loginSchema, parseBody, registerSchema } from './auth.validation';
+import { forgotPasswordSchema, loginSchema, parseBody, registerSchema, resetPasswordSchema } from './auth.validation';
 import { REFRESH_COOKIE, REFRESH_COOKIE_PATH, REFRESH_TOKEN_TTL_DAYS } from './auth.constants';
 
 const cookieOptions = (): CookieOptions => ({
@@ -58,5 +58,15 @@ export const authController = {
 
   me: wrap(async (_req, res) => {
     res.json({ success: true, data: await authService.me(res.locals.auth.sub) });
+  }),
+
+  forgotPassword: wrap(async (req, res) => {
+    const result = await authService.forgotPassword(parseBody(forgotPasswordSchema, req.body));
+    res.json(result);
+  }),
+
+  resetPassword: wrap(async (req, res) => {
+    const result = await authService.resetPassword(parseBody(resetPasswordSchema, req.body));
+    res.json(result);
   }),
 };

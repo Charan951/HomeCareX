@@ -1,25 +1,54 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, ArrowRight, ArrowLeft, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Mail, ArrowRight, ArrowLeft, KeyRound, CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react';
+import { authApi } from '@/services/authApi';
+import { classifyApiError } from '@/lib/apiError';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
     setError('');
-    if (!email) {
-      setError('Please enter your email');
+    setErrorStatus(null);
+
+    const trimmed = email.trim();
+    if (!trimmed || !EMAIL_RE.test(trimmed)) {
+      setError('Please enter a valid email address.');
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await authApi.forgotPassword(trimmed);
       setSent(true);
-    }, 900);
+    } catch (err) {
+      const classified = classifyApiError(err);
+      setErrorStatus(classified.status ?? null);
+
+      if (classified.kind === 'offline') {
+        setError('Unable to connect to the server. Please check your internet connection.');
+      } else if (classified.kind === 'network') {
+        setError('Unable to connect to the server. Please check your connection and try again.');
+      } else if (classified.kind === 'timeout') {
+        setError('The server is taking too long to respond. Please check your connection and try again.');
+      } else if (classified.status === 429) {
+        setError('Too many password reset requests. Please wait a moment and try again.');
+      } else if (classified.status && classified.status >= 500) {
+        setError('A server error occurred. Please try again shortly.');
+      } else {
+        setError(classified.message || 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -40,7 +69,7 @@ export const ForgotPasswordPage: React.FC = () => {
             </div>
             <h1 className="text-2xl font-bold text-accent-700 mb-1">Check your inbox</h1>
             <p className="text-gray-500 mb-6">
-              We've sent a password reset link to <span className="font-medium text-gray-700">{email}</span>
+              If an account exists for this email, we&apos;ve sent a password reset link.
             </p>
             <Link
               to="/login"
@@ -58,26 +87,42 @@ export const ForgotPasswordPage: React.FC = () => {
 
             <h1 className="text-2xl font-bold text-accent-700 mb-1">Forgot your password?</h1>
             <p className="text-gray-500 mb-6">
-              Enter your email and we'll send you a link to reset it
+              Enter your email and we&apos;ll send you a link to reset it
             </p>
 
             {error && (
-              <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 animate-fadeUp">
-                {error}
+              <div
+                role="alert"
+                className={`mb-4 text-xs sm:text-sm rounded-lg p-3 flex items-start gap-2.5 animate-fadeUp ${
+                  errorStatus === 429
+                    ? 'bg-amber-50 border border-amber-200 text-amber-800'
+                    : 'bg-red-50 border border-red-200 text-red-700'
+                }`}
+              >
+                {errorStatus === 429 ? (
+                  <AlertTriangle size={17} className="shrink-0 mt-0.5 text-amber-600" aria-hidden="true" />
+                ) : (
+                  <AlertCircle size={17} className="shrink-0 mt-0.5 text-red-500" aria-hidden="true" />
+                )}
+                <span className="leading-snug">{error}</span>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div className="group">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <div className="relative">
-                  <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500 transition-colors" />
+                  <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-brand-500 transition-colors pointer-events-none" />
                   <input
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError('');
+                    }}
                     placeholder="you@example.com"
-                    className="w-full rounded-lg border border-gray-300 pl-10 pr-3 py-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-400 hover:border-gray-400"
+                    disabled={loading}
+                    className="w-full rounded-lg border border-gray-300 pl-10 pr-3 py-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:border-brand-400 hover:border-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -87,7 +132,7 @@ export const ForgotPasswordPage: React.FC = () => {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-lg
                            hover:shadow-lg hover:shadow-brand-500/30 hover:-translate-y-0.5
-                           active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0
+                           active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0 disabled:cursor-not-allowed
                            transition-all duration-200 flex items-center justify-center gap-2"
               >
                 {loading ? (
