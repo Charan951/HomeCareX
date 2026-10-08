@@ -3,11 +3,7 @@ import { ServiceModel } from '../../models/Service';
 import { HttpError } from '../auth/auth.types';
 import { slugify, uniqueSlug } from '../../utils/slug';
 import { SEED_CATEGORIES } from './categories.constants';
-import {
-  categoryCreateSchema,
-  categoryReorderSchema,
-  categoryUpdateSchema,
-} from './categories.validation';
+import { categoryCreateSchema, categoryReorderSchema, categoryUpdateSchema } from './categories.validation';
 import type { CategoryDto } from './categories.types';
 
 const CI = {
@@ -197,7 +193,6 @@ export const categoriesService = {
     return this.list();
   },
 
-  /** Blocked while services still belong to it; move or delete them first (or just deactivate the category). */
   /**
    * Block deletion while services still belong to the category.
    * Move or delete those services first, or deactivate the category.
@@ -230,5 +225,3 @@ export const categoriesService = {
     await existing.deleteOne();
   },
 };
-
-

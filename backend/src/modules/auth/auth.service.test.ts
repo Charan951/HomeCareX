@@ -16,6 +16,10 @@ const originalFindByEmail = Object.getOwnPropertyDescriptor(authRepository, 'fin
 const originalFindByResetTokenHash = Object.getOwnPropertyDescriptor(authRepository, 'findByResetTokenHash');
 const originalSendAccountCreatedEmail = Object.getOwnPropertyDescriptor(mailService, 'sendAccountCreatedEmail');
 const originalSendPasswordResetEmail = Object.getOwnPropertyDescriptor(mailService, 'sendPasswordResetEmail');
+const originalSendPasswordResetOtpEmail = Object.getOwnPropertyDescriptor(mailService, 'sendPasswordResetOtpEmail');
+const originalCreateOtp = Object.getOwnPropertyDescriptor(authRepository, 'createOtp');
+const originalFindLatestOtp = Object.getOwnPropertyDescriptor(authRepository, 'findLatestOtp');
+const originalInvalidateActiveOtps = Object.getOwnPropertyDescriptor(authRepository, 'invalidateActiveOtps');
 const originalConsoleError = console.error;
 
 afterEach(() => {
@@ -24,8 +28,12 @@ afterEach(() => {
   if (originalFindById) Object.defineProperty(authRepository, 'findById', originalFindById);
   if (originalFindByEmail) Object.defineProperty(authRepository, 'findByEmail', originalFindByEmail);
   if (originalFindByResetTokenHash) Object.defineProperty(authRepository, 'findByResetTokenHash', originalFindByResetTokenHash);
+  if (originalCreateOtp) Object.defineProperty(authRepository, 'createOtp', originalCreateOtp);
+  if (originalFindLatestOtp) Object.defineProperty(authRepository, 'findLatestOtp', originalFindLatestOtp);
+  if (originalInvalidateActiveOtps) Object.defineProperty(authRepository, 'invalidateActiveOtps', originalInvalidateActiveOtps);
   if (originalSendAccountCreatedEmail) Object.defineProperty(mailService, 'sendAccountCreatedEmail', originalSendAccountCreatedEmail);
   if (originalSendPasswordResetEmail) Object.defineProperty(mailService, 'sendPasswordResetEmail', originalSendPasswordResetEmail);
+  if (originalSendPasswordResetOtpEmail) Object.defineProperty(mailService, 'sendPasswordResetOtpEmail', originalSendPasswordResetOtpEmail);
   console.error = originalConsoleError;
 });
 
@@ -58,7 +66,7 @@ const validInput: RegisterInput = {
   name: 'Test Customer',
   email: 'testcustomer@example.com',
   phone: '9876543210',
-  password: 'StrongPassword123',
+  password: 'StrongPassword123!',
   role: 'customer',
 };
 
@@ -348,17 +356,14 @@ test('refresh: old refresh token is rejected after rotation, and reused token ca
   );
 });
 
-// --- Forgot & Reset Password Tests ---
+// --- Forgot, Verify OTP, Resend & Reset Password Tests ---
 
-test('forgotPassword: sends email with cryptographically secure token and returns generic message for registered user', async () => {
+test('forgotPassword: sends 6-digit OTP email, stores hashed OTP with 10m expiry, and returns generic message', async () => {
   const mockUser = {
     id: '507f1f77bcf86cd799439011',
     name: 'Reset Test User',
     email: 'resetuser@example.com',
     status: 'active',
-    passwordResetTokenHash: undefined as string | undefined,
-    passwordResetExpiresAt: undefined as Date | undefined,
-    save: async function () { return this; },
   };
 
   Object.defineProperty(authRepository, 'findByEmail', {
@@ -366,29 +371,48 @@ test('forgotPassword: sends email with cryptographically secure token and return
     value: async (email: string) => (email === mockUser.email ? mockUser : null),
   });
 
+  let createdOtpData: any = null;
+  Object.defineProperty(authRepository, 'createOtp', {
+    configurable: true,
+    value: async (data: any) => { createdOtpData = data; return data; },
+  });
+
+  let invalidatedPurpose: string | undefined;
+  Object.defineProperty(authRepository, 'invalidateActiveOtps', {
+    configurable: true,
+    value: async (_id: string, purpose: string) => { invalidatedPurpose = purpose; },
+  });
+
   let sentMail: any = null;
-  Object.defineProperty(mailService, 'sendPasswordResetEmail', {
+  Object.defineProperty(mailService, 'sendPasswordResetOtpEmail', {
     configurable: true,
     value: async (data: any) => { sentMail = data; },
   });
 
   const res = await authService.forgotPassword({ email: 'resetuser@example.com' });
   assert.equal(res.success, true);
-  assert.equal(res.message, 'If an account exists for this email, a password reset link has been sent.');
+  assert.equal(res.message, 'If an account exists, a verification code has been sent.');
 
-  // User has token hash and expiration
-  assert.ok(mockUser.passwordResetTokenHash);
-  assert.equal(mockUser.passwordResetTokenHash.length, 64, 'SHA-256 hash must be 64 hex characters');
-  assert.ok(mockUser.passwordResetExpiresAt);
-  assert.ok(mockUser.passwordResetExpiresAt.getTime() > Date.now());
+  // Previous OTPs were invalidated
+  assert.equal(invalidatedPurpose, 'PASSWORD_RESET');
 
-  // Email was sent with raw token URL
+  // OTP was stored hashed
+  assert.ok(createdOtpData);
+  assert.equal(createdOtpData.identifier, 'resetuser@example.com');
+  assert.equal(createdOtpData.hashedCode.length, 64, 'Hashed OTP must be SHA-256 (64 hex chars)');
+  assert.equal(createdOtpData.purpose, 'PASSWORD_RESET');
+  assert.ok(createdOtpData.expiresAt.getTime() > Date.now());
+
+  // Email was sent with 6-digit plaintext OTP
   assert.ok(sentMail);
   assert.equal(sentMail.email, mockUser.email);
   assert.equal(sentMail.name, mockUser.name);
-  assert.ok(sentMail.resetUrl.includes('/reset-password?token='));
-  // Ensure the raw token in email is NOT the hash
-  assert.equal(sentMail.resetUrl.includes(mockUser.passwordResetTokenHash), false);
+  assert.equal(typeof sentMail.otp, 'string');
+  assert.equal(sentMail.otp.length, 6);
+  assert.match(sentMail.otp, /^\d{6}$/);
+
+  // Plaintext OTP is NOT what is stored in the database
+  assert.notEqual(sentMail.otp, createdOtpData.hashedCode);
 });
 
 test('forgotPassword: returns identical generic message and does not send email for unknown user (anti-enumeration)', async () => {
@@ -398,18 +422,240 @@ test('forgotPassword: returns identical generic message and does not send email 
   });
 
   let mailSent = false;
-  Object.defineProperty(mailService, 'sendPasswordResetEmail', {
+  Object.defineProperty(mailService, 'sendPasswordResetOtpEmail', {
     configurable: true,
     value: async () => { mailSent = true; },
   });
 
   const res = await authService.forgotPassword({ email: 'unknown@example.com' });
   assert.equal(res.success, true);
-  assert.equal(res.message, 'If an account exists for this email, a password reset link has been sent.');
+  assert.equal(res.message, 'If an account exists, a verification code has been sent.');
   assert.equal(mailSent, false, 'No email should be sent for unknown address');
 });
 
-test('resetPassword: valid token updates password, clears reset fields, increments tokenVersion, and prevents reuse', async () => {
+test('verifyOtp: valid 6-digit OTP marks OTP as used, generates single-use reset token and returns it', async () => {
+  const crypto = await import('crypto');
+  const otpCode = '654321';
+  const hashedCode = crypto.createHash('sha256').update(otpCode).digest('hex');
+
+  const mockOtpDoc = {
+    _id: 'otp_123',
+    identifier: 'resetuser@example.com',
+    hashedCode,
+    purpose: 'PASSWORD_RESET',
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    attempts: 0,
+    usedAt: undefined as Date | undefined,
+    save: async function () { return this; },
+  };
+
+  const mockUser = {
+    id: '507f1f77bcf86cd799439011',
+    email: 'resetuser@example.com',
+    status: 'active',
+    passwordResetTokenHash: undefined as string | undefined,
+    passwordResetExpiresAt: undefined as Date | undefined,
+    save: async function () { return this; },
+  };
+
+  Object.defineProperty(authRepository, 'findLatestOtp', {
+    configurable: true,
+    value: async () => mockOtpDoc,
+  });
+
+  Object.defineProperty(authRepository, 'findByEmail', {
+    configurable: true,
+    value: async () => mockUser,
+  });
+
+  const res = await authService.verifyOtp({ email: 'resetuser@example.com', otp: '654321' });
+  assert.equal(res.success, true);
+  assert.ok(res.resetToken);
+  assert.equal(typeof res.resetToken, 'string');
+  assert.equal(res.resetToken.length, 64, 'Raw reset token must be 32 bytes hex (64 chars)');
+
+  // OTP was marked as used
+  assert.ok(mockOtpDoc.usedAt instanceof Date);
+
+  // User has stored hash of the reset token
+  assert.ok(mockUser.passwordResetTokenHash);
+  assert.equal(mockUser.passwordResetTokenHash.length, 64);
+  assert.ok(mockUser.passwordResetExpiresAt);
+  assert.ok(mockUser.passwordResetExpiresAt.getTime() > Date.now());
+});
+
+test('verifyOtp: invalid format rejects non-numeric or short codes with 400', async () => {
+  await assert.rejects(
+    authService.verifyOtp({ email: 'user@example.com', otp: '12345' }),
+    { status: 400, code: 'INVALID_OTP_FORMAT' }
+  );
+  await assert.rejects(
+    authService.verifyOtp({ email: 'user@example.com', otp: '12a456' }),
+    { status: 400, code: 'INVALID_OTP_FORMAT' }
+  );
+});
+
+test('verifyOtp: incorrect OTP increments attempts and returns 400 INVALID_OTP', async () => {
+  const crypto = await import('crypto');
+  const mockOtpDoc = {
+    _id: 'otp_123',
+    identifier: 'resetuser@example.com',
+    hashedCode: crypto.createHash('sha256').update('123456').digest('hex'),
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    attempts: 0,
+    usedAt: undefined as Date | undefined,
+    save: async function () { return this; },
+  };
+
+  Object.defineProperty(authRepository, 'findLatestOtp', {
+    configurable: true,
+    value: async () => mockOtpDoc,
+  });
+
+  await assert.rejects(
+    authService.verifyOtp({ email: 'resetuser@example.com', otp: '999999' }),
+    { status: 400, code: 'INVALID_OTP', message: 'The verification code is invalid. Please try again.' }
+  );
+  assert.equal(mockOtpDoc.attempts, 1);
+});
+
+test('verifyOtp: 5 failed attempts rejects with 400 TOO_MANY_ATTEMPTS', async () => {
+  const crypto = await import('crypto');
+  const mockOtpDoc = {
+    _id: 'otp_123',
+    identifier: 'resetuser@example.com',
+    hashedCode: crypto.createHash('sha256').update('123456').digest('hex'),
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    attempts: 4,
+    usedAt: undefined as Date | undefined,
+    save: async function () { return this; },
+  };
+
+  Object.defineProperty(authRepository, 'findLatestOtp', {
+    configurable: true,
+    value: async () => mockOtpDoc,
+  });
+
+  await assert.rejects(
+    authService.verifyOtp({ email: 'resetuser@example.com', otp: '999999' }),
+    { status: 400, code: 'TOO_MANY_ATTEMPTS', message: 'Too many attempts. Please request a new code.' }
+  );
+  assert.equal(mockOtpDoc.attempts, 5);
+
+  // Subsequent call immediately returns TOO_MANY_ATTEMPTS even before hashing
+  await assert.rejects(
+    authService.verifyOtp({ email: 'resetuser@example.com', otp: '123456' }),
+    { status: 400, code: 'TOO_MANY_ATTEMPTS' }
+  );
+});
+
+test('verifyOtp: expired OTP rejects with 400 OTP_EXPIRED', async () => {
+  const mockOtpDoc = {
+    _id: 'otp_123',
+    identifier: 'resetuser@example.com',
+    hashedCode: 'some_hash',
+    expiresAt: new Date(Date.now() - 1000), // expired
+    attempts: 0,
+    usedAt: undefined as Date | undefined,
+  };
+
+  Object.defineProperty(authRepository, 'findLatestOtp', {
+    configurable: true,
+    value: async () => mockOtpDoc,
+  });
+
+  await assert.rejects(
+    authService.verifyOtp({ email: 'resetuser@example.com', otp: '123456' }),
+    { status: 400, code: 'OTP_EXPIRED', message: 'This verification code has expired. Please request a new code.' }
+  );
+});
+
+test('verifyOtp: already used OTP rejects with 400 OTP_ALREADY_USED', async () => {
+  const mockOtpDoc = {
+    _id: 'otp_123',
+    identifier: 'resetuser@example.com',
+    hashedCode: 'some_hash',
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    attempts: 0,
+    usedAt: new Date(Date.now() - 5000), // already used
+  };
+
+  Object.defineProperty(authRepository, 'findLatestOtp', {
+    configurable: true,
+    value: async () => mockOtpDoc,
+  });
+
+  await assert.rejects(
+    authService.verifyOtp({ email: 'resetuser@example.com', otp: '123456' }),
+    { status: 400, code: 'OTP_ALREADY_USED', message: 'This verification code has already been used. Please request a new code.' }
+  );
+});
+
+test('resendOtp: enforces 30s cooldown per identifier returning 429 RATE_LIMITED', async () => {
+  const recentOtpDoc = {
+    createdAt: new Date(Date.now() - 10_000), // created 10s ago
+  };
+
+  Object.defineProperty(authRepository, 'findLatestOtp', {
+    configurable: true,
+    value: async () => recentOtpDoc,
+  });
+
+  await assert.rejects(
+    authService.resendOtp({ email: 'user@example.com' }),
+    { status: 429, code: 'RATE_LIMITED', message: 'Please wait 30 seconds before requesting another code.' }
+  );
+});
+
+test('resendOtp: invalidates previous OTP, issues new OTP and returns generic message after cooldown', async () => {
+  const oldOtpDoc = {
+    createdAt: new Date(Date.now() - 35_000), // created 35s ago (> 30s cooldown)
+  };
+
+  Object.defineProperty(authRepository, 'findLatestOtp', {
+    configurable: true,
+    value: async () => oldOtpDoc,
+  });
+
+  const mockUser = {
+    id: '507f1f77bcf86cd799439011',
+    name: 'Reset Test User',
+    email: 'resetuser@example.com',
+    status: 'active',
+  };
+
+  Object.defineProperty(authRepository, 'findByEmail', {
+    configurable: true,
+    value: async () => mockUser,
+  });
+
+  let createdOtp: any = null;
+  Object.defineProperty(authRepository, 'createOtp', {
+    configurable: true,
+    value: async (d: any) => { createdOtp = d; return d; },
+  });
+
+  let invalidated = false;
+  Object.defineProperty(authRepository, 'invalidateActiveOtps', {
+    configurable: true,
+    value: async () => { invalidated = true; },
+  });
+
+  let mailSent: any = null;
+  Object.defineProperty(mailService, 'sendPasswordResetOtpEmail', {
+    configurable: true,
+    value: async (d: any) => { mailSent = d; },
+  });
+
+  const res = await authService.resendOtp({ email: 'resetuser@example.com' });
+  assert.equal(res.success, true);
+  assert.equal(res.message, 'If an account exists, a verification code has been sent.');
+  assert.equal(invalidated, true);
+  assert.ok(createdOtp);
+  assert.ok(mailSent);
+});
+
+test('resetPassword: valid reset token updates password, revokes all sessions, and prevents token reuse', async () => {
   const rawToken = 'test-secure-raw-token-12345678901234567890';
   const crypto = await import('crypto');
   const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
@@ -432,26 +678,53 @@ test('resetPassword: valid token updates password, clears reset fields, incremen
     value: async (hash: string) => (hash === tokenStoredInDb ? mockUser : null),
   });
 
-  // 1. Successful reset
-  const res = await authService.resetPassword({ token: rawToken, newPassword: 'NewPassword123' });
+  // 1. Successful reset using resetToken field
+  const res = await authService.resetPassword({ resetToken: rawToken, newPassword: 'NewPassword123' });
   assert.equal(res.success, true);
-  assert.equal(res.message, 'Your password has been reset successfully.');
+  assert.equal(res.message, 'Your password has been reset successfully. Please log in with your new password.');
 
   // Password updated and hashed
   assert.notEqual(mockUser.passwordHash, 'old_hashed_password');
   // Reset fields cleared
   assert.equal(mockUser.passwordResetTokenHash, undefined);
   assert.equal(mockUser.passwordResetExpiresAt, undefined);
-  // Session version bumped
+  // Session version bumped (all previous sessions revoked)
   assert.equal(mockUser.tokenVersion, 2);
 
-  // 2. Token reuse rejected: database no longer has the token
+  // 2. Token reuse rejected
   tokenStoredInDb = undefined;
   await assert.rejects(
-    authService.resetPassword({ token: rawToken, newPassword: 'AnotherPassword123' }),
+    authService.resetPassword({ resetToken: rawToken, newPassword: 'AnotherPassword123' }),
     { status: 400, code: 'INVALID_RESET_TOKEN' },
     'Reusing the reset token must be rejected'
   );
+});
+
+test('resetPassword: works with legacy token parameter for backwards compatibility', async () => {
+  const rawToken = 'legacy-token-parameter-test-1234567890';
+  const crypto = await import('crypto');
+  const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+  const mockUser = {
+    id: '507f1f77bcf86cd799439011',
+    name: 'Reset Test User',
+    email: 'resetuser@example.com',
+    status: 'active',
+    passwordHash: 'old_hashed_password',
+    tokenVersion: 1,
+    passwordResetTokenHash: tokenHash,
+    passwordResetExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    save: async function () { return this; },
+  };
+
+  Object.defineProperty(authRepository, 'findByResetTokenHash', {
+    configurable: true,
+    value: async () => mockUser,
+  });
+
+  const res = await authService.resetPassword({ token: rawToken, newPassword: 'NewPassword123' });
+  assert.equal(res.success, true);
+  assert.equal(mockUser.tokenVersion, 2);
 });
 
 test('resetPassword: expired token or invalid token is rejected with 400', async () => {
@@ -461,8 +734,9 @@ test('resetPassword: expired token or invalid token is rejected with 400', async
   });
 
   await assert.rejects(
-    authService.resetPassword({ token: 'expired-or-invalid-token', newPassword: 'NewPassword123' }),
+    authService.resetPassword({ resetToken: 'expired-or-invalid-token', newPassword: 'NewPassword123' }),
     { status: 400, code: 'INVALID_RESET_TOKEN', message: 'This password reset link is invalid or has expired.' }
   );
 });
+
 

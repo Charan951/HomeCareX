@@ -1,0 +1,1391 @@
+/* =========================================================
+   Marketing Page
+   ========================================================= */
+
+.marketing-page {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.marketing-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.marketing-header h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.marketing-header p {
+  margin: 7px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.marketing-list-header {
+  align-items: center;
+}
+
+/* =========================================================
+   Messages
+   ========================================================= */
+
+.marketing-message {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.marketing-error {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.marketing-success {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+/* =========================================================
+   Cards
+   ========================================================= */
+
+.marketing-card {
+  min-width: 0;
+  box-sizing: border-box;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+}
+
+.marketing-list-card {
+  padding: 20px;
+}
+
+.marketing-form-card {
+  width: 100%;
+  padding: 28px;
+}
+
+.marketing-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.marketing-card-header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.marketing-card-description {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+/* =========================================================
+   Create Button
+   ========================================================= */
+
+.marketing-create-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px 18px;
+  border: 1px solid #2563eb;
+  border-radius: 7px;
+  background: #2563eb;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgb(37 99 235 / 15%);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.marketing-create-button:hover {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+  box-shadow: 0 4px 10px rgb(37 99 235 / 20%);
+  transform: translateY(-1px);
+}
+
+.marketing-create-button:active {
+  border-color: #1e40af;
+  background: #1e40af;
+  box-shadow: 0 1px 3px rgb(37 99 235 / 20%);
+  transform: translateY(0);
+}
+
+.marketing-create-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.marketing-empty-button {
+  margin-top: 18px;
+}
+
+/* =========================================================
+   Status Summary
+   ========================================================= */
+
+.marketing-status-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.marketing-summary-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 15px 17px;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.marketing-summary-label {
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.marketing-summary-card strong {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.marketing-summary-total {
+  border-left: 4px solid #6b7280;
+}
+
+.marketing-summary-total strong {
+  color: #374151;
+}
+
+.marketing-summary-active {
+  border-left: 4px solid #16a34a;
+}
+
+.marketing-summary-active strong {
+  color: #15803d;
+}
+
+.marketing-summary-scheduled {
+  border-left: 4px solid #2563eb;
+}
+
+.marketing-summary-scheduled strong {
+  color: #1d4ed8;
+}
+
+.marketing-summary-inactive {
+  border-left: 4px solid #9ca3af;
+}
+
+.marketing-summary-inactive strong {
+  color: #4b5563;
+}
+
+.marketing-summary-expired {
+  border-left: 4px solid #dc2626;
+}
+
+.marketing-summary-expired strong {
+  color: #b91c1c;
+}
+
+/* =========================================================
+   Loading / Empty
+   ========================================================= */
+
+.marketing-loading {
+  padding: 50px 20px;
+  color: #6b7280;
+  font-size: 14px;
+  text-align: center;
+}
+
+.marketing-empty {
+  padding: 50px 20px;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.marketing-empty-title {
+  margin: 0;
+  color: #374151;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.marketing-empty-text {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* =========================================================
+   Banner List
+   ========================================================= */
+
+/*
+   Desktop:
+
+   ┌──────────────────────┐  ┌──────────────────────┐
+   │                      │  │                      │
+   │      Banner 1        │  │      Banner 2        │
+   │                      │  │                      │
+   └──────────────────────┘  └──────────────────────┘
+
+   Two banners per row.
+*/
+
+.marketing-banner-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px;
+  align-items: stretch;
+}
+
+/* =========================================================
+   Banner Card
+   ========================================================= */
+
+.marketing-banner {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+
+  /*
+     Professional card transition
+  */
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 5%),
+    0 4px 10px rgb(15 23 42 / 4%);
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background-color 0.25s ease;
+}
+
+/*
+   Main box hover transition
+*/
+
+.marketing-banner:hover {
+  transform: translateY(-5px);
+  border-color: #bfdbfe;
+
+  box-shadow:
+    0 4px 8px rgb(37 99 235 / 8%),
+    0 14px 30px rgb(15 23 42 / 10%);
+}
+
+/*
+   Small blue highlight at the top of the card
+*/
+
+.marketing-banner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: #2563eb;
+  opacity: 0;
+  z-index: 2;
+
+  transition: opacity 0.25s ease;
+}
+
+.marketing-banner:hover::before {
+  opacity: 1;
+}
+
+/* =========================================================
+   Expired Banner
+   ========================================================= */
+
+.marketing-banner-expired {
+  border-color: #fecaca;
+  background: #fffafa;
+}
+
+.marketing-banner-expired:hover {
+  border-color: #fca5a5;
+  box-shadow:
+    0 4px 8px rgb(220 38 38 / 6%),
+    0 14px 30px rgb(220 38 38 / 8%);
+}
+
+.marketing-banner-expired::before {
+  background: #dc2626;
+}
+
+.marketing-banner-expired:hover::before {
+  opacity: 1;
+}
+
+/* =========================================================
+   Inactive Banner
+   ========================================================= */
+
+.marketing-banner-inactive {
+  border-color: #d1d5db;
+  background: #fafafa;
+}
+
+.marketing-banner-inactive:hover {
+  border-color: #cbd5e1;
+  box-shadow:
+    0 4px 8px rgb(15 23 42 / 5%),
+    0 14px 30px rgb(15 23 42 / 8%);
+}
+
+.marketing-banner-inactive::before {
+  background: #9ca3af;
+}
+
+/* =========================================================
+   Banner Content
+   ========================================================= */
+
+.marketing-banner-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+}
+
+/* =========================================================
+   Banner Image
+   ========================================================= */
+
+.marketing-banner-image {
+  width: 100%;
+  height: 220px;
+  min-width: 0;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+/*
+   Image transition
+
+   When user hovers the card:
+   image slightly zooms in.
+*/
+
+.marketing-banner-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+
+  transition:
+    transform 0.45s ease,
+    filter 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.marketing-banner:hover .marketing-banner-image img {
+  transform: scale(1.045);
+}
+
+/* =========================================================
+   Expired / Inactive Images
+   ========================================================= */
+
+.marketing-banner-expired .marketing-banner-image img {
+  filter: grayscale(35%);
+  opacity: 0.78;
+}
+
+.marketing-banner-inactive .marketing-banner-image img {
+  filter: grayscale(25%);
+  opacity: 0.78;
+}
+
+/* =========================================================
+   Banner Details
+   ========================================================= */
+
+.marketing-banner-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  padding: 18px;
+}
+
+.marketing-banner-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.marketing-banner-title {
+  margin: 0;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.marketing-banner-placement {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* =========================================================
+   Status Badges
+   ========================================================= */
+
+.marketing-status {
+  flex-shrink: 0;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Active */
+
+.marketing-status-active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* Scheduled */
+
+.marketing-status-scheduled {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* Inactive */
+
+.marketing-status-inactive {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Expired */
+
+.marketing-status-expired {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* =========================================================
+   Status Messages
+   ========================================================= */
+
+.marketing-status-message {
+  margin-top: 16px;
+  padding: 10px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.marketing-status-message-scheduled {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.marketing-status-message-inactive {
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #4b5563;
+}
+
+.marketing-status-message-expired {
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* =========================================================
+   Banner Information
+   ========================================================= */
+
+.marketing-banner-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.marketing-info-label {
+  display: block;
+  margin-bottom: 3px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.marketing-info-value {
+  margin: 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.marketing-expired-date {
+  color: #dc2626;
+}
+
+.marketing-link {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.marketing-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.marketing-no-link {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* =========================================================
+   Buttons
+   ========================================================= */
+
+.marketing-primary-button,
+.marketing-secondary-button,
+.marketing-danger-button,
+.marketing-cancel-button,
+.marketing-refresh-button,
+.marketing-back-button {
+  box-sizing: border-box;
+  min-height: 40px;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* =========================================================
+   Primary Button
+   ========================================================= */
+
+.marketing-primary-button {
+  min-width: 160px;
+  padding: 10px 18px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 1px 2px rgb(37 99 235 / 15%);
+}
+
+.marketing-primary-button:hover:not(:disabled) {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+  box-shadow: 0 4px 10px rgb(37 99 235 / 20%);
+  transform: translateY(-1px);
+}
+
+.marketing-primary-button:active:not(:disabled) {
+  border-color: #1e40af;
+  background: #1e40af;
+  box-shadow: 0 1px 3px rgb(37 99 235 / 20%);
+  transform: translateY(0);
+}
+
+.marketing-primary-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+
+.marketing-primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+/* =========================================================
+   Secondary / Edit Button
+   ========================================================= */
+
+.marketing-secondary-button {
+  padding: 8px 14px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.marketing-secondary-button:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: #dbeafe;
+  color: #1e40af;
+  transform: translateY(-1px);
+}
+
+.marketing-secondary-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/*
+   Edit is disabled for:
+   - Inactive
+   - Expired
+*/
+
+.marketing-secondary-button:disabled {
+  border-color: #d1d5db;
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.7;
+  transform: none;
+}
+
+/* =========================================================
+   Danger / Delete Button
+   ========================================================= */
+
+.marketing-danger-button {
+  padding: 8px 14px;
+  border: 1px solid #fecaca;
+  background: #ffffff;
+  color: #dc2626;
+}
+
+.marketing-danger-button:hover:not(:disabled) {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+  transform: translateY(-1px);
+}
+
+.marketing-danger-button:focus-visible {
+  outline: 2px solid #ef4444;
+  outline-offset: 2px;
+}
+
+.marketing-danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* =========================================================
+   Refresh Button
+   ========================================================= */
+
+.marketing-refresh-button {
+  padding: 8px 13px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+}
+
+.marketing-refresh-button:hover:not(:disabled) {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.marketing-refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* =========================================================
+   Cancel Button
+   ========================================================= */
+
+.marketing-cancel-button {
+  min-width: 100px;
+  padding: 10px 18px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+}
+
+.marketing-cancel-button:hover:not(:disabled) {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.marketing-cancel-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.marketing-cancel-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* =========================================================
+   Back Button
+   ========================================================= */
+
+.marketing-back-button {
+  min-height: auto;
+  margin-bottom: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+}
+
+.marketing-back-button:hover:not(:disabled) {
+  color: #2563eb;
+}
+
+.marketing-back-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.marketing-back-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* =========================================================
+   Banner Actions
+   ========================================================= */
+
+.marketing-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+/* =========================================================
+   Form Page
+   ========================================================= */
+
+.marketing-form-page {
+  width: 100%;
+}
+
+.marketing-form-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.marketing-form-header h1 {
+  margin: 0;
+  color: #111827;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.marketing-form-header p {
+  margin: 7px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.marketing-form-status {
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.marketing-form-status-active {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.marketing-form-status-inactive {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.marketing-full-form {
+  width: 100%;
+}
+
+/* =========================================================
+   Form Sections
+   ========================================================= */
+
+.marketing-form-section {
+  padding: 4px 0 28px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.marketing-form-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.marketing-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.marketing-section-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #dbeafe;
+}
+
+.marketing-section-heading h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.marketing-section-heading p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.marketing-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.marketing-field-full {
+  grid-column: 1 / -1;
+}
+
+/* =========================================================
+   Form Fields
+   ========================================================= */
+
+.marketing-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.marketing-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.marketing-field label {
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.marketing-field input,
+.marketing-field select {
+  width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  outline: none;
+  background: #ffffff;
+  color: #111827;
+  font-family: inherit;
+  font-size: 14px;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.marketing-field input::placeholder {
+  color: #9ca3af;
+}
+
+.marketing-field input:focus,
+.marketing-field select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgb(37 99 235 / 10%);
+}
+
+.marketing-field-help {
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* =========================================================
+   Date Fields
+   ========================================================= */
+
+.marketing-date-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+/* =========================================================
+   Checkbox
+   ========================================================= */
+
+.marketing-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.marketing-checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+.marketing-checkbox-large {
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f9fafb;
+
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.marketing-checkbox-large:hover {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+}
+
+.marketing-checkbox-large span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.marketing-checkbox-large strong {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.marketing-checkbox-large small {
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* =========================================================
+   Preview
+   ========================================================= */
+
+.marketing-preview {
+  position: relative;
+  overflow: hidden;
+  min-height: 280px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
+.marketing-preview img {
+  display: block;
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+}
+
+.marketing-preview-overlay {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  padding: 32px 24px 20px;
+
+  background: linear-gradient(
+    transparent,
+    rgb(0 0 0 / 75%)
+  );
+
+  color: #ffffff;
+}
+
+.marketing-preview-overlay span {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.marketing-preview-overlay strong {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   Form Actions
+   ========================================================= */
+
+.marketing-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 24px;
+}
+
+/* =========================================================
+   Tablet - 1100px
+   ========================================================= */
+
+@media (max-width: 1100px) {
+  .marketing-status-summary {
+    grid-template-columns: repeat(
+      3,
+      minmax(0, 1fr)
+    );
+  }
+
+  /*
+     Keep two banners per row.
+  */
+
+  .marketing-banner-list {
+    grid-template-columns: repeat(
+      2,
+      minmax(0, 1fr)
+    );
+    gap: 18px;
+  }
+
+  .marketing-banner-image {
+    height: 190px;
+  }
+
+  .marketing-banner-details {
+    padding: 16px;
+  }
+}
+
+/* =========================================================
+   768px
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .marketing-page {
+    padding: 16px;
+  }
+
+  .marketing-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .marketing-list-header {
+    flex-direction: column;
+  }
+
+  .marketing-create-button {
+    width: 100%;
+  }
+
+  .marketing-status-summary {
+    grid-template-columns: repeat(
+      2,
+      minmax(0, 1fr)
+    );
+  }
+
+  /*
+     Mobile:
+     one banner per row.
+  */
+
+  .marketing-banner-list {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .marketing-banner-content {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-banner-image {
+    height: 220px;
+  }
+
+  .marketing-banner-image img {
+    min-height: 220px;
+    max-height: 280px;
+  }
+
+  .marketing-form-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .marketing-form-status {
+    align-self: flex-start;
+  }
+
+  .marketing-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-field-full {
+    grid-column: auto;
+  }
+
+  .marketing-date-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-preview img {
+    height: 280px;
+  }
+}
+
+/* =========================================================
+   560px
+   ========================================================= */
+
+@media (max-width: 560px) {
+  .marketing-page {
+    padding: 12px;
+  }
+
+  .marketing-list-card,
+  .marketing-form-card {
+    padding: 16px;
+  }
+
+  .marketing-header h1,
+  .marketing-form-header h1 {
+    font-size: 24px;
+  }
+
+  .marketing-status-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-banner-info {
+    grid-template-columns: 1fr;
+  }
+
+  .marketing-banner-top {
+    flex-direction: column;
+  }
+
+  .marketing-status {
+    align-self: flex-start;
+  }
+
+  .marketing-banner-actions {
+    flex-direction: column;
+  }
+
+  .marketing-secondary-button,
+  .marketing-danger-button {
+    width: 100%;
+  }
+
+  .marketing-card-header {
+    align-items: flex-start;
+  }
+
+  .marketing-refresh-button {
+    flex-shrink: 0;
+  }
+
+  .marketing-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .marketing-primary-button,
+  .marketing-cancel-button {
+    width: 100%;
+  }
+
+  .marketing-preview img {
+    height: 230px;
+  }
+
+  .marketing-preview-overlay {
+    padding: 28px 16px 16px;
+  }
+
+  .marketing-preview-overlay strong {
+    font-size: 17px;
+  }
+}
+
+/* =========================================================
+   360px
+   ========================================================= */
+
+@media (max-width: 380px) {
+  .marketing-page {
+    padding: 8px;
+  }
+
+  .marketing-list-card,
+  .marketing-form-card {
+    padding: 12px;
+  }
+
+  .marketing-header h1,
+  .marketing-form-header h1 {
+    font-size: 21px;
+  }
+
+  .marketing-header p,
+  .marketing-form-header p {
+    font-size: 13px;
+  }
+
+  .marketing-banner-details {
+    padding: 12px;
+  }
+
+  .marketing-banner-image {
+    height: 180px;
+    min-height: 180px;
+  }
+
+  .marketing-banner-image img {
+    min-height: 180px;
+  }
+
+  .marketing-section-heading {
+    gap: 10px;
+  }
+
+  .marketing-section-number {
+    width: 30px;
+    height: 30px;
+  }
+
+  .marketing-section-heading h2 {
+    font-size: 15px;
+  }
+
+  .marketing-preview img {
+    height: 190px;
+  }
+}
+
+/* =========================================================
+   Accessibility
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-banner,
+  .marketing-banner-image img,
+  .marketing-banner::before,
+  .marketing-create-button,
+  .marketing-primary-button,
+  .marketing-secondary-button,
+  .marketing-danger-button {
+    transition: none;
+  }
+
+  .marketing-banner:hover,
+  .marketing-create-button:hover,
+  .marketing-primary-button:hover,
+  .marketing-secondary-button:hover,
+  .marketing-danger-button:hover {
+    transform: none;
+  }
+
+  .marketing-banner:hover .marketing-banner-image img {
+    transform: none;
+  }
+}

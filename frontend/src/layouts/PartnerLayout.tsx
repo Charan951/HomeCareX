@@ -41,12 +41,18 @@ const PAGE_TITLES: Record<string, string> = {
 };
 
 // Titles that only change the heading (they don't hide the status pill / bell on mobile)
+// Pages listed here also hide the Online/Offline pill (see hideStatusPill below)
 const EXTRA_TITLES: Record<string, string> = {
   "/partner/incentives": "Partner Incentives",
   "/partner/earnings/incentives": "Partner Incentives",
   "/partner/payouts": "Partner Payouts",
   "/partner/earnings/payouts": "Partner Payouts",
+  "/partner/transactions": "Partner Transactions",
+  "/partner/wallet": "Partner Wallet",
 };
+
+// Pages that hide the mobile bottom bar (they have their own back button in the top bar)
+const HIDE_BOTTOM_NAV = ["/partner/wallet", "/partner/transactions"];
 
 // Bottom tabs. Every other page is reached from the Profile tab (see ProfileMenu).
 // ---- Mobile bottom navigation (Instagram-style: hides on scroll down, shows on scroll up) ----
@@ -239,8 +245,9 @@ export default function PartnerLayout() {
   const title = PAGE_TITLES[cleanPath] ?? EXTRA_TITLES[cleanPath] ?? current?.label ?? "Partner";
   // Availability / Working Hours / Blackout Dates / Schedule / Earnings on mobile: header shows only [Back] + page name
   const minimalHeader = Object.keys(PAGE_TITLES).includes(cleanPath);
-  // Partner Incentives / Partner Payouts pages: no Online/Offline pill (every other page keeps it)
+  // Partner Incentives / Payouts / Transactions / Wallet pages: no Online/Offline pill (every other page keeps it)
   const hideStatusPill = Object.keys(EXTRA_TITLES).includes(cleanPath);
+  const hideBottomNav = HIDE_BOTTOM_NAV.includes(cleanPath);
 
   // Mobile back button: shown on every page except Home.
   const showBack = cleanPath !== "/partner";
@@ -285,14 +292,14 @@ export default function PartnerLayout() {
           </header>
 
           {/* Page content */}
-          <main className="px-4 py-6 pb-24 sm:px-6 lg:pb-8">
+          <main className={`px-4 py-6 sm:px-6 lg:pb-8 ${hideBottomNav ? "pb-8" : "pb-24"}`}>
             <PartnerErrorBoundary resetKey={pathname}>
               <Outlet />
             </PartnerErrorBoundary>
           </main>
         </div>
 
-        <BottomNav visible={navVisible} path={cleanPath} />
+        {!hideBottomNav && <BottomNav visible={navVisible} path={cleanPath} />}
       </div>
     </PartnerStatusContext.Provider>
   );
