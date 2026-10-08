@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  CheckCircle2, Eye, EyeOff, FolderTree, Layers, Plus, X, XCircle, History, Info, WifiOff,
+  CheckCircle2, Eye, EyeOff, FolderTree, Layers, Plus, X, XCircle, History, WifiOff,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { PageHeader } from '@/components/admin/PageHeader';

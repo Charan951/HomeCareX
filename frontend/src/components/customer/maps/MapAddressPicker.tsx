@@ -205,9 +205,8 @@ export default function MapAddressPicker({ value, onPick, autoLocate = false, cl
     );
   }
 
-  const cardOpen = Boolean(picked || notice);
-
   return (
+    <div className="space-y-2.5">
     <div className={clsx("relative isolate overflow-hidden rounded-3xl border border-line bg-[#ECEEF7]", className)}>
       {/* z-0 keeps Leaflet's internal panes (z-index up to 1000) underneath our overlays */}
       <div ref={mapEl} className="absolute inset-0 z-0" aria-label="Map. Drag to move the pin to your exact location." role="application" />
@@ -222,8 +221,13 @@ export default function MapAddressPicker({ value, onPick, autoLocate = false, cl
       {/* Fixed centre pin */}
       {status === "ready" && (
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-full">
-          <div className="mb-2 whitespace-nowrap rounded-full bg-ink px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg">
-            {dragging ? "Release to set location" : resolving ? "Finding address…" : "Service will happen here"}
+          <div
+            className={clsx(
+              "mb-2 whitespace-nowrap rounded-full bg-ink px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg transition-opacity motion-reduce:transition-none",
+              dragging || resolving ? "opacity-100" : "opacity-0",
+            )}
+          >
+            {dragging ? "Release to set location" : "Finding address…"}
           </div>
           <div className={clsx("mx-auto w-fit transition-transform duration-200 motion-reduce:transition-none", dragging && "-translate-y-2")}>
             <svg width="40" height="52" viewBox="0 0 40 52" aria-hidden="true">
@@ -238,15 +242,13 @@ export default function MapAddressPicker({ value, onPick, autoLocate = false, cl
       {/* Search (runs on Enter, to respect Nominatim's no-autocomplete policy) */}
       {status === "ready" && (
         <div className="absolute inset-x-3 top-3 z-20">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              void submitSearch();
-            }}
+          {/* A div, not a <form>: this picker lives inside the address <form>, and a nested form would also
+              submit (and close) the address form when Enter is pressed here. */}
+          <div
             role="search"
-            className="flex items-center gap-2 rounded-full border border-line bg-white px-4 shadow-[0_10px_30px_-12px_rgba(30,27,46,.45)]"
+            className="flex items-center gap-2 rounded-full border border-line bg-white px-4 shadow-[0_10px_30px_-12px_rgba(30,27,46,.45)] transition-colors focus-within:border-brand/60"
           >
-            <button type="submit" aria-label="Search" className={clsx("shrink-0 rounded-full p-1 text-muted hover:text-ink", FOCUS_RING)}>
+            <button type="button" onClick={() => void submitSearch()} aria-label="Search" className={clsx("shrink-0 rounded-full p-1 text-muted hover:text-ink", FOCUS_RING)}>
               <Search className="h-4 w-4" aria-hidden="true" />
             </button>
             <input
@@ -256,10 +258,16 @@ export default function MapAddressPicker({ value, onPick, autoLocate = false, cl
                 setQuery(e.target.value);
                 if (results.length) setResults([]);
               }}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" || e.nativeEvent.isComposing) return;
+                e.preventDefault();
+                e.stopPropagation();
+                void submitSearch();
+              }}
               placeholder="Search for area, street or landmark, then press Enter"
               aria-label="Search for a location"
               autoComplete="off"
-              className="h-11 min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted/70"
+              className="h-11 min-w-0 flex-1 bg-transparent text-sm text-ink outline-none focus:outline-none focus-visible:outline-none placeholder:text-muted/70"
             />
             {searching && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-muted" aria-hidden="true" />}
             {query && !searching && (
@@ -275,7 +283,7 @@ export default function MapAddressPicker({ value, onPick, autoLocate = false, cl
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
             )}
-          </form>
+          </div>
           {results.length > 0 && (
             <ul role="listbox" aria-label="Search results" className="mt-2 overflow-hidden rounded-2xl border border-line bg-white shadow-[0_18px_40px_-16px_rgba(30,27,46,.5)]">
               {results.map((r) => (
@@ -300,8 +308,8 @@ export default function MapAddressPicker({ value, onPick, autoLocate = false, cl
 
       {/* Zoom + current location */}
       {status === "ready" && (
-        <div className={clsx("absolute right-3 z-20 flex flex-col items-end gap-2", cardOpen ? "bottom-[6.75rem]" : "bottom-9")}>
-          <div className="flex flex-col overflow-hidden rounded-full border border-line bg-white shadow-[0_10px_30px_-12px_rgba(30,27,46,.45)]">
+        <div className="absolute bottom-8 right-3 z-20 flex flex-col items-end gap-2">
+          <div className="hidden flex-col overflow-hidden sm:flex rounded-full border border-line bg-white shadow-[0_10px_30px_-12px_rgba(30,27,46,.45)]">
             <button type="button" onClick={() => zoomBy(1)} aria-label="Zoom in" className={clsx("flex h-9 w-9 items-center justify-center text-ink hover:bg-brand-soft", FOCUS_RING)}>
               <Plus className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -313,38 +321,15 @@ export default function MapAddressPicker({ value, onPick, autoLocate = false, cl
             type="button"
             onClick={locateMe}
             disabled={locating}
+            aria-label="Use current location"
             className={clsx(
-              "inline-flex h-11 items-center gap-2 rounded-full border border-line bg-white px-4 text-xs font-bold text-brand shadow-[0_10px_30px_-12px_rgba(30,27,46,.45)] transition-colors hover:bg-brand-soft disabled:opacity-70",
+              "inline-flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-line bg-white text-xs font-bold text-brand sm:w-auto sm:px-4 shadow-[0_10px_30px_-12px_rgba(30,27,46,.45)] transition-colors hover:bg-brand-soft disabled:opacity-70",
               FOCUS_RING,
             )}
           >
             {locating ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Crosshair className="h-4 w-4" aria-hidden="true" />}
-            Use current location
+            <span className="hidden sm:inline">Use current location</span>
           </button>
-        </div>
-      )}
-
-      {/* Resolved address */}
-      {status === "ready" && cardOpen && (
-        <div className="absolute inset-x-3 bottom-9 z-20" aria-live="polite">
-          <div className="flex items-start gap-3 rounded-2xl border border-line bg-white/95 px-4 py-3 shadow-[0_10px_30px_-12px_rgba(30,27,46,.45)] backdrop-blur">
-            {notice ? (
-              <>
-                <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
-                <p className="text-sm text-ink">{notice}</p>
-              </>
-            ) : (
-              picked && (
-                <>
-                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden="true" />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-ink">{picked.area || picked.line1 || picked.city}</p>
-                    <p className="line-clamp-2 text-xs text-muted">{picked.formatted}</p>
-                  </div>
-                </>
-              )
-            )}
-          </div>
         </div>
       )}
 
@@ -356,6 +341,31 @@ export default function MapAddressPicker({ value, onPick, autoLocate = false, cl
         </a>{" "}
         contributors
       </div>
+    </div>
+
+    {/* The chosen location sits under the map, not on top of it, so it never covers the pin or controls. */}
+    <div aria-live="polite" className="flex min-h-[64px] items-start gap-3 rounded-2xl border border-line bg-white px-4 py-3">
+      {notice ? (
+        <>
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" />
+          <p className="text-sm text-ink">{notice}</p>
+        </>
+      ) : picked ? (
+        <>
+          <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-brand" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Service location</p>
+            <p className="truncate text-sm font-bold text-ink">{picked.area || picked.line1 || picked.city}</p>
+            <p className="line-clamp-2 text-xs text-muted">{picked.formatted}</p>
+          </div>
+        </>
+      ) : (
+        <>
+          <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-muted" aria-hidden="true" />
+          <p className="text-sm text-muted">{resolving ? "Finding address…" : "Drag the map or search to set your location."}</p>
+        </>
+      )}
+    </div>
     </div>
   );
 }

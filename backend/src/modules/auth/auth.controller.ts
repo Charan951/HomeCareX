@@ -12,7 +12,9 @@ import {
   loginSchema,
   parseBody,
   registerSchema,
+  resendOtpSchema,
   resetPasswordSchema,
+  verifyOtpSchema,
 } from './auth.validation';
 
 import {
@@ -36,10 +38,7 @@ const cookieOptions = (): CookieOptions => ({
 
   secure: process.env.NODE_ENV === 'production',
 
-  sameSite:
-    process.env.NODE_ENV === 'production'
-      ? 'strict'
-      : 'lax',
+  sameSite: 'strict',
 
   path: REFRESH_COOKIE_PATH,
 
@@ -286,6 +285,38 @@ export const authController = {
       await authService.forgotPassword(
         parseBody(
           forgotPasswordSchema,
+          req.body,
+        ),
+      );
+
+    res.json(result);
+  }),
+
+
+  /**
+   * POST /api/v1/auth/verify-otp
+   */
+  verifyOtp: wrap(async (req, res) => {
+    const result =
+      await authService.verifyOtp(
+        parseBody(
+          verifyOtpSchema,
+          req.body,
+        ),
+      );
+
+    res.json(result);
+  }),
+
+
+  /**
+   * POST /api/v1/auth/resend-otp
+   */
+  resendOtp: wrap(async (req, res) => {
+    const result =
+      await authService.resendOtp(
+        parseBody(
+          resendOtpSchema,
           req.body,
         ),
       );

@@ -46,19 +46,10 @@ import { bookingsRoutes } from '../modules/bookings/bookings.routes';
 
 import customerDashboardRoutes from '../modules/customer-dashboard/customer-dashboard.routes';
 
-import { addressesRoutes } from '../modules/addresses/addresses.routes';
+import { addressesRoutes, serviceabilityRoutes } from '../modules/addresses/addresses.routes';
 
 import { reviewsRoutes } from '../modules/reviews/reviews.routes';
-
-import {
-  couponsRoutes,
-  couponCustomerRoutes,
-} from '../modules/coupons/coupons.routes';
-
-import {
-  marketingRoutes,
-  publicMarketingRoutes,
-} from '../modules/marketing/marketing.routes';
+import { pricingRoutes } from '../modules/pricing/pricing.routes';
 
 export const rootRouter = Router();
 
@@ -145,92 +136,14 @@ rootRouter.use(
   leadsRoutes,
 ); // POST /public/leads
 
-rootRouter.use(
-  bookingsRoutes,
-); // GET /services/:id/slots, POST /bookings/check-slot, POST /bookings, GET /bookings/:id
-
-rootRouter.use(
-  '/partner/earnings',
-  earningsRoutes,
-); // GET /partner/earnings/summary
-
-rootRouter.use(
-  '/addresses',
-  addressesRoutes,
-); // GET/POST /addresses, GET /addresses/serviceability
-
-rootRouter.use(
-  '/payments',
-  paymentRoutes,
-); // GET /payments, POST /payments/order, /cod, /verify, /attempt, /webhook (public, HMAC)
-
-rootRouter.use(
-  '/wallet',
-  walletRoutes,
-); // GET /wallet
-
-rootRouter.use(
-  reviewsRoutes,
-); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
-
-rootRouter.use(
-  '/partner/incentives',
-  incentivesRoutes,
-); // GET /partner/incentives, GET /partner/incentives/:id
-
-rootRouter.use(
-  '/admin/customers',
-  adminCustomersRoutes,
-);
-
-// =========================================================
-// Coupons
-// =========================================================
-
-// Admin coupon CRUD
-// GET    /api/v1/admin/coupons
-// GET    /api/v1/admin/coupons/:id
-// POST   /api/v1/admin/coupons
-// PATCH  /api/v1/admin/coupons/:id
-// DELETE /api/v1/admin/coupons/:id
-
-rootRouter.use(
-  '/admin/coupons',
-  couponsRoutes,
-);
-
-// Customer coupon APIs
-// POST /api/v1/coupons/validate
-// POST /api/v1/coupons/available
-
-rootRouter.use(
-  '/coupons',
-  couponCustomerRoutes,
-);
-
-// =========================================================
-// Marketing & Banners
-// =========================================================
-
-// Admin banner CRUD
-// GET    /api/v1/admin/banners
-// GET    /api/v1/admin/banners/:id
-// POST   /api/v1/admin/banners
-// PATCH  /api/v1/admin/banners/:id
-// DELETE /api/v1/admin/banners/:id
-
-rootRouter.use(
-  '/admin/banners',
-  marketingRoutes,
-);
-
-// Public banners
-// GET /api/v1/banners
-// GET /api/v1/banners?placement=HOME
-
-rootRouter.use(
-  '/banners',
-  publicMarketingRoutes,
-);
-
+rootRouter.use(bookingsRoutes); // GET /services/:id/slots, POST /bookings/check-slot, POST /bookings, GET /bookings/:id
+rootRouter.use('/pricing', pricingRoutes); // POST /pricing/quote
+rootRouter.use('/partner/earnings', earningsRoutes); // GET /partner/earnings/summary
+rootRouter.use('/addresses', addressesRoutes); // GET/POST /addresses, PATCH/DELETE /addresses/:id
+rootRouter.use('/serviceability', serviceabilityRoutes); // GET /serviceability?pincode=
+rootRouter.use('/payments', paymentRoutes); // GET /payments, POST /payments/order, /cod, /verify, /attempt, /webhook (public, HMAC)
+rootRouter.use('/wallet', walletRoutes); // GET /wallet
+rootRouter.use(reviewsRoutes); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
+rootRouter.use('/partner/incentives', incentivesRoutes); // GET /partner/incentives, GET /partner/incentives/:id
+rootRouter.use('/admin/customers', adminCustomersRoutes);
 export default rootRouter;

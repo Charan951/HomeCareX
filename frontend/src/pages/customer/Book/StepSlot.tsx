@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, CalendarDays, Clock3, MapPin, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Clock3 } from "lucide-react";
 import clsx from "clsx";
 import { useQuery } from "@tanstack/react-query";
 import { todayISO, useBookingDraftStore } from "@/features/booking";
@@ -8,9 +8,9 @@ import { EmptyState, ErrorState, LoadingState } from "@/components/customer";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import type { SlotAvailability, SlotsResponse } from "@/types/booking";
+import BookingSummary, { prettyDate } from "./components/BookingSummary";
 import DatePicker from "./components/DatePicker";
 import SlotPicker, { formatSlotLabel } from "./components/SlotPicker";
-import { formatINR } from "./formatMoney";
 
 export default function StepSlot() {
   const serviceId = useBookingDraftStore((s) => s.serviceId);
@@ -20,11 +20,6 @@ export default function StepSlot() {
   const setSlot = useBookingDraftStore((s) => s.setSlot);
   const setStep = useBookingDraftStore((s) => s.setStep);
   const online = useOnlineStatus();
-  const serviceName = useBookingDraftStore((s) => s.serviceName);
-  const quantity = useBookingDraftStore((s) => s.quantity);
-  const addOns = useBookingDraftStore((s) => s.addOns);
-  const basePrice = useBookingDraftStore((s) => s.basePrice);
-  const address = useBookingDraftStore((s) => s.addressSnapshot);
 
   // Default to today; a persisted draft whose date has since passed is reset (with its slot).
   useEffect(() => {
@@ -99,7 +94,6 @@ export default function StepSlot() {
   }
 
   const dateLabel = date ? prettyDate(date) : null;
-  const estimate = basePrice * quantity + addOns.reduce((sum, a) => sum + a.price * a.quantity, 0);
 
   const backBtn = (
     <button
@@ -185,70 +179,7 @@ export default function StepSlot() {
       </div>
 
       {/* Desktop: sticky booking summary */}
-      <aside className="hidden lg:sticky lg:top-24 lg:block" aria-label="Your visit">
-        <div className="overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_30px_70px_-44px_rgba(67,56,202,.6)]">
-          <div className="bg-gradient-to-br from-brand to-[#6D5BE8] px-5 py-5 text-white">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Your visit</p>
-            {canContinue ? (
-              <>
-                <p className="mt-1.5 text-lg font-bold leading-snug">{dateLabel}</p>
-                <p className="mt-0.5 text-sm font-medium text-white/85">{formatSlotLabel(slot ?? "")}</p>
-              </>
-            ) : (
-              <>
-                <p className="mt-1.5 text-lg font-bold leading-snug">Select a date and time</p>
-                <p className="mt-0.5 text-sm text-white/75">Your slot will appear here.</p>
-              </>
-            )}
-          </div>
-          <dl className="space-y-4 px-5 py-5 text-sm">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <dt className="text-xs text-muted">Service</dt>
-                <dd className="font-semibold text-ink">
-                  {serviceName ?? "Home service"} × {quantity}
-                </dd>
-                {addOns.length > 0 && <dd className="text-xs text-muted">+ {addOns.length} add-on{addOns.length > 1 ? "s" : ""}</dd>}
-              </div>
-            </div>
-            {address && (
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
-                  <MapPin className="h-4 w-4" aria-hidden="true" />
-                </span>
-                <div className="min-w-0">
-                  <dt className="text-xs text-muted">{address.label ?? "Address"}</dt>
-                  <dd className="break-words font-semibold text-ink">
-                    {address.line1}, {address.city} – {address.pincode}
-                  </dd>
-                </div>
-              </div>
-            )}
-            <div className="flex items-baseline justify-between border-t border-line pt-4">
-              <dt className="text-muted">Estimated</dt>
-              <dd className="text-lg font-bold tabular-nums text-ink">{formatINR(estimate)}</dd>
-            </div>
-          </dl>
-          <div className="flex items-center gap-2 px-5 pb-5">
-            {backBtn}
-            {nextBtn}
-          </div>
-          <p className="flex items-center justify-center gap-1.5 border-t border-line bg-canvas px-5 py-3 text-xs text-muted">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
-            You can review everything before paying
-          </p>
-        </div>
-      </aside>
+      <BookingSummary ariaLabel="Your visit" actions={<>{backBtn}{nextBtn}</>} footnote="You can review everything before paying" />
     </div>
   );
-}
-
-/** "2026-10-07" -> "Wed, 7 Oct". Parsed as a local date so the day never shifts with the timezone. */
-function prettyDate(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  if (!y || !m || !d) return iso;
-  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
 }
