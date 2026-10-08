@@ -3,9 +3,9 @@ import { ServiceModel } from '../../models/Service';
 import { HttpError } from '../auth/auth.types';
 import { slugify, uniqueSlug } from '../../utils/slug';
 import { SEED_CATEGORIES } from './categories.constants';
-import { categoryCreateSchema, categoryReorderSchema, categoryUpdateSchema } from './categories.validation';
 import {
   categoryCreateSchema,
+  categoryReorderSchema,
   categoryUpdateSchema,
 } from './categories.validation';
 import type { CategoryDto } from './categories.types';
@@ -230,5 +230,5 @@ export const categoriesService = {
     await existing.deleteOne();
   },
 };
-};
+
 
