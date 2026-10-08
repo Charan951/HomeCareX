@@ -61,7 +61,10 @@ export const adminRoutes: AdminRoute[] = [
   { path: 'coupons/create', element: <AdminCouponsPage /> },
   { path: 'coupons/:id/edit', element: <AdminCouponsPage /> },
 
+  // Marketing
   { path: 'marketing', element: <AdminMarketingPage /> },
+{ path: 'marketing/create', element: <AdminMarketingPage /> },
+{ path: 'marketing/:id/edit', element: <AdminMarketingPage /> },
 
   // Finance
   { path: 'payments', element: <AdminPaymentsPage /> },
