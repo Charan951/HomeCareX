@@ -9,7 +9,6 @@ import {
   BOOKING_HOLD_MS,
   BOOKING_STATUS,
   BOOKING_WINDOW_DAYS,
-  BOOKINGS_SERVICE_CATALOG,
   CONVENIENCE_FEE,
   PRICE_CHANGED_TOLERANCE,
   SERVICE_SLOTS,
@@ -17,6 +16,7 @@ import {
 import type { CreateBookingInput, PriceLine, PriceSnapshot } from './bookings.types';
 import { addDays, isRealDate, nowInBookingTz, slotStartMinutes } from './bookings.time';
 import { BOOKING_PAYMENT_STATUS } from '../../models/Booking';
+import { ServiceModel } from '../../models/Service';
 
 export interface SlotAvailability {
   slot: string;
@@ -61,7 +61,8 @@ function toView(doc: { toObject?: () => Record<string, unknown> } | Record<strin
     typeof (doc as { toObject?: unknown }).toObject === 'function'
       ? (doc as { toObject: () => Record<string, unknown> }).toObject()
       : { ...(doc as Record<string, unknown>) };
-  const { requestHash: _h, idempotencyKey: _k, slotSeat: _s, __v: _v, otp: _o, ...rest } = obj;
+ const rest = { ...obj };
+for (const key of ['requestHash', 'idempotencyKey', 'slotSeat', '__v', 'otp']) delete rest[key];
   return rest;
 }
 
@@ -131,8 +132,15 @@ export const BookingService = {
     const replayed = await replay();
     if (replayed) return replayed;
 
-    const service = BOOKINGS_SERVICE_CATALOG.getById(input.serviceId);
-    if (!service) throw new AppError(404, 'SERVICE_NOT_FOUND', 'That service was not found');
+    const row = await ServiceModel.findOne(
+      { _id: input.serviceId, active: { $ne: false } },
+      'name basePrice addOns',
+    ).lean();
+    if (!row) throw new AppError(404, 'SERVICE_NOT_FOUND', 'That service was not found');
+    const service = {
+      id: String(row._id), name: row.name, basePrice: row.basePrice,
+      addOns: (row.addOns ?? []).map((a) => ({ id: String(a._id), name: a.name, price: a.price })),
+    };
 
     const addOnLines: PriceLine[] = input.addOns.map((a) => {
       const addOn = service.addOns.find((x) => x.id === a.addOnId);

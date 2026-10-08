@@ -7,32 +7,35 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
   plugins: [
     react(),
+
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: null,
       manifest: {
-        name: 'HomeCareX',
-        short_name: 'HomeCareX',
-        description: 'HomeCareX Professional Home Services',
-        theme_color: '#4338ca',
-        background_color: '#ffffff',
-        display: 'standalone',
-        start_url: '/',
+        name: "HomeCareX",
+        short_name: "HomeCareX",
+        description: "HomeCareX Professional Home Services",
+        theme_color: "#4338ca",
+        background_color: "#ffffff",
+        display: "standalone",
+        start_url: "/",
+
         icons: [
           {
-            src: '/logo.png',
-            sizes: '192x192',
-            type: 'image/png',
+            src: "/logo.png",
+            sizes: "192x192",
+            type: "image/png",
           },
           {
-            src: '/logo.png',
-            sizes: '512x512',
-            type: 'image/png',
+            src: "/logo.png",
+            sizes: "512x512",
+            type: "image/png",
           },
         ],
       },
+
       workbox: {
-        cacheId: 'homecarex-auth-shell-v1',
+        cacheId: "homecarex-auth-shell-v1",
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
@@ -42,23 +45,35 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'StaleWhileRevalidate',
+            // Google Fonts CSS
+            urlPattern:
+              /^https:\/\/fonts\.googleapis\.com\/.*/i,
+
+            handler: "StaleWhileRevalidate",
+
             options: {
-              cacheName: 'homecarex-fonts-stylesheets',
+              cacheName: "homecarex-fonts-stylesheets",
+
               cacheableResponse: {
                 statuses: [0, 200],
               },
             },
           },
+
           {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
+            // Google Fonts files
+            urlPattern:
+              /^https:\/\/fonts\.gstatic\.com\/.*/i,
+
+            handler: "CacheFirst",
+
             options: {
-              cacheName: 'homecarex-fonts-webfonts',
+              cacheName: "homecarex-fonts-webfonts",
+
               cacheableResponse: {
                 statuses: [0, 200],
               },
+
               expiration: {
                 maxEntries: 30,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
@@ -89,6 +104,7 @@ export default defineConfig({
 
   preview: {
     port: 3000,
+
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

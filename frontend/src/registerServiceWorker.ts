@@ -1,5 +1,3 @@
-import { registerSW } from 'virtual:pwa-register';
-
 let isRegistered = false;
 
 /**
@@ -18,17 +16,18 @@ export function registerServiceWorker(): void {
   isRegistered = true;
 
   try {
-    registerSW({
-      immediate: true,
-      onRegisteredSW(swScriptUrl, registration) {
-        if (registration) {
-          console.info('[HomeCareX SW] Service Worker registered at', swScriptUrl, 'scope:', registration.scope);
-        }
-      },
-      onRegisterError(error) {
-        console.warn('[HomeCareX SW] Service Worker registration failed:', error);
-      },
-    });
+    if (import.meta.env.PROD) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then((registration) => {
+            console.info('[HomeCareX SW] Service Worker registered, scope:', registration.scope);
+          })
+          .catch((error) => {
+            console.warn('[HomeCareX SW] Service Worker registration failed:', error);
+          });
+      });
+    }
   } catch (err) {
     console.warn('[HomeCareX SW] Unable to register Service Worker:', err);
   }

@@ -63,11 +63,17 @@ export async function backfillServiceDetails({ refreshMedia = false }: BackfillO
     const describe = full
       ? [{ updateOne: { filter: { slug: sv.slug, $or: [{ description: { $exists: false } }, { description: '' }, { description: sv.description }] }, update: { $set: { description: full } } } }]
       : [];
+    // Add-ons are only written on insert, so a service that already existed without them (older seed, or
+    // created before add-ons were defined) would never get them. Fill them in while the list is still empty.
+    const addOnFill = sv.addOns?.length
+      ? [{ updateOne: { filter: { slug: sv.slug, ...isEmpty('addOns') }, update: { $set: { addOns: sv.addOns } } } }]
+      : [];
     const d = SERVICE_DETAILS_SEED[sv.slug];
-    if (!d) return describe;
+    if (!d) return [...describe, ...addOnFill];
     const fill = (field: string, value: unknown, force = false) => ({ updateOne: { filter: { slug: sv.slug, ...(force ? {} : isEmpty(field)) }, update: { $set: { [field]: value } } } });
     return [
       ...describe,
+      ...addOnFill,
       fill('media', d.images.map((url, i) => ({ url, alt: `${sv.name} (photo ${i + 1})` })), refreshMedia),
       fill('inclusions', d.inclusions),
       fill('exclusions', d.exclusions),
