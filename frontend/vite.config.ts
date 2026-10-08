@@ -1,20 +1,16 @@
-import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
-import { VitePWA } from "vite-plugin-pwa";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
   plugins: [
     react(),
 
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: 'autoUpdate',
       injectRegister: null,
-
       manifest: {
         name: "HomeCareX",
         short_name: "HomeCareX",
@@ -43,18 +39,10 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: true,
-
-        globPatterns: [
-          "**/*.{js,css,html,ico,png,svg,webp,woff2,jpg,jpeg}",
-        ],
-
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff2,jpg,jpeg}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
-
-        navigateFallback: "/index.html",
-
-        // Do not intercept API requests
+        navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/],
-
         runtimeCaching: [
           {
             // Google Fonts CSS
@@ -99,17 +87,16 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
 
   server: {
     port: 3000,
     open: true,
-
     proxy: {
-      "/api": {
-        target: "http://localhost:5000",
+      '/api': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
     },
@@ -119,17 +106,16 @@ export default defineConfig({
     port: 3000,
 
     proxy: {
-      "/api": {
-        target: "http://localhost:5000",
+      '/api': {
+        target: 'http://localhost:5000',
         changeOrigin: true,
       },
     },
   },
 
-  // Vitest configuration
   test: {
     globals: true,
-    environment: "jsdom",
-    setupFiles: "./src/test/setup.ts",
+    environment: 'jsdom',
+    setupFiles: './src/test/setup.ts',
   },
 });

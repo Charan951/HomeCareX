@@ -1,25 +1,25 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import clsx from "clsx";
 import {
+  ArrowLeft,
   Banknote,
   CalendarClock,
+  Check,
+  ChevronDown,
   CreditCard,
   Landmark,
   Lock,
   MapPin,
+  Pencil,
   Smartphone,
   Sparkles,
+  Tag,
   Wallet,
+  X,
   type LucideIcon,
 } from "lucide-react";
-
-import {
-  useAvailableCoupons,
-  useBookingDraftStore,
-  useQuote,
-  useValidateCoupon,
-} from "@/features/booking";
+import clsx from "clsx";
+import { useNavigate } from "react-router-dom";
+import { useAvailableCoupons, useBookingDraftStore, useQuote, useValidateCoupon } from "@/features/booking";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { customerPath } from "@/routes/customerPath";
@@ -27,17 +27,11 @@ import { bookingApi, type NormalizedApiError } from "@/services/bookingApi";
 import { paymentApi } from "@/services/paymentApi";
 import { PRICING_IS_MOCK } from "@/services/pricingApi";
 import type { CreateBookingRequest } from "@/types/booking";
-import {
-  COUPON_ERROR,
-  type PriceQuote,
-  type QuoteRequest,
-} from "@/types/pricing";
-
+import { COUPON_ERROR, type PriceQuote, type QuoteRequest } from "@/types/pricing";
 import { formatSlotLabel } from "./components/SlotPicker";
 import { couponErrorText } from "./components/CouponInput";
 import PriceBreakdown from "./components/PriceBreakdown";
 import { formatINR } from "./formatMoney";
-
 import { PaymentResult } from "@/components/customer/payments";
 import {
   CHECKOUT_METHODS,
@@ -55,22 +49,22 @@ import type { CheckoutMethod } from "@/types/payment";
 
 type RazorpayCheckoutMethod = "upi" | "card" | "netbanking" | "wallet";
 
-function toRazorpayCheckoutMethod(
-  method: Exclude<CheckoutMethod, "cod">,
-): RazorpayCheckoutMethod | undefined {
-  return method === "upi" ||
-    method === "card" ||
-    method === "netbanking" ||
-    method === "wallet"
-    ? method
-    : undefined;
+function toRazorpayCheckoutMethod(method: Exclude<CheckoutMethod, "cod">): RazorpayCheckoutMethod | undefined {
+  switch (method) {
+    case "upi":
+    case "card":
+    case "netbanking":
+    case "wallet":
+      return method;
+    default:
+      return undefined;
+  }
 }
 
 const PRE_POPUP_DELAY_MS = 2000;
 const MAX_PAYMENT_RETRIES = 3;
 
-const sleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 const ERROR_TO_STEP: Record<string, number> = {
   SERVICE_NOT_FOUND: 1,
@@ -84,8 +78,7 @@ const ERROR_TO_STEP: Record<string, number> = {
 
 const SLOT_ERRORS = new Set(["SLOT_UNAVAILABLE", "SLOT_BUSY", "INVALID_DATE"]);
 
-const SLOT_TAKEN_NOTICE =
-  "That time slot was just taken by someone else. Please pick another slot.";
+const SLOT_TAKEN_NOTICE = "That time slot was just taken by someone else. Please pick another slot.";
 
 const COUPON_ERROR_CODES: string[] = Object.values(COUPON_ERROR);
 
@@ -123,68 +116,40 @@ type CompactCoupon = {
 function compactCouponDescription(coupon: CompactCoupon): string {
   const direct = coupon.description ?? coupon.subtitle ?? coupon.discountText;
   if (direct) return direct;
-
   const value = coupon.discountValue;
   const type = coupon.discountType?.toLowerCase();
   const parts: string[] = [];
-
   if (typeof value === "number") {
     if (type?.includes("percent")) parts.push(`${value}% off`);
     else parts.push(`${formatINR(value)} off`);
   }
-  if (typeof coupon.maxDiscount === "number")
-    parts.push(`up to ${formatINR(coupon.maxDiscount)}`);
-  if (typeof coupon.minOrder === "number")
-    parts.push(`min. ${formatINR(coupon.minOrder)}`);
+  if (typeof coupon.maxDiscount === "number") parts.push(`up to ${formatINR(coupon.maxDiscount)}`);
+  if (typeof coupon.minOrder === "number") parts.push(`min. ${formatINR(coupon.minOrder)}`);
   if (coupon.serviceName) parts.push(coupon.serviceName);
-
   return parts.join(" · ") || coupon.title || "Available offer";
 }
-
-/** "2026-10-15" -> "Thu, 15 Oct 2026". Parsed as a local date so the day never shifts with the timezone. */
-function prettyDate(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  if (!y || !m || !d) return iso;
-  return new Date(y, m - 1, d).toLocaleDateString("en-IN", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-/* -------------------------------------------------------------------------- */
-/* Component                                                                  */
-/* -------------------------------------------------------------------------- */
 
 export default function StepReview() {
   const draft = useBookingDraftStore();
   const navigate = useNavigate();
   const online = useOnlineStatus();
-
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [statusMessage, setStatusMessage] = useState(
-    "Processing your payment…",
-  );
+  const [statusMessage, setStatusMessage] = useState("Processing your payment…");
   const [clickedWhileProcessing, setClickedWhileProcessing] = useState(false);
-  const [error, setError] = useState<
-    NormalizedApiError | { message: string } | null
-  >(null);
+  const [error, setError] = useState<NormalizedApiError | { message: string } | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [priceNotice, setPriceNotice] = useState<PriceNotice | null>(null);
   const [method, setMethod] = useState<CheckoutMethod>("upi");
   const [couponDraft, setCouponDraft] = useState(draft.couponCode ?? "");
+  // Mobile coupon list starts compact and expands only when the customer asks.
   const [showAllCoupons, setShowAllCoupons] = useState(false);
-
   const inFlight = useRef(false);
   const mounted = useRef(true);
   const retryCountRef = useRef(0);
   const hasExitedRef = useRef(false);
-
   useEffect(() => {
     setCouponDraft(draft.couponCode ?? "");
   }, [draft.couponCode]);
-
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -192,62 +157,30 @@ export default function StepReview() {
       forceCloseRazorpayModal();
     };
   }, []);
-
-  const canSubmit = Boolean(
-    draft.serviceId && draft.addressId && draft.date && draft.slot,
-  );
-
+  const canSubmit = Boolean(draft.serviceId && draft.addressId && draft.date && draft.slot);
   const baseRequest = useMemo<QuoteRequest | null>(() => {
     if (!draft.serviceId || !draft.date || !draft.slot) return null;
     return {
       serviceId: draft.serviceId,
       quantity: draft.quantity,
-      addOns: draft.addOns.map((a) => ({
-        addOnId: a.id,
-        quantity: a.quantity,
-      })),
+      addOns: draft.addOns.map((a) => ({ addOnId: a.id, quantity: a.quantity })),
       date: draft.date,
       slot: draft.slot,
     };
   }, [draft.serviceId, draft.quantity, draft.addOns, draft.date, draft.slot]);
-
   const quoteRequest = useMemo<QuoteRequest | null>(
-    () =>
-      baseRequest
-        ? {
-            ...baseRequest,
-            ...(draft.couponCode ? { couponCode: draft.couponCode } : {}),
-          }
-        : null,
+    () => (baseRequest ? { ...baseRequest, ...(draft.couponCode ? { couponCode: draft.couponCode } : {}) } : null),
     [baseRequest, draft.couponCode],
   );
-
-  const {
-    quote,
-    isLoading,
-    isRefreshing,
-    isPlaceholder,
-    isError,
-    error: quoteError,
-    refetch,
-    requote,
-  } = useQuote(quoteRequest);
-
+  const { quote, isLoading, isRefreshing, isPlaceholder, isError, error: quoteError, refetch, requote } = useQuote(quoteRequest);
   const { validate, isValidating } = useValidateCoupon();
-  const { coupons: availableCoupons, isLoading: couponsLoading } =
-    useAvailableCoupons(baseRequest);
-
+  const { coupons: availableCoupons, isLoading: couponsLoading } = useAvailableCoupons(baseRequest);
   const { setCouponCode, setStep } = draft;
-
   useEffect(() => {
-    if (!quote || isPlaceholder || !quote.couponError || !draft.couponCode)
-      return;
+    if (!quote || isPlaceholder || !quote.couponError || !draft.couponCode) return;
     setCouponCode(null);
-    setCouponError(
-      couponErrorText(quote.couponError.code, quote.couponError.minOrder),
-    );
+    setCouponError(couponErrorText(quote.couponError.code, quote.couponError.minOrder));
   }, [quote, isPlaceholder, draft.couponCode, setCouponCode]);
-
   const handleApplyCoupon = async (code: string) => {
     if (!baseRequest) return;
     setCouponError(null);
@@ -260,41 +193,33 @@ export default function StepReview() {
       setCouponError(couponErrorText(apiErr.code, minOrderOf(apiErr.details)));
     }
   };
-
   const handleRemoveCoupon = () => {
     setCouponError(null);
     setPriceNotice(null);
     setCouponCode(null);
   };
-
   const stopSubmitting = () => {
     inFlight.current = false;
     setIsSubmitting(false);
     setClickedWhileProcessing(false);
   };
-
   const handlePay = async (selectedMethod?: CheckoutMethod) => {
     const activeMethod = selectedMethod ?? method;
-
     if (inFlight.current) {
       setClickedWhileProcessing(true);
       return;
     }
     if (!online) return;
-    if (!draft.serviceId || !draft.addressId || !draft.date || !draft.slot)
-      return;
-
+    if (!draft.serviceId || !draft.addressId || !draft.date || !draft.slot) return;
     inFlight.current = true;
     hasExitedRef.current = false;
     retryCountRef.current = 0;
     const startedAt = Date.now();
-
     setIsSubmitting(true);
     setStatusMessage("Processing your payment. Please wait a moment…");
     setClickedWhileProcessing(false);
     setError(null);
     setPriceNotice(null);
-
     let fresh: PriceQuote;
     try {
       fresh = await requote();
@@ -303,133 +228,88 @@ export default function StepReview() {
       stopSubmitting();
       return;
     }
-
     if (fresh.couponError) {
       setCouponCode(null);
-      setCouponError(
-        couponErrorText(fresh.couponError.code, fresh.couponError.minOrder),
-      );
+      setCouponError(couponErrorText(fresh.couponError.code, fresh.couponError.minOrder));
     }
-
     if (quote?.total !== undefined && fresh.total !== quote.total) {
       setPriceNotice({ from: quote.total, to: fresh.total });
       stopSubmitting();
       return;
     }
-
-    const isSdkLoaded =
-      activeMethod === "cod" ? true : await loadRazorpayScript();
-
+    const isSdkLoaded = activeMethod === "cod" ? true : await loadRazorpayScript();
     if (!isSdkLoaded) {
-      setError({
-        message:
-          "Could not load the secure payment window. Check your internet connection.",
-      });
+      setError({ message: "Could not load the secure payment window. Check your internet connection." });
       stopSubmitting();
       return;
     }
-
     const payload: CreateBookingRequest = {
       serviceId: draft.serviceId,
       addressId: draft.addressId,
       date: draft.date,
       slot: draft.slot,
       quantity: draft.quantity,
-      addOns: draft.addOns.map((a) => ({
-        addOnId: a.id,
-        quantity: a.quantity,
-      })),
+      addOns: draft.addOns.map((a) => ({ addOnId: a.id, quantity: a.quantity })),
       ...(PRICING_IS_MOCK ? {} : { expectedTotal: fresh.total }),
-      ...(!PRICING_IS_MOCK && fresh.coupon
-        ? { couponCode: fresh.coupon.code }
-        : {}),
+      ...(!PRICING_IS_MOCK && fresh.coupon ? { couponCode: fresh.coupon.code } : {}),
     };
-
     const idempotencyKey = draft.getIdempotencyKey(JSON.stringify(payload));
-
     try {
-      const { booking } = await bookingApi.createBooking(
-        payload,
-        idempotencyKey,
-      );
+      const { booking } = await bookingApi.createBooking(payload, idempotencyKey);
       const resolvedBookingId: string = booking._id;
-
-      const goToFailed = (
-        reason: "failed" | "verification" | "network" | "cancelled",
-      ) =>
-        navigate(
-          `${customerPath(`/booking/failed/${resolvedBookingId}`)}?reason=${reason}`,
-          { replace: true },
-        );
-
-      // Cash on service: confirm immediately, leave payment as PENDING.
+      const goToFailed = (reason: "failed" | "verification" | "network" | "cancelled") =>
+        navigate(`${customerPath(`/booking/failed/${resolvedBookingId}`)}?reason=${reason}`, { replace: true });
+      // Cash on Service Bypass: Immediately confirm booking, leave payment as PENDING
       if (activeMethod === "cod") {
         setStatusMessage("Confirming your booking…");
         await paymentApi.confirmCod(resolvedBookingId);
-        navigate(customerPath(`/booking/booked/${resolvedBookingId}`), {
-          replace: true,
-        });
+       navigate(`${customerPath(`/booking/booked/${resolvedBookingId}`)}`, { replace: true });
         return;
       }
-
-      // Online payment methods.
+      // Online Payment Methods
       const orderData = await paymentApi.createOrder(resolvedBookingId);
-
+      // CRITICAL CHECK: Ensure backend returned the key and order ID
       if (!orderData.orderId || !orderData.keyId) {
-        throw new Error(
-          "Invalid payment gateway response. Developer: Ensure backend returns both 'orderId' and 'keyId'.",
-        );
+         throw new Error("Invalid payment gateway response. Developer: Ensure backend returns both 'orderId' and 'keyId'.");
       }
-
-      // Safety guard: this screen is wired to Razorpay TEST mode only.
+      // Safety guard: this screen is intentionally wired to Razorpay TEST mode.
+      // A Razorpay test key always starts with `rzp_test_`. Never open Checkout
+      // with a live key from this flow, so test clicks cannot create real charges.
       if (!orderData.keyId.startsWith("rzp_test_")) {
         throw new Error(
           "Razorpay test mode is required, but the backend returned a live key. Configure the backend with Razorpay TEST credentials (rzp_test_...).",
         );
       }
-
       const markFailureOnServer = async (reason: string) => {
         try {
-          await paymentApi.recordAttempt(
-            resolvedBookingId,
-            "FAILED",
-            orderData.orderId,
-            reason,
-          );
+          await paymentApi.recordAttempt(resolvedBookingId, "FAILED", orderData.orderId, reason);
         } catch (e) {
           console.error("Failed to notify backend of payment failure:", e);
         }
       };
-
-      const remainingWaitMs = Math.max(
-        0,
-        PRE_POPUP_DELAY_MS - (Date.now() - startedAt),
-      );
+      const remainingWaitMs = Math.max(0, PRE_POPUP_DELAY_MS - (Date.now() - startedAt));
       if (remainingWaitMs > 0) {
         setStatusMessage("Opening Razorpay checkout in a few seconds…");
         await sleep(remainingWaitMs);
       }
-
       if (!mounted.current) return;
-
       const address = draft.addressSnapshot;
-      const onlineMethod = activeMethod as Exclude<CheckoutMethod, "cod">;
+      const onlineMethod: Exclude<CheckoutMethod, "cod"> = activeMethod as Exclude<CheckoutMethod, "cod">;
       const preferredRazorpayMethod = toRazorpayCheckoutMethod(onlineMethod);
-
       const prefillName = orderData.prefill?.name || address?.contactName || "";
       const prefillEmail = orderData.prefill?.email || "";
-      const prefillContact =
-        orderData.prefill?.contact || address?.contactPhone || "";
-
+      const prefillContact = orderData.prefill?.contact || address?.contactPhone || "";
       const options = {
-        key: orderData.keyId,
+        key: orderData.keyId, // Test key is enforced above.
         amount: orderData.amount,
         currency: orderData.currency || "INR",
         name: "HomeCareX",
         description: `Payment for ${draft.serviceName ?? "Home Service"}`,
         order_id: orderData.orderId,
-        // Don't restrict Checkout with the `method` option: an unavailable
-        // method makes Razorpay show "No appropriate payment method found."
+        // Do not restrict Checkout with the `method` option here. Restricting the
+        // checkout to one unavailable method can make Razorpay show
+        // "No appropriate payment method found." Checkout is allowed to show all
+        // payment methods enabled for this Razorpay test account.
         handler: async function (response: RazorpaySuccess) {
           hasExitedRef.current = true;
           setIsSubmitting(true);
@@ -440,16 +320,11 @@ export default function StepReview() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
             });
-            navigate(customerPath(`/booking/success/${resolvedBookingId}`), {
-              replace: true,
-            });
+            navigate(customerPath(`/booking/success/${resolvedBookingId}`), { replace: true });
           } catch (verifyErr) {
             const e = verifyErr as Partial<NormalizedApiError>;
             const uncertain = e?.code === "NETWORK_ERROR" || !e?.status;
-            if (!uncertain)
-              await markFailureOnServer(
-                e?.message || "Payment verification failed",
-              );
+            if (!uncertain) await markFailureOnServer(e?.message || "Payment verification failed");
             goToFailed(uncertain ? "network" : "verification");
           }
         },
@@ -457,134 +332,88 @@ export default function StepReview() {
           name: prefillName,
           email: prefillEmail,
           contact: prefillContact,
-          // Razorpay can pre-select a method only when both email and contact exist.
+          // Razorpay can pre-select a method when both email and contact are
+          // available. If either is missing, Checkout still opens normally with
+          // all payment methods enabled for the Razorpay account.
           ...(preferredRazorpayMethod && prefillEmail && prefillContact
             ? { method: preferredRazorpayMethod }
             : {}),
         },
-        retry: { enabled: true },
-        theme: { color: "#0066FF" },
+        retry: {
+          enabled: true,
+        },
+        theme: {
+          color: "#0066FF",
+        },
         modal: {
           ondismiss: async function () {
             if (hasExitedRef.current) return;
             hasExitedRef.current = true;
             setIsSubmitting(true);
             setStatusMessage("Payment cancelled…");
-            try {
-              await paymentApi.recordAttempt(
-                resolvedBookingId,
-                "CANCELLED",
-                orderData.orderId,
-                "Customer closed the checkout",
-              );
-            } catch (e) {
-              console.error("Failed to record cancelled payment:", e);
-            }
+            await paymentApi.recordAttempt(resolvedBookingId, "CANCELLED", orderData.orderId, "Customer closed the checkout");
             forceCloseRazorpayModal();
             goToFailed("cancelled");
           },
         },
       };
-
       if (!window.Razorpay) throw new Error("Payment window is not available");
-
       try {
         const rzpInstance: RazorpayInstance = new window.Razorpay(options);
-
-        rzpInstance.on(
-          "payment.failed",
-          async function (response: RazorpayFailure) {
-            retryCountRef.current += 1;
-            if (
-              retryCountRef.current >= MAX_PAYMENT_RETRIES &&
-              !hasExitedRef.current
-            ) {
-              hasExitedRef.current = true;
-              forceCloseRazorpayModal();
-              try {
-                rzpInstance.close();
-              } catch {
-                /* ignore */
-              }
-              setIsSubmitting(true);
-              setStatusMessage("Maximum retries (3) reached. Payment failed.");
-              await markFailureOnServer(
-                response.error?.description || "Payment failed 3 times",
-              );
-              goToFailed("failed");
-            }
-          },
-        );
-
+        rzpInstance.on("payment.failed", async function (response: RazorpayFailure) {
+          retryCountRef.current += 1;
+          const currentAttempts = retryCountRef.current;
+          if (currentAttempts >= MAX_PAYMENT_RETRIES && !hasExitedRef.current) {
+            hasExitedRef.current = true;
+            forceCloseRazorpayModal();
+            try { rzpInstance.close(); } catch { /* ignore */ }
+            setIsSubmitting(true);
+            setStatusMessage("Maximum retries (3) reached. Payment failed.");
+            await markFailureOnServer(response.error?.description || "Payment failed 3 times");
+            goToFailed("failed");
+          }
+        });
         rzpInstance.open();
-      } catch (razorpayErr) {
-        throw new Error(
-          `Razorpay Initialization Error: ${razorpayErr instanceof Error ? razorpayErr.message : String(razorpayErr)}`,
-        );
+      } catch (razorpayErr: any) {
+        throw new Error(`Razorpay Initialization Error: ${razorpayErr.message}`);
       }
     } catch (err) {
       stopSubmitting();
       const apiErr = err as NormalizedApiError;
-
       if (apiErr.code === "PRICE_CHANGED") {
-        const d = apiErr.details as
-          | { expectedTotal?: number; total?: number }
-          | undefined;
-        setPriceNotice({
-          from: d?.expectedTotal ?? fresh.total,
-          to: d?.total ?? fresh.total,
-        });
+        const d = apiErr.details as { expectedTotal?: number; total?: number } | undefined;
+        setPriceNotice({ from: d?.expectedTotal ?? fresh.total, to: d?.total ?? fresh.total });
         void requote().catch(() => undefined);
         return;
       }
-
       if (COUPON_ERROR_CODES.includes(apiErr.code)) {
         setCouponCode(null);
         setCouponError(
-          apiErr.code === COUPON_ERROR.INVALID
-            ? apiErr.message
-            : couponErrorText(apiErr.code, minOrderOf(apiErr.details)),
+          apiErr.code === COUPON_ERROR.INVALID ? apiErr.message : couponErrorText(apiErr.code, minOrderOf(apiErr.details)),
         );
         return;
       }
-
-      if (
-        ["HOLD_EXPIRED", "BOOKING_NOT_PAYABLE", "ALREADY_PAID"].includes(
-          apiErr.code,
-        )
-      ) {
+      if (["HOLD_EXPIRED", "BOOKING_NOT_PAYABLE", "ALREADY_PAID"].includes(apiErr.code)) {
         draft.resetIdempotency();
         setError({
-          message:
-            apiErr.code === "ALREADY_PAID"
-              ? apiErr.message
-              : "Your earlier reservation is no longer valid. Please tap Confirm & Pay again to start a fresh one.",
+          message: apiErr.code === "ALREADY_PAID" ? apiErr.message : "Your earlier reservation is no longer valid. Please tap Confirm & Pay again to start a fresh one.",
         });
         return;
       }
-
       const backStep = ERROR_TO_STEP[apiErr.code];
       if (backStep) {
         if (SLOT_ERRORS.has(apiErr.code)) {
           draft.setSlot(null);
-          draft.setNotice(
-            apiErr.code === "INVALID_DATE" ? apiErr.message : SLOT_TAKEN_NOTICE,
-          );
+          draft.setNotice(apiErr.code === "INVALID_DATE" ? apiErr.message : SLOT_TAKEN_NOTICE);
         } else {
           draft.setNotice(apiErr.message);
         }
         setStep(backStep);
         return;
       }
-
-      setError(
-        apiErr.message ? apiErr : { message: "An unexpected error occurred." },
-      );
+      setError(apiErr.message ? apiErr : { message: "An unexpected error occurred." });
     }
   };
-
-  /* ------------------------------ Render ---------------------------------- */
-
   if (!canSubmit) {
     return (
       <div className="py-8 text-center text-sm text-muted">
@@ -593,15 +422,10 @@ export default function StepReview() {
     );
   }
 
-  const quoteReady =
-    Boolean(quote) && !isPlaceholder && !isRefreshing && !isError;
+  const quoteReady = Boolean(quote) && !isPlaceholder && !isRefreshing && !isError;
   const payDisabled = !quoteReady || !online;
-  const compactCoupons = (
-    Array.isArray(availableCoupons) ? availableCoupons : []
-  ) as unknown as CompactCoupon[];
-  const visibleCoupons = showAllCoupons
-    ? compactCoupons
-    : compactCoupons.slice(0, 4);
+  const compactCoupons = (Array.isArray(availableCoupons) ? availableCoupons : []) as unknown as CompactCoupon[];
+  const visibleCoupons = showAllCoupons ? compactCoupons : compactCoupons.slice(0, 4);
   const hiddenCouponCount = Math.max(compactCoupons.length - 4, 0);
   const address = draft.addressSnapshot;
   const dateLabel = draft.date ? prettyDate(draft.date) : "";
@@ -754,251 +578,194 @@ export default function StepReview() {
                       type="button"
                       onClick={() => draft.setStep(2)}
                       disabled={isSubmitting}
-                      className={`shrink-0 text-[11px] font-semibold text-brand hover:underline disabled:opacity-50 ${FOCUS_RING}`}
+                      className={clsx("inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft disabled:opacity-50", FOCUS_RING)}
                     >
+                      <Pencil className="h-3 w-3" aria-hidden="true" />
                       Edit
                     </button>
                   </div>
-                  <p className="mt-0.5 break-words text-[13px] leading-5 text-ink">
-                    {address?.line1}, {address?.city}, {address?.state} —{" "}
-                    {address?.pincode}
+                  <p className="mt-0.5 break-words text-sm font-semibold text-ink">
+                    {address?.line1}, {address?.city}, {address?.state} — {address?.pincode}
                   </p>
                 </div>
               </div>
-
-              {/* Date & time */}
               <div className="flex items-start gap-3.5 px-5 py-4 sm:px-6">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
                   <CalendarClock className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-semibold text-muted">
-                      Date &amp; time
-                    </p>
+                    <p className="text-xs font-semibold text-muted">Date &amp; time</p>
                     <button
                       type="button"
                       onClick={() => draft.setStep(3)}
                       disabled={isSubmitting}
-                      className={`shrink-0 text-[11px] font-semibold text-brand hover:underline disabled:opacity-50 ${FOCUS_RING}`}
+                      className={clsx("inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft disabled:opacity-50", FOCUS_RING)}
                     >
+                      <Pencil className="h-3 w-3" aria-hidden="true" />
                       Edit
                     </button>
                   </div>
-                  <p className="mt-0.5 text-[13px] font-medium leading-5 text-ink">
-                    {dateLabel}
-                    <br />
-                    {formatSlotLabel(draft.slot ?? "")}
-                  </p>
+                  <p className="mt-0.5 text-sm font-semibold text-ink">{dateLabel}</p>
+                  <p className="text-sm text-muted">{formatSlotLabel(draft.slot ?? "")}</p>
                 </div>
               </div>
             </div>
           </section>
 
           {/* Coupons */}
-          <section
-            aria-labelledby="rv-coupons"
-            className="rounded-3xl border border-line bg-panel p-5 sm:p-6"
-          >
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <div className="min-w-0">
+          <section aria-labelledby="rv-coupons" className="rounded-3xl border border-line bg-panel p-5 shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)] sm:p-6">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent">
+                <Tag className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
                 <h4 id="rv-coupons" className="text-base font-bold text-ink">
                   Offers &amp; coupons
                 </h4>
-                <p className="text-xs text-muted">
-                  Pick a coupon or enter a code.
-                </p>
+                <p className="text-xs text-muted">Choose an offer or enter a code.</p>
               </div>
-              {draft.couponCode && (
-                <span className="max-w-[50%] shrink-0 truncate rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-semibold text-brand">
-                  {draft.couponCode} applied
-                </span>
-              )}
             </div>
 
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+            {draft.couponCode && (
+              <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-emerald-800">
+                  <Check className="h-4 w-4 shrink-0" strokeWidth={3} aria-hidden="true" />
+                  <span className="truncate">{draft.couponCode} applied</span>
+                  {saving > 0 && <span className="shrink-0 font-medium">— you save {formatINR(saving)}</span>}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  disabled={isSubmitting}
+                  className={clsx("inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-danger hover:bg-white disabled:opacity-50", FOCUS_RING)}
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                  Remove
+                </button>
+              </div>
+            )}
+
+            <div className="mt-4 flex gap-2">
               <input
-                aria-label="Coupon code"
                 type="text"
-                placeholder="Enter code"
+                inputMode="text"
+                autoComplete="off"
+                aria-label="Coupon code"
+                placeholder="ENTER CODE"
                 disabled={couponBusy}
                 value={couponDraft}
                 onChange={(event) => {
-                  setCouponDraft(event.currentTarget.value);
-                  setCouponError(null);
+                  setCouponDraft(event.target.value.toUpperCase());
+                  if (couponError) setCouponError(null);
                 }}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") applyDraftCoupon();
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    applyDraftCoupon();
+                  }
                 }}
-                className={clsx(
-                  "h-11 min-w-0 rounded-xl border border-line bg-canvas px-3 text-sm text-ink outline-none placeholder:text-muted disabled:opacity-50",
-                  FOCUS_RING,
-                )}
+                className={clsx("h-12 min-w-0 flex-1 rounded-full border border-line bg-canvas px-5 text-sm font-medium uppercase tracking-wide text-ink placeholder:text-muted/60 disabled:opacity-60", FOCUS_RING)}
               />
               <button
                 type="button"
-                disabled={couponBusy}
+                disabled={couponBusy || !couponDraft.trim()}
                 onClick={applyDraftCoupon}
-                className={clsx(
-                  "h-11 rounded-xl bg-brand px-5 text-sm font-semibold text-white disabled:opacity-50",
-                  FOCUS_RING,
-                )}
+                className={clsx("h-12 shrink-0 rounded-full bg-ink px-6 text-sm font-bold text-white transition-colors hover:bg-brand disabled:opacity-50", FOCUS_RING)}
               >
                 {isValidating ? "Applying…" : "Apply"}
               </button>
             </div>
-
             {couponError && (
-              <p role="alert" className="mt-2 text-xs text-danger">
+              <p role="alert" className="mt-2 px-1 text-xs text-danger">
                 {couponError}
               </p>
             )}
 
-            <div className="mt-4 flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold text-muted">
-                Available coupons
-              </p>
-              {couponsLoading && (
-                <span className="text-xs text-muted">Loading…</span>
-              )}
+            <div className="mt-5 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted">Available for you</p>
+              {couponsLoading && <span className="text-xs text-muted">Loading…</span>}
             </div>
-
+            {!couponsLoading && compactCoupons.length === 0 && (
+              <p className="mt-2 rounded-2xl border border-dashed border-line bg-canvas px-4 py-4 text-center text-sm text-muted">
+                No coupons are available for this booking.
+              </p>
+            )}
             {!couponsLoading && compactCoupons.length > 0 && (
               <>
-                <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <ul className="mt-3 grid gap-3 sm:grid-cols-2">
                   {visibleCoupons.map((coupon, index) => {
                     const code = coupon.code ?? `COUPON-${index + 1}`;
-                    const selected = draft.couponCode === coupon.code;
+                    const selected = Boolean(coupon.code) && draft.couponCode === coupon.code;
                     return (
-                      <button
-                        key={`${code}-${index}`}
-                        type="button"
-                        disabled={!coupon.code || couponBusy}
-                        onClick={() =>
-                          coupon.code && void handleApplyCoupon(coupon.code)
-                        }
-                        className={clsx(
-                          "min-w-0 rounded-xl border px-3 py-2 text-left disabled:opacity-50",
-                          selected
-                            ? "border-brand bg-accent-soft"
-                            : "border-line bg-white hover:border-brand/50",
-                          FOCUS_RING,
-                        )}
-                      >
-                        <span className="flex items-center justify-between gap-2">
-                          <strong className="min-w-0 truncate text-sm font-semibold text-ink">
-                            {code}
-                          </strong>
-                          <span className="shrink-0 text-xs font-semibold text-brand">
-                            {selected ? "Applied" : "Apply"}
+                      <li key={`${code}-${index}`}>
+                        <button
+                          type="button"
+                          disabled={!coupon.code || couponBusy}
+                          onClick={() => coupon.code && void handleApplyCoupon(coupon.code)}
+                          aria-pressed={selected}
+                          className={clsx(
+                            "relative flex h-full w-full items-stretch overflow-hidden rounded-2xl border border-dashed text-left transition-all disabled:opacity-50 motion-safe:hover:-translate-y-px",
+                            selected ? "border-brand bg-brand-soft" : "border-line bg-panel hover:border-brand/60",
+                            FOCUS_RING,
+                          )}
+                        >
+                          <span className={clsx("flex w-11 shrink-0 items-center justify-center", selected ? "bg-brand text-white" : "bg-accent-soft text-accent")}>
+                            {selected ? <Check className="h-4 w-4" strokeWidth={3} aria-hidden="true" /> : <Tag className="h-4 w-4" aria-hidden="true" />}
                           </span>
-                        </span>
-                        <span className="mt-0.5 block text-xs leading-4 text-muted">
-                          {compactCouponDescription(coupon)}
-                        </span>
-                      </button>
+                          <span className="min-w-0 flex-1 px-3.5 py-3">
+                            <span className="flex items-center justify-between gap-2">
+                              <strong className="truncate text-sm font-bold tracking-wide text-ink">{code}</strong>
+                              <span className={clsx("shrink-0 text-xs font-bold", selected ? "text-brand" : "text-brand/80")}>{selected ? "Applied" : "Apply"}</span>
+                            </span>
+                            <span className="mt-0.5 block text-xs leading-4 text-muted">{compactCouponDescription(coupon)}</span>
+                          </span>
+                        </button>
+                      </li>
                     );
                   })}
-                </div>
-
+                </ul>
                 {hiddenCouponCount > 0 && (
                   <button
                     type="button"
                     onClick={() => setShowAllCoupons((current) => !current)}
                     aria-expanded={showAllCoupons}
-                    className={clsx(
-                      "mt-2 flex min-h-[36px] w-full items-center justify-center gap-1.5 rounded-xl border border-line bg-white px-3 text-xs font-semibold text-brand hover:bg-canvas",
-                      FOCUS_RING,
-                    )}
+                    className={clsx("mx-auto mt-3 flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold text-brand hover:bg-brand-soft", FOCUS_RING)}
                   >
-                    {showAllCoupons ? (
-                      <>
-                        Show less <span aria-hidden="true">↑</span>
-                      </>
-                    ) : (
-                      <>
-                        View {hiddenCouponCount} more{" "}
-                        {hiddenCouponCount === 1 ? "coupon" : "coupons"}{" "}
-                        <span aria-hidden="true">↓</span>
-                      </>
-                    )}
+                    {showAllCoupons ? "Show fewer offers" : `View ${hiddenCouponCount} more ${hiddenCouponCount === 1 ? "offer" : "offers"}`}
+                    <ChevronDown className={clsx("h-4 w-4 transition-transform", showAllCoupons && "rotate-180")} aria-hidden="true" />
                   </button>
                 )}
               </>
             )}
-
-            {!couponsLoading && compactCoupons.length === 0 && (
-              <p className="mt-2 text-xs text-muted">
-                No coupons are available for this booking.
-              </p>
-            )}
-
-            {draft.couponCode && (
-              <button
-                type="button"
-                onClick={handleRemoveCoupon}
-                disabled={isSubmitting}
-                className={clsx(
-                  "mt-3 text-xs font-medium text-danger hover:underline disabled:opacity-50",
-                  FOCUS_RING,
-                )}
-              >
-                Remove coupon
-              </button>
-            )}
-          </section>
-        </div>
-
-        {/* ------------------------------ Right column --------------------- */}
-        <aside className="min-w-0 space-y-5 lg:sticky lg:top-4">
-          {/* Price summary */}
-          <section
-            aria-labelledby="rv-price"
-            className="rounded-3xl border border-line bg-panel p-5"
-          >
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <h4 id="rv-price" className="text-base font-bold text-ink">
-                Price summary
-              </h4>
-              {saving > 0 && (
-                <span className="rounded-full bg-accent-soft px-2.5 py-1 text-[11px] font-semibold text-brand">
-                  You save {formatINR(saving)}
-                </span>
-              )}
-            </div>
-            <div className="text-sm">
-              <PriceBreakdown
-                quote={quote}
-                isLoading={isLoading}
-                isRefreshing={isRefreshing || isPlaceholder}
-                isError={isError}
-                errorMessage={quoteError?.message}
-                onRetry={refetch}
-              />
-            </div>
           </section>
 
           {/* Payment method */}
-          <fieldset
-            className="min-w-0 rounded-3xl border border-line bg-panel p-5"
-            disabled={isSubmitting}
-          >
-            <legend className="px-1 text-base font-bold text-ink">
-              Payment method
-            </legend>
-            <div className="mt-1 grid min-w-0 grid-cols-2 gap-2">
+          <fieldset disabled={isSubmitting} className="min-w-0 rounded-3xl border border-line bg-panel p-5 shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)] sm:p-6">
+            <legend className="sr-only">Payment method</legend>
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-soft text-brand">
+                <CreditCard className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
+                <h4 className="text-base font-bold text-ink" aria-hidden="true">
+                  Payment method
+                </h4>
+                <p className="text-xs text-muted">All online payments are processed securely by Razorpay.</p>
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {CHECKOUT_METHODS.map((m) => {
                 const selected = method === m.id;
-                const Icon = METHOD_ICONS[m.id];
+                const Icon = METHOD_ICONS[m.id] ?? CreditCard;
                 return (
                   <label
                     key={m.id}
                     className={clsx(
-                      "flex min-w-0 cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5",
+                      "relative flex cursor-pointer items-center gap-3.5 rounded-2xl border p-4 transition-all duration-200 motion-reduce:transition-none",
                       selected
-                        ? "border-brand bg-accent-soft"
-                        : "border-line bg-white hover:border-brand/50",
-                      isSubmitting && "cursor-not-allowed opacity-50",
+                        ? "border-brand bg-brand-soft shadow-[0_14px_26px_-20px_rgba(67,56,202,.8)] ring-1 ring-brand"
+                        : "border-line bg-panel hover:border-brand/50 motion-safe:hover:-translate-y-px",
                     )}
                   >
                     <input
@@ -1008,59 +775,107 @@ export default function StepReview() {
                       checked={selected}
                       disabled={isSubmitting}
                       onChange={() => setMethod(m.id)}
-                      className="sr-only"
+                      className="peer sr-only"
                     />
-                    {Icon && (
-                      <Icon
-                        className={clsx(
-                          "h-4 w-4 shrink-0",
-                          selected ? "text-brand" : "text-muted",
-                        )}
-                        aria-hidden="true"
-                      />
-                    )}
-                    <span className="min-w-0">
-                      <span className="block truncate text-xs font-semibold text-ink">
-                        {m.label}
-                      </span>
-                      <span className="block truncate text-[10px] text-muted">
-                        {m.hint}
-                      </span>
+                    <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-2xl ring-brand ring-offset-2 peer-focus-visible:ring-2" />
+                    <span className={clsx("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", selected ? "bg-brand text-white" : "bg-canvas text-ink")}>
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold text-ink">{m.label}</span>
+                      <span className="block text-xs leading-4 text-muted">{m.hint}</span>
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className={clsx(
+                        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2",
+                        selected ? "border-brand bg-brand text-white" : "border-line text-transparent",
+                      )}
+                    >
+                      <Check className="h-3 w-3" strokeWidth={4} />
                     </span>
                   </label>
                 );
               })}
             </div>
           </fieldset>
+        </div>
 
-          {/* Total & actions */}
-          <section className="rounded-3xl border border-brand bg-panel p-5">
-            <div className="mb-4 flex items-end justify-between gap-2">
-              <span className="text-sm font-semibold text-muted">
-                Total payable
-              </span>
-              <span
-                className="text-2xl font-bold tabular-nums text-ink"
-                aria-live="polite"
-              >
-                {totalText}
-              </span>
+        {/* Order summary */}
+        <aside aria-label="Order summary" className="lg:sticky lg:top-24">
+          <div className="overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_30px_70px_-44px_rgba(67,56,202,.6)]">
+            <div className="bg-gradient-to-br from-brand to-[#6D5BE8] px-6 py-5 text-white">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Total payable</p>
+              <div className="mt-1 flex items-end justify-between gap-3">
+                <p key={totalText} className="bk-tick text-3xl font-bold tracking-tight tabular-nums">
+                  {totalText}
+                </p>
+                {saving > 0 && (
+                  <span className="mb-1 rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur">You save {formatINR(saving)}</span>
+                )}
+              </div>
             </div>
-            {payButton}
-            <button
-              type="button"
-              onClick={() => draft.setStep(3)}
-              disabled={isSubmitting}
-              className={clsx(
-                "mt-2 h-11 w-full rounded-full border border-line bg-white text-sm font-semibold text-ink hover:bg-canvas disabled:opacity-50",
-                FOCUS_RING,
-              )}
-            >
-              Back
-            </button>
-          </section>
+            <div className="px-6 py-5">
+              <h4 className="mb-3 text-sm font-bold text-ink">Price summary</h4>
+              <PriceBreakdown
+                quote={quote}
+                isLoading={isLoading}
+                isRefreshing={isRefreshing}
+                isError={isError}
+                errorMessage={quoteError?.message}
+                onRetry={() => void refetch()}
+              />
+            </div>
+            <div className="hidden space-y-3 border-t border-line bg-canvas px-6 py-5 lg:block">
+              {payButton}
+              <button
+                type="button"
+                onClick={() => draft.setStep(3)}
+                disabled={isSubmitting}
+                className={clsx("flex w-full items-center justify-center gap-1.5 rounded-full py-2 text-sm font-semibold text-muted hover:text-brand disabled:opacity-50", FOCUS_RING)}
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Back to date &amp; time
+              </button>
+              <p className="flex items-center justify-center gap-1.5 text-xs text-muted">
+                <Lock className="h-3 w-3" aria-hidden="true" />
+                {method === "cod" ? "Pay the professional after the service" : "Secure checkout powered by Razorpay"}
+              </p>
+            </div>
+          </div>
         </aside>
+      </div>
+
+      {/* Mobile / tablet: floating pay bar */}
+      <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 md:bottom-4 lg:hidden">
+        <div className="flex items-center gap-2 rounded-3xl border border-line bg-white/90 p-2 shadow-[0_18px_40px_-14px_rgba(30,27,46,.45)] backdrop-blur-xl">
+          <button
+            type="button"
+            onClick={() => draft.setStep(3)}
+            disabled={isSubmitting}
+            aria-label="Back to date and time"
+            className={clsx("flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border border-line bg-white text-ink hover:bg-canvas disabled:opacity-50", FOCUS_RING)}
+          >
+            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <div className="min-w-0 flex-1">{payButton}</div>
+        </div>
       </div>
     </div>
   );
+}
+
+const METHOD_ICONS: Partial<Record<CheckoutMethod, LucideIcon>> = {
+  upi: Smartphone,
+  card: CreditCard,
+  netbanking: Landmark,
+  wallet: Wallet,
+  cod: Banknote,
+};
+
+/** "2026-10-15" -> "Thu, 15 Oct 2026". Parsed as a local date so the day never shifts with the timezone. */
+function prettyDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }
