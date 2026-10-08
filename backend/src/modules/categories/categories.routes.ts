@@ -14,6 +14,7 @@ export const categoriesRoutes = Router();
 categoriesRoutes.use(authenticate, requireAdmin);
 categoriesRoutes.get('/', asyncHandler(async (_req, res) => sendSuccess(res, await categoriesService.list())));
 categoriesRoutes.post('/', asyncHandler(async (req, res) => sendSuccess(res, await categoriesService.create(req.body), { status: 201 })));
+categoriesRoutes.put('/reorder', asyncHandler(async (req, res) => sendSuccess(res, await categoriesService.reorder(req.body))));
 categoriesRoutes.patch('/:id', asyncHandler(async (req, res) => sendSuccess(res, await categoriesService.update(req.params.id, req.body))));
 categoriesRoutes.delete(
   '/:id',
