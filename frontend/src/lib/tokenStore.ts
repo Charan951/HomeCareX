@@ -1,16 +1,33 @@
-/**
- * Access token lives in memory only (never localStorage). The refresh token is an
- * httpOnly cookie the browser sends to /api/v1/auth, so a page reload restores the
- * session through POST /auth/refresh.
- */
-let accessToken: string | null = null;
+let memoryToken: string | null = null;
 
 export const tokenStore = {
-  get: () => accessToken,
+  get: (): string | null => {
+    if (memoryToken) return memoryToken;
+    const stored =
+      localStorage.getItem("token") ||
+      localStorage.getItem("accessToken") ||
+      null;
+    if (stored) {
+      memoryToken = stored;
+      return stored;
+    }
+    return null;
+  },
   set: (token: string | null) => {
-    accessToken = token;
+    memoryToken = token;
+    if (token) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("accessToken", token);
+    } else {
+      localStorage.removeItem("token");
+      localStorage.removeItem("accessToken");
+    }
+  },
+  clear: () => {
+    memoryToken = null;
+    localStorage.removeItem("token");
+    localStorage.removeItem("accessToken");
   },
 };
 
-/** Fired when refresh fails; AuthProvider listens and signs the user out. */
 export const SESSION_EXPIRED_EVENT = "auth:session-expired";

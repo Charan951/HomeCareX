@@ -26,7 +26,8 @@ export const registerSchema = z.object({
     .string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Password needs an uppercase letter')
-    .regex(/[0-9]/, 'Password needs a number'),
+    .regex(/[0-9]/, 'Password needs a number')
+    .regex(/[^A-Za-z0-9]/, 'Password needs a special character'),
   confirmPassword: z.string().optional(),
   referralCode: z.string().trim().optional(),
   role: z.enum(['customer', 'partner']).default('customer'),
@@ -39,16 +40,35 @@ export const forgotPasswordSchema = z.object({
   email: z.string().trim().toLowerCase().email('Please enter a valid email address'),
 });
 
-export const resetPasswordSchema = z.object({
-  token: z.string().trim().min(1, 'Reset token is required'),
-  newPassword: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password needs an uppercase letter')
-    .regex(/[0-9]/, 'Password needs a number'),
+export const resendOtpSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Please enter a valid email address'),
 });
 
+export const verifyOtpSchema = z.object({
+  email: z.string().trim().toLowerCase().email('Please enter a valid email address'),
+  otp: z.string().trim().regex(/^\d{6}$/, 'Enter a valid 6-digit verification code'),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    resetToken: z.string().trim().min(1).optional(),
+    token: z.string().trim().min(1).optional(),
+    newPassword: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/[A-Z]/, 'Password needs an uppercase letter')
+      .regex(/[0-9]/, 'Password needs a number')
+      .regex(/[^A-Za-z0-9]/, 'Password needs a special character'),
+    confirmPassword: z.string().optional(),
+  })
+  .refine((data) => Boolean(data.resetToken || data.token), {
+    message: 'Reset token is required',
+    path: ['resetToken'],
+  });
+
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResendOtpInput = z.infer<typeof resendOtpSchema>;
+export type VerifyOtpInput = z.infer<typeof verifyOtpSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 /** Parses a body or throws a 400 with per-field details. */

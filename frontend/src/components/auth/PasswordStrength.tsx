@@ -20,18 +20,15 @@ export function evaluatePasswordStrength(password: string): StrengthInfo {
   }
 
   let score = 0;
-
   if (password.length >= 8) score += 1;
   if (/[A-Z]/.test(password)) score += 1;
   if (/[0-9]/.test(password)) score += 1;
-  if (/[^A-Za-z0-9]/.test(password) || password.length >= 12) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
 
-  // Even if some criteria met, if length < 6 it is at most 1
   if (password.length < 6) {
     score = Math.min(score, 1);
   }
 
-  // Bound between 1 and 4 when password is non-empty
   const normalizedScore = Math.max(1, Math.min(4, score));
 
   switch (normalizedScore) {
@@ -48,7 +45,7 @@ export function evaluatePasswordStrength(password: string): StrengthInfo {
 }
 
 export const PasswordStrength: React.FC<PasswordStrengthProps> = ({ password, className = '' }) => {
-  const { score, level, barColor, textColor } = useMemo(
+  const { level, textColor } = useMemo(
     () => evaluatePasswordStrength(password),
     [password]
   );
@@ -58,25 +55,9 @@ export const PasswordStrength: React.FC<PasswordStrengthProps> = ({ password, cl
   }
 
   return (
-    <div className={`mt-1 space-y-0.5 ${className}`} role="status" aria-live="polite">
-      <div className="flex items-center justify-between text-[11px]">
-        <span className="text-gray-400">Strength</span>
-        <span className={`font-medium ${textColor}`}>{level}</span>
-      </div>
-
-      <div className="flex gap-1 h-1 w-full">
-        {[1, 2, 3, 4].map((step) => {
-          const isActive = step <= score;
-          return (
-            <div
-              key={step}
-              className={`flex-1 rounded-full transition-all duration-300 ${
-                isActive ? barColor : 'bg-gray-200'
-              }`}
-            />
-          );
-        })}
-      </div>
+    <div className={`mt-1 flex items-center justify-between text-xs ${className}`} role="status" aria-live="polite">
+      <span className="text-gray-500">Password strength:</span>
+      <span className={`font-semibold ${textColor}`}>{level}</span>
     </div>
   );
 };

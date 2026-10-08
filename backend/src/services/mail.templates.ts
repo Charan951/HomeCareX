@@ -330,3 +330,66 @@ ${button(d.resetUrl, 'Reset My Password')}
 
   return { subject: `Reset your ${BRAND.name} password`, html, text };
 }
+
+export interface PasswordResetOtpEmailData {
+  name: string;
+  email: string;
+  otp: string;
+  logoSrc?: string;
+  supportEmail?: string;
+}
+
+export function passwordResetOtpEmail(d: PasswordResetOtpEmailData): { subject: string; html: string; text: string } {
+  const firstName = d.name.trim().split(/\s+/)[0] || d.name;
+
+  const bodyHtml = `
+<h1 style="margin:8px 0 6px;font:700 24px ${FONT};color:${BRAND.indigoDark};text-align:center">Password Reset Verification Code</h1>
+<p style="margin:0 0 22px;text-align:center;color:${BRAND.muted}">Use the code below to reset your password and regain access to your account.</p>
+
+<p style="margin:0 0 16px">Hi ${esc(firstName)},</p>
+<p style="margin:0 0 16px">We received a request to reset your ${BRAND.name} account password. Here is your 6-digit verification code:</p>
+
+<div style="text-align:center;margin:24px 0">
+  <div style="display:inline-block;padding:12px 28px;background:#f3f4f6;border:2px dashed ${BRAND.indigo};border-radius:12px;font:700 32px 'Courier New',Courier,monospace;letter-spacing:8px;color:${BRAND.indigoDark}">
+    ${esc(d.otp)}
+  </div>
+</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f8fafc;border:1px solid ${BRAND.border};border-radius:10px;margin-bottom:20px">
+  <tr><td style="padding:16px 20px;font:13px/1.7 ${FONT};color:${BRAND.muted}">
+    <strong style="color:${BRAND.text}">A quick note on account security:</strong><br />
+    &bull; This code is valid for <strong>10 minutes</strong> and can only be used once.<br />
+    &bull; Maximum 5 verification attempts are allowed.<br />
+    &bull; If you didn't request a password reset, you can safely disregard this email — your account remains completely safe and untouched.<br />
+    &bull; For your safety, never share this code with anyone. ${BRAND.name} staff will never ask for your verification code.
+  </td></tr>
+</table>
+
+<p style="margin:26px 0 0">Warmly,<br /><strong>The ${BRAND.name} Team</strong></p>`;
+
+  const html = layout({
+    preheader: `Your ${BRAND.name} password reset verification code is ${d.otp}.`,
+    logoSrc: d.logoSrc,
+    bodyHtml,
+    footerNote: `You are receiving this email because a password reset verification code was requested for ${d.email}.`,
+    supportEmail: d.supportEmail,
+  });
+
+  const text = [
+    `Hi ${firstName},`,
+    '',
+    `Your ${BRAND.name} password reset verification code is: ${d.otp}`,
+    '',
+    'Security notes:',
+    '- This code is valid for 10 minutes and can only be used once.',
+    '- Maximum 5 attempts allowed.',
+    '- If you did not request this, you can safely ignore this email; your account remains secure.',
+    '- Never share this verification code with anyone.',
+    '',
+    'Warmly,',
+    `The ${BRAND.name} Team`,
+  ].join('\n');
+
+  return { subject: `${d.otp} is your ${BRAND.name} password reset code`, html, text };
+}
+

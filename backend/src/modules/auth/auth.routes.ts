@@ -10,6 +10,8 @@ authRoutes.post('/register', authRateLimit, authController.register);
 authRoutes.post('/refresh', authController.refresh);
 authRoutes.post('/logout', authController.logout);
 authRoutes.post('/forgot-password', authRateLimit, authController.forgotPassword);
+authRoutes.post('/verify-otp', authRateLimit, authController.verifyOtp);
+authRoutes.post('/resend-otp', authRateLimit, authController.resendOtp);
 authRoutes.post('/reset-password', authRateLimit, authController.resetPassword);
 authRoutes.get('/me', authMiddleware, authController.me);
 

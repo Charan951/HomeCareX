@@ -11,6 +11,7 @@ import {
   Info,
 } from "lucide-react";
 import PageShell from "@/components/layout/PageShell";
+import { AddMoneyModal } from "@/components/customer/payments/AddMoneyModal";
 import {
   EmptyState,
   ErrorState,
@@ -41,6 +42,7 @@ const FILTERS: FilterOption[] = [
 export default function Wallet() {
   const online = useOnlineStatus();
   const [page, setPage] = useState(1);
+  const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
   const [type, setType] = useState<"" | LedgerType>("");
   const { data, isLoading, isError, error, refetch, isFetching } = useWallet(
     page,
@@ -142,28 +144,19 @@ export default function Wallet() {
               {/* Add Money */}
               <button
                 type="button"
-                onClick={() => {
-                  /* Connect to top-up flow or trigger modal */
-                }}
-                className={`group flex min-h-[44px] w-full items-center justify-between py-2 text-left transition-colors hover:bg-canvas/50 focus:outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-brand ${FOCUS_RING}`}
+                onClick={() => setIsAddMoneyOpen(true)}
+                className={`flex w-full items-center justify-between rounded-xl p-3 text-left transition-colors hover:bg-canvas ${FOCUS_RING}`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-                    <Plus className="h-5 w-5" aria-hidden="true" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+                    <Plus className="h-5 w-5" />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-ink sm:text-sm">
-                      Add Money
-                    </p>
-                    <p className="truncate text-[11px] text-muted sm:text-xs">
-                      Top up your wallet
-                    </p>
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Add Money</p>
+                    <p className="text-xs text-muted">Top up your wallet</p>
                   </div>
                 </div>
-                <ChevronRight
-                  className="h-4 w-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5"
-                  aria-hidden="true"
-                />
+                <ChevronRight className="h-4 w-4 text-muted" />
               </button>
 
               {/* View Transactions */}
@@ -225,7 +218,7 @@ export default function Wallet() {
           </section>
         </div>
 
-        {/* Filter Pills (Clean Wrapping on 360px, No Horizontal Overflow) */}
+        {/* Filter Pills */}
         <section aria-label="Transaction filters" className="w-full">
           <div className="flex flex-wrap items-center gap-2">
             {FILTERS.map((f) => {
@@ -307,7 +300,6 @@ export default function Wallet() {
             />
           ) : (
             <div className="w-full min-w-0">
-              {/* Responsive table wrapper ensures wide ledger records won't force page scrolling */}
               <div className="w-full max-w-full overflow-x-auto">
                 <LedgerTable entries={ledger.items} />
               </div>
@@ -344,6 +336,15 @@ export default function Wallet() {
           )}
         </section>
       </div>
+
+     {/* Add Money Razorpay Modal */}
+      <AddMoneyModal
+        isOpen={isAddMoneyOpen}
+        onClose={() => setIsAddMoneyOpen(false)}
+        onSuccess={() => {
+          void refetch();
+        }}
+      />
     </PageShell>
   );
 }
