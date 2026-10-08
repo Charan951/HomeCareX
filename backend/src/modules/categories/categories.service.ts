@@ -3,9 +3,9 @@ import { ServiceModel } from '../../models/Service';
 import { HttpError } from '../auth/auth.types';
 import { slugify, uniqueSlug } from '../../utils/slug';
 import { SEED_CATEGORIES } from './categories.constants';
-import { categoryCreateSchema, categoryReorderSchema, categoryUpdateSchema } from './categories.validation';
 import {
   categoryCreateSchema,
+  categoryReorderSchema,
   categoryUpdateSchema,
 } from './categories.validation';
 import type { CategoryDto } from './categories.types';
@@ -186,18 +186,41 @@ export const categoriesService = {
     );
   },
 
-  /** Saves a whole new order in one atomic-ish bulk write, so the public site never sees a half-applied order. */
+  /**
+   * Saves a whole new order in one atomic-ish bulk write,
+   * so the public site never sees a half-applied order.
+   */
   async reorder(input: unknown): Promise<CategoryDto[]> {
     const { items } = categoryReorderSchema.parse(input);
-    const found = await CategoryModel.countDocuments({ _id: { $in: items.map((i) => i.id) } });
-    if (found !== items.length) throw new HttpError(404, 'One or more categories were not found', 'NOT_FOUND');
+
+    const found = await CategoryModel.countDocuments({
+      _id: { $in: items.map((i) => i.id) },
+    });
+
+    if (found !== items.length) {
+      throw new HttpError(
+        404,
+        'One or more categories were not found',
+        'NOT_FOUND',
+      );
+    }
+
     await CategoryModel.bulkWrite(
-      items.map((i) => ({ updateOne: { filter: { _id: i.id }, update: { $set: { sortOrder: i.sortOrder } } } })),
+      items.map((i) => ({
+        updateOne: {
+          filter: { _id: i.id },
+          update: {
+            $set: {
+              sortOrder: i.sortOrder,
+            },
+          },
+        },
+      })),
     );
+
     return this.list();
   },
 
-  /** Blocked while services still belong to it; move or delete them first (or just deactivate the category). */
   /**
    * Block deletion while services still belong to the category.
    * Move or delete those services first, or deactivate the category.
@@ -230,5 +253,3 @@ export const categoriesService = {
     await existing.deleteOne();
   },
 };
-};
-

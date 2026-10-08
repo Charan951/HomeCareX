@@ -82,14 +82,6 @@ const SLOT_TAKEN_NOTICE = "That time slot was just taken by someone else. Please
 
 const COUPON_ERROR_CODES: string[] = Object.values(COUPON_ERROR);
 
-const METHOD_ICONS: Partial<Record<CheckoutMethod, LucideIcon>> = {
-  upi: Smartphone,
-  card: CreditCard,
-  netbanking: Landmark,
-  wallet: Wallet,
-  cod: Banknote,
-};
-
 interface PriceNotice {
   from: number;
   to: number;

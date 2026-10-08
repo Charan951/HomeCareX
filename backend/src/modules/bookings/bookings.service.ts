@@ -3,6 +3,7 @@ import { Types } from 'mongoose';
 import { AppError } from '../../utils/AppError';
 import { addressesService, type ResolvedAddress } from '../addresses/addresses.service';
 import { bookingsRepository } from './bookings.repository';
+import type { ListBookingsQuery } from './bookings.query';
 import { bookingSettings } from './bookings.settings';
 import { withSlotLock } from './bookings.lock';
 import {
@@ -295,8 +296,11 @@ export const BookingService = {
     return toView(booking as never);
   },
 
-  async listBookings(customerId: string) {
-    const bookings = await bookingsRepository.listForCustomer(customerId);
-    return bookings.map((b) => toView(b as never));
+  async listBookings(customerId: string, query: ListBookingsQuery) {
+    const { items, total } = await bookingsRepository.listPageForCustomer(customerId, query);
+    return {
+      items: items.map((b) => toView(b as never)),
+      meta: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) },
+    };
   },
 };
