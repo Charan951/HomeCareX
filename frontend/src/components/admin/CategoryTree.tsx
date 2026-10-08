@@ -8,9 +8,10 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
-  ArrowDown, ArrowUp, ChevronRight, CornerDownRight, FolderTree, GripVertical, History, ImageIcon, Pencil, Plus, Trash2,
+  ArrowDown, ArrowUp, ChevronRight, Package, CornerDownRight, FolderTree, GripVertical, History, ImageIcon, Pencil, Plus, Trash2,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { Link } from 'react-router-dom';
 import type { AdminCategory, ReorderItem } from '@/types/adminCatalog';
 
 export interface TreeNode { category: AdminCategory; children: AdminCategory[] }
@@ -48,11 +49,11 @@ const Media: React.FC<{ c: AdminCategory; small?: boolean }> = ({ c, small }) =>
 
 interface RowProps extends Omit<Props, 'nodes' | 'all' | 'onReorder'> {
   c: AdminCategory; sub?: boolean; index: number; count: number; hasKids?: boolean;
-  open?: boolean; onOpen?: () => void; onMove: (dir: -1 | 1) => void;
+  open?: boolean; onOpen?: () => void; subServices?: number; onMove: (dir: -1 | 1) => void;
 }
 
 const Row: React.FC<RowProps> = ({
-  c, sub, index, count, hasKids, open, onOpen, onMove, onEdit, onDelete, onToggle, onAddChild,
+  c, sub, index, count, hasKids, open, onOpen, subServices = 0, onMove, onEdit, onDelete, onToggle, onAddChild,
   reorderEnabled, busyIds,
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: c.id, disabled: !reorderEnabled });
@@ -81,7 +82,9 @@ const Row: React.FC<RowProps> = ({
         </div>
         <div className="cat-sub"><code>/{c.slug}</code>{c.description && <span className="cat-desc">{c.description}</span>}</div>
         <div className="cat-pills">
-          <span className="cat-pill" title="Services in this category">{c.services} service{c.services === 1 ? '' : 's'}</span>
+          {c.services + subServices > 0
+            ? <Link className="cat-pill is-link" to={`/admin/services?category=${encodeURIComponent(c.id)}`} title={subServices > 0 ? `${c.services} here + ${subServices} in sub-categories. View them.` : 'View these services'}>{c.services + subServices} service{c.services + subServices === 1 ? '' : 's'} →</Link>
+            : <span className="cat-pill" title="Services in this category">0 services</span>}
           {c.images.length > 1 && <span className="cat-pill" title="Gallery images"><ImageIcon size={11} /> {c.images.length} images</span>}
           {!c.images.length && !c.iconUrl && <span className="cat-pill is-warn">No images yet</span>}
         </div>
@@ -100,6 +103,7 @@ const Row: React.FC<RowProps> = ({
           <button type="button" className="cat-iconbtn" onClick={() => onMove(-1)} disabled={!reorderEnabled || index === 0 || busy} aria-label={`Move ${c.name} up`} title="Move up"><ArrowUp size={15} /></button>
           <button type="button" className="cat-iconbtn" onClick={() => onMove(1)} disabled={!reorderEnabled || index === count - 1 || busy} aria-label={`Move ${c.name} down`} title="Move down"><ArrowDown size={15} /></button>
         </span>
+        <Link className="cat-iconbtn" to={`/admin/services?category=${encodeURIComponent(c.id)}&new=1`} aria-label={`Add service to ${c.name}`} title="Add service to this category"><Package size={15} /></Link>
         {!sub && <button type="button" className="cat-iconbtn" onClick={() => onAddChild(c)} aria-label={`Add sub-category to ${c.name}`} title="Add sub-category"><Plus size={15} /></button>}
         <button type="button" className="cat-iconbtn" onClick={() => onEdit(c)} aria-label={`Edit ${c.name}`} title="Edit"><Pencil size={15} /></button>
         <button
@@ -156,7 +160,7 @@ export const CategoryTree: React.FC<Props> = (props) => {
             <ul className="cat-list cat-list--flat">
               <Row
                 {...props} c={p} index={pGroup.findIndex((x) => x.id === p.id)} count={pGroup.length}
-                hasKids={children.length > 0} open={open}
+                hasKids={children.length > 0} open={open} subServices={children.reduce((n, k) => n + k.services, 0)}
                 onOpen={() => setCollapsed((s) => { const n = new Set(s); if (n.has(p.id)) n.delete(p.id); else n.add(p.id); return n; })}
                 onMove={(d) => commitMove(null, p.id, siblings(null).findIndex((c) => c.id === p.id) + d)}
               />
