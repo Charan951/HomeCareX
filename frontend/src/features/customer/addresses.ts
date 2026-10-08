@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { addressApi } from "@/services/addressApi";
+import type { ServiceabilityResult } from "@/types/address";
 import type { NormalizedApiError } from "@/services/bookingApi";
 import { ADDRESSES_QUERY_KEY } from "@/features/booking/useAddresses";
 import { customerKeys } from "./api";
@@ -27,6 +28,31 @@ export function useAddresses() {
     staleTime: 30_000,
     retry: (count, error) => count < 2 && (error.status === null || error.status >= 500),
   });
+}
+
+export type ServiceabilityStatus = "idle" | "checking" | "serviceable" | "unserviceable" | "error";
+
+/**
+ * GET /serviceability for a pincode, checked once all 6 digits are typed. The query key is shared with
+ * SetupAddress and StepAddress, so the same pincode is only ever fetched once.
+ */
+export function useServiceability(pincode: string) {
+  const ready = /^\d{6}$/.test(pincode);
+  const query = useQuery<ServiceabilityResult, NormalizedApiError>({
+    queryKey: ["serviceability", pincode],
+    queryFn: () => addressApi.checkServiceability(pincode),
+    enabled: ready,
+    staleTime: 5 * 60_000,
+    retry: (count, error) => count < 1 && (error.status === null || error.status >= 500),
+  });
+
+  let status: ServiceabilityStatus = "idle";
+  if (ready) {
+    if (query.isError) status = "error";
+    else if (query.data) status = query.data.serviceable ? "serviceable" : "unserviceable";
+    else status = "checking";
+  }
+  return { status, result: ready ? query.data : undefined, retry: () => void query.refetch() };
 }
 
 /** After any change, refresh the address list, the dashboard (default address) and the booking flow's list. */

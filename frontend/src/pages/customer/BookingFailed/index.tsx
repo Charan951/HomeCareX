@@ -52,6 +52,7 @@ const COPY: Record<
 };
 
 export default function BookingFailed() {
+  // The routes are /booking/success/:id and /booking/failed/:id (see CustomerRoutes), so the param is `id`.
   const { id: bookingId } = useParams<{ id: string }>();
   const [params] = useSearchParams();
   const navigate = useNavigate();

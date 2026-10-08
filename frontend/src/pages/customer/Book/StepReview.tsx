@@ -32,6 +32,7 @@ import { formatSlotLabel } from "./components/SlotPicker";
 import { couponErrorText } from "./components/CouponInput";
 import PriceBreakdown from "./components/PriceBreakdown";
 import { formatINR } from "./formatMoney";
+import { settledBookingDestination } from "./settledBooking";
 import { PaymentResult } from "@/components/customer/payments";
 import {
   CHECKOUT_METHODS,
@@ -42,10 +43,6 @@ import {
   type RazorpaySuccess,
 } from "@/features/payments";
 import type { CheckoutMethod } from "@/types/payment";
-
-/* -------------------------------------------------------------------------- */
-/* Constants & helpers                                                        */
-/* -------------------------------------------------------------------------- */
 
 type RazorpayCheckoutMethod = "upi" | "card" | "netbanking" | "wallet";
 
@@ -61,7 +58,8 @@ function toRazorpayCheckoutMethod(method: Exclude<CheckoutMethod, "cod">): Razor
   }
 }
 
-const PRE_POPUP_DELAY_MS = 2000;
+const PRE_POPUP_DELAY_MS = 2000; // Reduced delay so it opens faster
+
 const MAX_PAYMENT_RETRIES = 3;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -81,14 +79,6 @@ const SLOT_ERRORS = new Set(["SLOT_UNAVAILABLE", "SLOT_BUSY", "INVALID_DATE"]);
 const SLOT_TAKEN_NOTICE = "That time slot was just taken by someone else. Please pick another slot.";
 
 const COUPON_ERROR_CODES: string[] = Object.values(COUPON_ERROR);
-
-const METHOD_ICONS: Partial<Record<CheckoutMethod, LucideIcon>> = {
-  upi: Smartphone,
-  card: CreditCard,
-  netbanking: Landmark,
-  wallet: Wallet,
-  cod: Banknote,
-};
 
 interface PriceNotice {
   from: number;
@@ -210,7 +200,7 @@ export default function StepReview() {
     setIsSubmitting(false);
     setClickedWhileProcessing(false);
   };
-  const handlePay = async (selectedMethod?: CheckoutMethod) => {
+  const handlePay = async (selectedMethod?: CheckoutMethod, isRetry = false): Promise<void> => {
     const activeMethod = selectedMethod ?? method;
     if (inFlight.current) {
       setClickedWhileProcessing(true);
@@ -264,8 +254,19 @@ export default function StepReview() {
     try {
       const { booking } = await bookingApi.createBooking(payload, idempotencyKey);
       const resolvedBookingId: string = booking._id;
-      const goToFailed = (reason: "failed" | "verification" | "network" | "cancelled") =>
+      // A failed or cancelled attempt is over: the next attempt must not reuse its Idempotency-Key,
+      // or POST /bookings would replay this dead booking and payment would be refused.
+      const goToFailed = (reason: "failed" | "verification" | "network" | "cancelled") => {
+        draft.resetIdempotency();
         navigate(`${customerPath(`/booking/failed/${resolvedBookingId}`)}?reason=${reason}`, { replace: true });
+      };
+      // Already settled (CONFIRMED without payment, or a replay of a paid booking): there is nothing to pay, and a
+      // payment order would fail with BOOKING_NOT_PAYABLE (the retry below would then book it a second time).
+      const settled = settledBookingDestination(booking, activeMethod);
+      if (settled) {
+        navigate(customerPath(settled.path), { replace: true, state: settled.state });
+        return;
+      }
       // Cash on Service Bypass: Immediately confirm booking, leave payment as PENDING
       if (activeMethod === "cod") {
         setStatusMessage("Confirming your booking…");
@@ -401,9 +402,15 @@ export default function StepReview() {
         return;
       }
       if (["HOLD_EXPIRED", "BOOKING_NOT_PAYABLE", "ALREADY_PAID"].includes(apiErr.code)) {
+        // The saved Idempotency-Key pointed at an earlier booking that can no longer be paid. Drop the key.
         draft.resetIdempotency();
+        if (apiErr.code !== "ALREADY_PAID" && !isRetry) {
+          // Start a fresh reservation automatically (once) instead of making the customer tap again.
+          await handlePay(selectedMethod, true);
+          return;
+        }
         setError({
-          message: apiErr.code === "ALREADY_PAID" ? apiErr.message : "Your earlier reservation is no longer valid. Please tap Confirm & Pay again to start a fresh one.",
+          message: apiErr.code === "ALREADY_PAID" ? apiErr.message : "Your slot reservation expired. Please tap the button again to reserve it afresh.",
         });
         return;
       }
@@ -436,14 +443,9 @@ export default function StepReview() {
   const hiddenCouponCount = Math.max(compactCoupons.length - 4, 0);
   const address = draft.addressSnapshot;
   const dateLabel = draft.date ? prettyDate(draft.date) : "";
-  const payLabel = isSubmitting
-    ? "Processing…"
-    : method === "cod"
-      ? "Place order"
-      : "Confirm & Pay";
+  const payLabel = isSubmitting ? "Processing…" : method === "cod" ? "Place order" : "Confirm & Pay";
   const totalText = quoteReady && quote ? formatINR(quote.total) : "—";
-  const saving =
-    quoteReady && quote && quote.discount > 0 ? quote.discount : 0;
+  const saving = quoteReady && quote && quote.discount > 0 ? quote.discount : 0;
   const couponBusy = !online || isSubmitting || isValidating;
 
   const applyDraftCoupon = () => {
@@ -464,9 +466,7 @@ export default function StepReview() {
     >
       <Lock className="h-4 w-4" aria-hidden="true" />
       {payLabel}
-      {quoteReady && !isSubmitting && (
-        <span className="tabular-nums">· {totalText}</span>
-      )}
+      {quoteReady && !isSubmitting && <span className="tabular-nums">· {totalText}</span>}
     </button>
   );
 
@@ -479,38 +479,21 @@ export default function StepReview() {
             <Sparkles className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <h3 className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
-              Almost done — review &amp; pay
-            </h3>
-            <p className="mt-0.5 text-sm text-muted">
-              Check your details, add an offer if you have one, and choose how
-              to pay.
-            </p>
+            <h3 className="text-xl font-bold tracking-tight text-ink sm:text-2xl">Almost done — review &amp; pay</h3>
+            <p className="mt-0.5 text-sm text-muted">Check your details, add an offer if you have one, and choose how to pay.</p>
           </div>
         </div>
-        <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-brand">
-          Final step
-        </span>
+        <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-brand">Final step</span>
       </div>
 
       {!online && (
-        <div
-          role="status"
-          className="rounded-2xl border border-line bg-accent-soft px-4 py-3 text-sm text-ink"
-        >
+        <div role="status" className="rounded-2xl border border-line bg-accent-soft px-4 py-3 text-sm text-ink">
           You're offline. Reconnect to refresh the latest price and continue.
         </div>
       )}
-
       {isSubmitting && (
         <PaymentResult
-          phase={
-            clickedWhileProcessing
-              ? "processing"
-              : method === "cod"
-                ? "processing"
-                : "pending"
-          }
+          phase={clickedWhileProcessing ? "processing" : method === "cod" ? "processing" : "pending"}
           message={
             clickedWhileProcessing
               ? "Please wait a moment. You will not be charged twice."
@@ -518,69 +501,42 @@ export default function StepReview() {
           }
         />
       )}
-
       {error && (
-        <div
-          role="alert"
-          className="rounded-2xl border border-danger bg-danger-soft px-4 py-3 text-sm text-ink"
-        >
+        <div role="alert" className="rounded-2xl border border-danger bg-danger-soft px-4 py-3 text-sm text-ink">
           {error.message}
         </div>
       )}
-
       {priceNotice && (
-        <div
-          role="alert"
-          className="rounded-2xl border border-amber-500 bg-amber-50 px-4 py-3 text-sm text-ink"
-        >
-          The price changed from {formatINR(priceNotice.from)} to{" "}
-          {formatINR(priceNotice.to)}. Review the updated total and confirm
-          again.
+        <div role="alert" className="rounded-2xl border border-amber-500 bg-amber-50 px-4 py-3 text-sm text-ink">
+          The price changed from {formatINR(priceNotice.from)} to {formatINR(priceNotice.to)}. Review the updated total and confirm again.
         </div>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
-        {/* ------------------------------ Left column ---------------------- */}
         <div className="min-w-0 space-y-5">
           {/* Booking details */}
-          <section
-            aria-labelledby="rv-details"
-            className="overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)]"
-          >
+          <section aria-labelledby="rv-details" className="overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)]">
             <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-6">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
-                  Service
-                </p>
-                <h4
-                  id="rv-details"
-                  className="truncate text-base font-bold text-ink"
-                >
-                  {draft.serviceName ?? "Home service"}{" "}
-                  <span className="font-medium text-muted">
-                    × {draft.quantity}
-                  </span>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Service</p>
+                <h4 id="rv-details" className="truncate text-base font-bold text-ink">
+                  {draft.serviceName ?? "Home service"} <span className="font-medium text-muted">× {draft.quantity}</span>
                 </h4>
               </div>
               {draft.addOns.length > 0 && (
                 <span className="shrink-0 rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand">
-                  +{draft.addOns.length} add-on
-                  {draft.addOns.length > 1 ? "s" : ""}
+                  +{draft.addOns.length} add-on{draft.addOns.length > 1 ? "s" : ""}
                 </span>
               )}
             </div>
-
             <div className="grid divide-y divide-line sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-              {/* Address */}
               <div className="flex items-start gap-3.5 px-5 py-4 sm:px-6">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
                   <MapPin className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-semibold text-muted">
-                      {address?.label ?? "Address"}
-                    </p>
+                    <p className="text-xs font-semibold text-muted">{address?.label ?? "Address"}</p>
                     <button
                       type="button"
                       onClick={() => draft.setStep(2)}
