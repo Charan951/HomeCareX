@@ -1,6 +1,14 @@
 import type { CookieOptions, NextFunction, Request, Response } from 'express';
 import { authService } from './auth.service';
-import { forgotPasswordSchema, loginSchema, parseBody, registerSchema, resetPasswordSchema } from './auth.validation';
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  parseBody,
+  registerSchema,
+  resendOtpSchema,
+  resetPasswordSchema,
+  verifyOtpSchema,
+} from './auth.validation';
 import { REFRESH_COOKIE, REFRESH_COOKIE_PATH, REFRESH_TOKEN_TTL_DAYS } from './auth.constants';
 
 const cookieOptions = (): CookieOptions => ({
@@ -62,6 +70,16 @@ export const authController = {
 
   forgotPassword: wrap(async (req, res) => {
     const result = await authService.forgotPassword(parseBody(forgotPasswordSchema, req.body));
+    res.json(result);
+  }),
+
+  verifyOtp: wrap(async (req, res) => {
+    const result = await authService.verifyOtp(parseBody(verifyOtpSchema, req.body));
+    res.json(result);
+  }),
+
+  resendOtp: wrap(async (req, res) => {
+    const result = await authService.resendOtp(parseBody(resendOtpSchema, req.body));
     res.json(result);
   }),
 

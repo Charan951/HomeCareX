@@ -91,6 +91,8 @@ export const RegisterPage: React.FC = () => {
       nextErrors.password = 'Password requires at least one uppercase letter.';
     } else if (!/[0-9]/.test(form.password)) {
       nextErrors.password = 'Password requires at least one number.';
+    } else if (!/[^A-Za-z0-9]/.test(form.password)) {
+      nextErrors.password = 'Password requires at least one special character.';
     }
 
     if (!form.confirmPassword) {
@@ -331,7 +333,6 @@ export const RegisterPage: React.FC = () => {
               error={fieldErrors.password}
               className="!py-1.5 sm:!py-2 text-xs sm:text-sm"
             />
-            {/* Compact Password Strength Indicator */}
             <PasswordStrength password={form.password} />
           </div>
 

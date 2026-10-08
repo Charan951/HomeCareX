@@ -11,12 +11,39 @@ import {
   ROLE_PERMISSIONS,
 } from './auth.constants';
 import { HttpError, type AccessTokenPayload, type AuthUserDto, type RefreshTokenPayload } from './auth.types';
-import type { ForgotPasswordInput, LoginInput, RegisterInput, ResetPasswordInput } from './auth.validation';
+import type {
+  ForgotPasswordInput,
+  LoginInput,
+  RegisterInput,
+  ResendOtpInput,
+  ResetPasswordInput,
+  VerifyOtpInput,
+} from './auth.validation';
 import type { UserRole } from '../../models/User';
 import { mailService } from '../../services/mail.service';
 
 const accessSecret = () => process.env.JWT_SECRET || 'dev_access_secret_change_me';
 const refreshSecret = () => process.env.JWT_REFRESH_SECRET || `${accessSecret()}_refresh`;
+
+const OTP_TTL_MINUTES = 10;
+const MAX_OTP_ATTEMPTS = 5;
+const RESET_TOKEN_TTL_MINUTES = 15;
+const RESEND_COOLDOWN_MS = 30_000;
+
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return '***';
+  const visible = local.length <= 2 ? `${local[0]}*` : `${local[0]}${'*'.repeat(local.length - 2)}${local[local.length - 1]}`;
+  return `${visible}@${domain}`;
+}
+
+function generateSecureOtp(): string {
+  return crypto.randomInt(100000, 1000000).toString();
+}
+
+function hashSecret(val: string): string {
+  return crypto.createHash('sha256').update(val).digest('hex');
+}
 
 type UserDoc = NonNullable<Awaited<ReturnType<typeof authRepository.findById>>>;
 
@@ -167,39 +194,167 @@ export const authService = {
     return toAuthUser(user);
   },
 
+  /** Generates and dispatches a secure 6-digit OTP for password reset. */
   async forgotPassword({ email }: ForgotPasswordInput) {
-    const user = await authRepository.findByEmail(email);
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await authRepository.findByEmail(normalizedEmail);
+
     if (user && user.status !== 'blocked') {
-      const rawToken = crypto.randomBytes(32).toString('hex');
-      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      await authRepository.invalidateActiveOtps(user.email, 'PASSWORD_RESET');
 
-      user.passwordResetTokenHash = tokenHash;
-      user.passwordResetExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-      await user.save();
+      const otp = generateSecureOtp();
+      const hashedCode = hashSecret(otp);
+      const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60_000);
 
-      const frontendUrl = process.env.FRONTEND_URL
-        || (process.env.APP_LOGIN_URL ? new URL(process.env.APP_LOGIN_URL).origin : 'http://localhost:3000');
-      const resetUrl = `${frontendUrl.replace(/\/$/, '')}/reset-password?token=${rawToken}`;
+      await authRepository.createOtp({
+        userId: user.id,
+        identifier: user.email,
+        hashedCode,
+        purpose: 'PASSWORD_RESET',
+        expiresAt,
+      });
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[DEV ONLY] Password reset OTP generated for ${maskEmail(user.email)}: ${otp}`);
+      }
 
       try {
-        await mailService.sendPasswordResetEmail({
+        await mailService.sendPasswordResetOtpEmail({
           name: user.name,
           email: user.email,
-          resetUrl,
+          otp,
         });
       } catch (err) {
-        console.error('Password-reset email failed for user', user.id, err);
+        console.error('Password-reset OTP email failed for user', user.id, err);
+      }
+    }
+
+    // Critical security: Generic message to prevent account enumeration
+    return {
+      success: true,
+      message: 'If an account exists, a verification code has been sent.',
+    };
+  },
+
+  /** Resends an OTP with rate-limiting cooldown and anti-enumeration protection. */
+  async resendOtp({ email }: ResendOtpInput) {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Enforce 30-second cooldown per identifier
+    const latestOtp = await authRepository.findLatestOtp(normalizedEmail, 'PASSWORD_RESET');
+    if (latestOtp && (latestOtp as { createdAt?: Date }).createdAt) {
+      const elapsed = Date.now() - new Date((latestOtp as { createdAt: Date }).createdAt).getTime();
+      if (elapsed < RESEND_COOLDOWN_MS) {
+        throw new HttpError(429, 'Please wait 30 seconds before requesting another code.', 'RATE_LIMITED');
+      }
+    }
+
+    const user = await authRepository.findByEmail(normalizedEmail);
+
+    if (user && user.status !== 'blocked') {
+      await authRepository.invalidateActiveOtps(user.email, 'PASSWORD_RESET');
+
+      const otp = generateSecureOtp();
+      const hashedCode = hashSecret(otp);
+      const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60_000);
+
+      await authRepository.createOtp({
+        userId: user.id,
+        identifier: user.email,
+        hashedCode,
+        purpose: 'PASSWORD_RESET',
+        expiresAt,
+      });
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[DEV ONLY] Password reset OTP generated for ${maskEmail(user.email)}: ${otp}`);
+      }
+
+      try {
+        await mailService.sendPasswordResetOtpEmail({
+          name: user.name,
+          email: user.email,
+          otp,
+        });
+      } catch (err) {
+        console.error('Password-reset OTP email failed for user', user.id, err);
       }
     }
 
     return {
       success: true,
-      message: 'If an account exists for this email, a password reset link has been sent.',
+      message: 'If an account exists, a verification code has been sent.',
     };
   },
 
-  async resetPassword({ token, newPassword }: ResetPasswordInput) {
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+  /** Verifies a 6-digit OTP, marks it used, and returns a single-use reset token. */
+  async verifyOtp({ email, otp }: VerifyOtpInput) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const cleanedOtp = otp.trim();
+
+    if (!/^\d{6}$/.test(cleanedOtp)) {
+      throw new HttpError(400, 'Enter a valid 6-digit verification code.', 'INVALID_OTP_FORMAT');
+    }
+
+    const otpDoc = await authRepository.findLatestOtp(normalizedEmail, 'PASSWORD_RESET');
+
+    if (!otpDoc || otpDoc.expiresAt <= new Date()) {
+      throw new HttpError(400, 'This verification code has expired. Please request a new code.', 'OTP_EXPIRED');
+    }
+
+    if (otpDoc.usedAt) {
+      throw new HttpError(400, 'This verification code has already been used. Please request a new code.', 'OTP_ALREADY_USED');
+    }
+
+    if (otpDoc.attempts >= MAX_OTP_ATTEMPTS) {
+      throw new HttpError(400, 'Too many attempts. Please request a new code.', 'TOO_MANY_ATTEMPTS');
+    }
+
+    const submittedHash = hashSecret(cleanedOtp);
+    if (submittedHash !== otpDoc.hashedCode) {
+      otpDoc.attempts += 1;
+      await otpDoc.save();
+
+      if (otpDoc.attempts >= MAX_OTP_ATTEMPTS) {
+        throw new HttpError(400, 'Too many attempts. Please request a new code.', 'TOO_MANY_ATTEMPTS');
+      }
+
+      throw new HttpError(400, 'The verification code is invalid. Please try again.', 'INVALID_OTP');
+    }
+
+    // Mark OTP as single-use consumed
+    otpDoc.usedAt = new Date();
+    await otpDoc.save();
+
+    const user = await authRepository.findByEmail(normalizedEmail);
+    if (!user || user.status === 'blocked') {
+      throw new HttpError(400, 'The verification code is invalid. Please try again.', 'INVALID_OTP');
+    }
+
+    // Issue single-use password reset token with short TTL
+    const rawResetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = hashSecret(rawResetToken);
+
+    user.passwordResetTokenHash = resetTokenHash;
+    user.passwordResetExpiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60_000);
+    await user.save();
+
+    return {
+      success: true,
+      resetToken: rawResetToken,
+      data: { resetToken: rawResetToken },
+      message: 'Code verified successfully.',
+    };
+  },
+
+  /** Consumes the single-use reset token, resets password, and revokes all active sessions. */
+  async resetPassword({ resetToken, token, newPassword }: ResetPasswordInput) {
+    const tokenToVerify = (resetToken || token)?.trim();
+    if (!tokenToVerify) {
+      throw new HttpError(400, 'Reset token is required.', 'INVALID_RESET_TOKEN');
+    }
+
+    const tokenHash = hashSecret(tokenToVerify);
     const user = await authRepository.findByResetTokenHash(tokenHash);
 
     if (!user || user.status === 'blocked') {
@@ -217,7 +372,7 @@ export const authService = {
 
     return {
       success: true,
-      message: 'Your password has been reset successfully.',
+      message: 'Your password has been reset successfully. Please log in with your new password.',
     };
   },
 };

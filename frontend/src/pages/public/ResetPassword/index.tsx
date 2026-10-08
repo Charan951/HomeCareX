@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Lock, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
+import { Lock, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, WifiOff } from 'lucide-react';
 import { authApi } from '@/services/authApi';
 import { classifyApiError } from '@/lib/apiError';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { resetStateStore } from '@/features/auth/resetStateStore';
 import PasswordField from '@/components/auth/PasswordField';
 import PasswordStrength from '@/components/auth/PasswordStrength';
 
 export const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token')?.trim() || '';
+  const location = useLocation();
+  const isOnline = useOnlineStatus();
+
+  // Retrieve resetToken from router state, in-memory store, or URL query param (legacy)
+  const stateToken = (location.state as { resetToken?: string } | null)?.resetToken;
+  const token = (stateToken || resetStateStore.getResetToken() || searchParams.get('token') || '').trim();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,6 +40,8 @@ export const ResetPasswordPage: React.FC = () => {
       nextErrors.password = 'Password requires at least one uppercase letter.';
     } else if (!/[0-9]/.test(password)) {
       nextErrors.password = 'Password requires at least one number.';
+    } else if (!/[^A-Za-z0-9]/.test(password)) {
+      nextErrors.password = 'Password requires at least one special character.';
     }
 
     if (!confirmPassword) {
@@ -48,34 +57,47 @@ export const ResetPasswordPage: React.FC = () => {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
+
+    if (!isOnline) {
+      setError("You're offline. Check your internet connection and try again.");
+      return;
+    }
+
     setError('');
     setErrorStatus(null);
 
     if (!validate()) return;
 
     if (!token) {
-      setError('Invalid or missing password reset token. Please request a new link.');
+      setError('Invalid or missing password reset token. Please request a new code.');
       return;
     }
 
     setLoading(true);
     try {
-      await authApi.resetPassword({ token, newPassword: password });
+      await authApi.resetPassword({ resetToken: token, newPassword: password });
+      // Clear in-memory token immediately upon successful reset
+      resetStateStore.clear();
       setSuccess(true);
     } catch (err) {
       const classified = classifyApiError(err);
       setErrorStatus(classified.status ?? null);
 
       if (classified.kind === 'offline') {
-        setError('Unable to connect to the server. Please check your internet connection.');
+        setError("You're offline. Check your internet connection and try again.");
       } else if (classified.kind === 'network') {
         setError('Unable to connect to the server. Please check your connection and try again.');
       } else if (classified.kind === 'timeout') {
         setError('The server is taking too long to respond. Please check your connection and try again.');
       } else if (classified.status === 429) {
         setError('Too many requests. Please wait a moment and try again.');
-      } else if (classified.code === 'INVALID_RESET_TOKEN' || classified.status === 400) {
-        setError(classified.message || 'This password reset link is invalid or has expired.');
+      } else if (
+        classified.code === 'INVALID_RESET_TOKEN' ||
+        classified.code === 'RESET_TOKEN_EXPIRED' ||
+        classified.code === 'RESET_TOKEN_ALREADY_USED' ||
+        classified.status === 400
+      ) {
+        setError(classified.message || 'This password reset session is invalid or has expired.');
       } else if (classified.status && classified.status >= 500) {
         setError('A server error occurred. Please try again shortly.');
       } else {
@@ -88,32 +110,34 @@ export const ResetPasswordPage: React.FC = () => {
 
   return (
     <div>
-      <Link
-        to="/login"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-accent-700 transition-colors mb-4"
-      >
-        <ArrowLeft size={16} />
-        Back to Login
-      </Link>
+      <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-gray-100 shadow-[0_20px_60px_-15px_rgba(67,56,202,0.3)] p-6 sm:p-8">
+        {!isOnline && (
+          <div
+            role="status"
+            className="mb-4 text-xs sm:text-sm rounded-lg p-3 flex items-start gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 animate-fadeUp"
+          >
+            <WifiOff size={17} className="shrink-0 mt-0.5 text-amber-600" aria-hidden="true" />
+            <span className="leading-snug">You&apos;re offline. Check your internet connection and try again.</span>
+          </div>
+        )}
 
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(67,56,202,0.3)] border border-gray-100 p-8">
         {!token ? (
           <div className="text-center py-2 animate-fadeUp">
-            <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-4">
+            <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-4 border border-amber-100">
               <AlertTriangle size={26} className="text-amber-500" />
             </div>
-            <h1 className="text-2xl font-bold text-accent-700 mb-2">Invalid Reset Link</h1>
+            <h1 className="text-2xl font-bold text-accent-700 mb-2">Invalid Reset Session</h1>
             <p className="text-gray-500 mb-6 text-sm">
-              This password reset link is missing a valid token or is incomplete.
-              Please request a new reset link to proceed.
+              This password reset session is missing a valid verification token or has expired.
+              Please restart the password reset process to proceed.
             </p>
             <div className="space-y-3">
               <Link
                 to="/forgot-password"
                 className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-lg
-                           hover:shadow-lg hover:shadow-brand-500/30 transition-all duration-200 flex items-center justify-center gap-2"
+                           hover:shadow-lg hover:shadow-brand-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm"
               >
-                Request new link
+                Request new code
                 <ArrowRight size={16} />
               </Link>
               <Link
@@ -127,17 +151,17 @@ export const ResetPasswordPage: React.FC = () => {
           </div>
         ) : success ? (
           <div className="text-center py-2 animate-fadeUp">
-            <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-4">
+            <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-4 border border-green-100">
               <CheckCircle2 size={26} className="text-green-500" />
             </div>
             <h1 className="text-2xl font-bold text-accent-700 mb-1">Password reset successful</h1>
             <p className="text-gray-500 mb-6 text-sm">
-              Your password has been reset successfully. You can now log in with your new password.
+              Your password has been reset successfully and all active sessions have been signed out. You can now log in with your new password.
             </p>
             <Link
               to="/login"
               className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-lg
-                         hover:shadow-lg hover:shadow-brand-500/30 transition-all duration-200 flex items-center justify-center gap-2"
+                         hover:shadow-lg hover:shadow-brand-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm"
             >
               Log in now
               <ArrowRight size={16} />
@@ -151,7 +175,7 @@ export const ResetPasswordPage: React.FC = () => {
 
             <h1 className="text-2xl font-bold text-accent-700 mb-1">Set new password</h1>
             <p className="text-gray-500 mb-6 text-sm">
-              Create a strong new password for your account
+              Create a strong new password for your account.
             </p>
 
             {error && (
@@ -173,7 +197,7 @@ export const ResetPasswordPage: React.FC = () => {
                   {(errorStatus === 400 || error.includes('expired') || error.includes('invalid')) && (
                     <div className="mt-1">
                       <Link to="/forgot-password" className="font-semibold underline hover:text-red-900">
-                        Request a new reset link
+                        Request a new verification code
                       </Link>
                     </div>
                   )}
@@ -196,7 +220,7 @@ export const ResetPasswordPage: React.FC = () => {
                     if (error) setError('');
                   }}
                   error={fieldErrors.password}
-                  disabled={loading}
+                  disabled={loading || !isOnline}
                 />
                 <PasswordStrength password={password} />
               </div>
@@ -215,30 +239,40 @@ export const ResetPasswordPage: React.FC = () => {
                     if (error) setError('');
                   }}
                   error={fieldErrors.confirmPassword}
-                  disabled={loading}
+                  disabled={loading || !isOnline}
                 />
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !isOnline}
                 className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-lg
                            hover:shadow-lg hover:shadow-brand-500/30 hover:-translate-y-0.5
                            active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0 disabled:cursor-not-allowed
-                           transition-all duration-200 flex items-center justify-center gap-2"
+                           transition-all duration-200 flex items-center justify-center gap-2 text-sm"
               >
                 {loading ? (
                   <>
                     <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    Resetting password...
+                    <span>Resetting password...</span>
                   </>
                 ) : (
                   <>
-                    Reset password
+                    <span>Reset password</span>
                     <ArrowRight size={16} />
                   </>
                 )}
               </button>
+
+              <div className="text-center pt-2">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-accent-700 transition-colors"
+                >
+                  <ArrowLeft size={16} />
+                  Back to Login
+                </Link>
+              </div>
             </form>
           </>
         )}

@@ -9,6 +9,7 @@ import AuthLayout from '@/layouts/AuthLayout';
 import LoginPage from '@/pages/public/Login';
 import RegisterPage from '@/pages/public/Register';
 import ForgotPasswordPage from '@/pages/public/ForgotPassword';
+import VerifyOtpPage from '@/pages/public/VerifyOtp';
 import ResetPasswordPage from '@/pages/public/ResetPassword';
 import UnauthorizedPage from '@/pages/public/Unauthorized';
 import { ADMIN_ROLES } from '@/types/auth';
@@ -21,6 +22,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/verify-otp" element={<VerifyOtpPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>
       <Route path="/unauthorized" element={<UnauthorizedPage />} />
