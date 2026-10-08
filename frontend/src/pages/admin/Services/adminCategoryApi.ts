@@ -374,6 +374,11 @@ export const adminCategoryApi = {
   remove: (id: string) => run(() => impl().remove(id)),
   reorder: (items: ReorderItem[]) => run(() => impl().reorder(items)),
   auditLog: () => run(() => impl().auditLog()),
+  /** Demo mode only: keeps a category's service count in step with the demo services store (the live backend counts itself). */
+  adjustDemoServiceCount(id: string, delta: number) {
+    if (mode !== 'demo') return;
+    demoSave(demoAll().map((c) => (c.id === id ? { ...c, services: Math.max(0, c.services + delta) } : c)));
+  },
 };
 
 /** Test helper: forget the detected mode and cached rows. */

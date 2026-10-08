@@ -119,6 +119,13 @@ function compactCouponDescription(coupon: CompactCoupon): string {
   return parts.join(" · ") || coupon.title || "Available offer";
 }
 
+/** "2026-10-15" -> "Thu, 15 Oct 2026". Parsed as a local date so the day never shifts with the timezone. */
+function prettyDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+}
+
 export default function StepReview() {
   const draft = useBookingDraftStore();
   const navigate = useNavigate();
@@ -264,14 +271,14 @@ export default function StepReview() {
       if (activeMethod === "cod") {
         setStatusMessage("Confirming your booking…");
         await paymentApi.confirmCod(resolvedBookingId);
-       navigate(`${customerPath(`/booking/booked/${resolvedBookingId}`)}`, { replace: true });
+        navigate(`${customerPath(`/booking/booked/${resolvedBookingId}`)}`, { replace: true });
         return;
       }
       // Online Payment Methods
       const orderData = await paymentApi.createOrder(resolvedBookingId);
       // CRITICAL CHECK: Ensure backend returned the key and order ID
       if (!orderData.orderId || !orderData.keyId) {
-         throw new Error("Invalid payment gateway response. Developer: Ensure backend returns both 'orderId' and 'keyId'.");
+        throw new Error("Invalid payment gateway response. Developer: Ensure backend returns both 'orderId' and 'keyId'.");
       }
       // Safety guard: this screen is intentionally wired to Razorpay TEST mode.
       // A Razorpay test key always starts with `rzp_test_`. Never open Checkout
@@ -819,19 +826,4 @@ export default function StepReview() {
       </div>
     </div>
   );
-}
-
-const METHOD_ICONS: Partial<Record<CheckoutMethod, LucideIcon>> = {
-  upi: Smartphone,
-  card: CreditCard,
-  netbanking: Landmark,
-  wallet: Wallet,
-  cod: Banknote,
-};
-
-/** "2026-10-15" -> "Thu, 15 Oct 2026". Parsed as a local date so the day never shifts with the timezone. */
-function prettyDate(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  if (!y || !m || !d) return iso;
-  return new Date(y, m - 1, d).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 }

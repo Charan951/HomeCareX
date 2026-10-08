@@ -21,3 +21,15 @@ export function fileToDataUrl(file: File, maxEdge = 900, quality = 0.82): Promis
     img.src = url;
   });
 }
+
+
+/** Natural width/height of an image File, or rejects when the browser cannot decode it (corrupt, wrong type). */
+export function readImageSize(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve({ width: img.width, height: img.height }); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error(`${file.name}: not a valid image`)); };
+    img.src = url;
+  });
+}

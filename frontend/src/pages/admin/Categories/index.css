@@ -263,3 +263,7 @@
   .cat-toggle { padding-right: 5px; }
   .cat-iconbtn { width: 34px; height: 34px; }
 }
+
+.cat-pill.is-link { color: #4338ca; background: #eef2ff; text-decoration: none; font-weight: 600; }
+.cat-pill.is-link:hover { background: #e0e7ff; }
+.cat-pill.is-link:focus-visible { outline: 2px solid #4338ca; outline-offset: 2px; }

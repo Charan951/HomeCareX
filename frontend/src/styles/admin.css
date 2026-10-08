@@ -468,7 +468,7 @@
 @media (prefers-reduced-motion: reduce) { .hcx-skeleton { animation: none; } }
 
 /* ---- overlays: modal + drawer ---- */
-.hcx-overlay { position: fixed; inset: 0; z-index: 60; display: flex; background: rgba(15, 23, 42, 0.5); }
+.hcx-overlay { position: fixed; inset: 0; z-index: 75; display: flex; background: rgba(15, 23, 42, 0.5); }
 .hcx-overlay--center { align-items: center; justify-content: center; padding: 16px; }
 .hcx-modal, .hcx-drawer { display: flex; flex-direction: column; background: var(--hcx-surface); box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25); outline: none; }
 .hcx-modal { width: 100%; max-height: calc(100vh - 32px); border-radius: 12px; animation: hcx-pop 0.14s ease-out; }
@@ -597,4 +597,10 @@
 .breadcrumb-bar.breadcrumb-bar--left .topbar-search { flex: 1 1 640px; max-width: 640px; margin-left: 0; }
 @media (max-width: 767px) {
   .breadcrumb-bar.breadcrumb-bar--left .topbar-search { max-width: none; }
+}
+/* Services: the filter button stays beside the search bar on phones instead of wrapping below it */
+@media (max-width: 767px) {
+  .breadcrumb-bar.breadcrumb-bar--left:has(.admin-search-slot) { flex-wrap: nowrap; gap: 8px; }
+  .breadcrumb-bar.breadcrumb-bar--left:has(.admin-search-slot) .topbar-search { flex: 1 1 0; min-width: 0; width: auto; }
+  .breadcrumb-bar.breadcrumb-bar--left:has(.admin-search-slot) .admin-search-slot { flex: 0 0 auto; }
 }

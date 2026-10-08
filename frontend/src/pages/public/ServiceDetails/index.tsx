@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from "react";
-import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -22,6 +22,9 @@ import {
 import GallerySkeleton from "../../../components/public/skeletons/GallerySkeleton";
 import ServiceInfoSkeleton from "../../../components/public/skeletons/ServiceInfoSkeleton";
 import ReviewSkeleton from "../../../components/public/skeletons/ReviewSkeleton";
+import StickyBookNow from "../../../components/public/StickyBookNow";
+import NotFound from "../NotFound";
+import { useAuth } from "../../../hooks/useAuth"; // adjust to your real path
 
 interface Service {
   id: string;
@@ -368,6 +371,9 @@ const ServiceDetails: React.FC = () => {
   const params = useParams<{ slug?: string; id?: string }>();
   const key = params.slug ?? params.id;
 
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
   const service = services.find(
     (item) => item.slug === key || item.id === key
   );
@@ -545,36 +551,20 @@ const ServiceDetails: React.FC = () => {
     }
   };
 
+  /* Book now: logged in -> booking page; logged out -> login, then back to booking */
+  const handleBookNow = () => {
+    if (!service) return;
+    const bookPath = `/customer/book/${encodeURIComponent(service.slug)}`;
+    if (isAuthenticated) {
+      navigate(bookPath);
+      return;
+    }
+    navigate(`/login?returnUrl=${encodeURIComponent(bookPath)}`);
+  };
+
+  /* Unknown slug: show the public 404 page */
   if (!service) {
-    return (
-      <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f6f7fd] px-4">
-        <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-[#6366f1]/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-[#ff8a3d]/15 blur-3xl" />
-
-        <div className="relative max-w-md rounded-[2rem] border border-white bg-white/90 p-10 text-center shadow-[0_30px_80px_rgba(17,16,79,0.12)] backdrop-blur">
-          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eef2ff] text-3xl">
-            🔍
-          </div>
-
-          <h1 className="text-2xl font-extrabold tracking-tight text-[#11104f] sm:text-3xl">
-            Service not found
-          </h1>
-
-          <p className="mt-3 text-sm leading-6 text-[#6b6b8a]">
-            The service you are looking for does not exist or may have been
-            removed.
-          </p>
-
-          <Link
-            to="/services"
-            className={`mt-7 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#4338ca] to-[#6d5dfc] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#4338ca]/30 transition hover:-translate-y-0.5 ${focusRing}`}
-          >
-            <ArrowLeft size={18} aria-hidden="true" />
-            Back to services
-          </Link>
-        </div>
-      </main>
-    );
+    return <NotFound />;
   }
 
   /* Old id URLs (/services/SERVICE001) redirect to the slug URL
@@ -1221,9 +1211,9 @@ const ServiceDetails: React.FC = () => {
                   </div>
                 </div>
 
-                {/* TODO: connect this to the booking flow */}
                 <button
                   type="button"
+                  onClick={handleBookNow}
                   className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#4338ca] to-[#6d5dfc] px-8 py-5 text-lg font-extrabold text-white shadow-lg shadow-[#4338ca]/30 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#4338ca]/40 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#4338ca]/30"
                 >
                   <CalendarCheck size={22} aria-hidden="true" />
@@ -1363,25 +1353,11 @@ const ServiceDetails: React.FC = () => {
 
       {/* ================= STICKY BOOK BAR (mobile and tablet) ================= */}
       {!loading && (
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e4e7f5] bg-white/90 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-12px_32px_rgba(17,16,79,0.10)] backdrop-blur-md lg:hidden">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
-          <div>
-            <p className="text-xs text-[#6b6b8a]">Starting at</p>
-            <p className="text-2xl font-extrabold leading-none tracking-tight text-[#11104f]">
-              ₹{service.price.toLocaleString("en-IN")}
-            </p>
-          </div>
-
-          {/* TODO: connect this to the booking flow */}
-          <button
-            type="button"
-            className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#4338ca] to-[#6d5dfc] px-7 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-[#4338ca]/30 transition active:scale-95 focus:outline-none focus-visible:ring-4 focus-visible:ring-[#4338ca]/30"
-          >
-            <CalendarCheck size={18} aria-hidden="true" />
-            Book now
-          </button>
-        </div>
-      </div>
+        <StickyBookNow
+          serviceName={service.name}
+          price={service.price}
+          onBookNow={handleBookNow}
+        />
       )}
 
       {/* ================= PHOTO POP-UP (LIGHTBOX) ================= */}
