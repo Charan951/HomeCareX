@@ -1,53 +1,30 @@
 import { Router } from 'express';
 
 import paymentRoutes from '../modules/payments/payments.routes';
-
 import walletRoutes from '../modules/wallet/wallet.routes';
 
 import { authRoutes } from '../modules/auth/auth.routes';
-
 import { auditRoutes } from '../modules/audit/audit.routes';
-
 import { adminRoutes } from '../modules/admin/admin.routes';
-
 import { partnersRoutes } from '../modules/partners/partners.routes';
-
 import { availabilityRoutes } from '../modules/availability/availability.routes';
-
 import { blackoutRoutes } from '../modules/availability/blackout.routes';
-
 import { scheduleRoutes } from '../modules/availability/schedule.routes';
-
 import { partnerDashboardRoutes } from '../modules/partners/partner-dashboard.routes';
-
 import { earningsRoutes } from '../modules/earnings/earnings.routes';
-
 import { adminDashboardRoutes } from '../modules/admin-dashboard/admin-dashboard.routes';
-
 import { settingsRoutes } from '../modules/settings/settings.routes';
-
 import { designationsRoutes } from '../modules/designations/designations.routes';
-
 import { notificationsRoutes } from '../modules/notifications/notifications.routes';
-
 import { categoriesRoutes } from '../modules/categories/categories.routes';
-
 import { servicesRoutes } from '../modules/services/services.routes';
-
 import { catalogRoutes } from '../modules/catalog/catalog.routes';
-
 import { incentivesRoutes } from '../modules/incentives/incentives.routes';
-
 import { adminCustomersRoutes } from '../modules/admin-customers/admin-customers.routes';
-
 import leadsRoutes from '../modules/leads/leads.routes';
-
 import { bookingsRoutes } from '../modules/bookings/bookings.routes';
-
 import customerDashboardRoutes from '../modules/customer-dashboard/customer-dashboard.routes';
-
 import { addressesRoutes } from '../modules/addresses/addresses.routes';
-
 import { reviewsRoutes } from '../modules/reviews/reviews.routes';
 
 import {
@@ -59,6 +36,8 @@ import {
   marketingRoutes,
   publicMarketingRoutes,
 } from '../modules/marketing/marketing.routes';
+
+import refundsRoutes from '../modules/refunds/refunds.routes';
 
 export const rootRouter = Router();
 
@@ -115,6 +94,19 @@ rootRouter.use(
   '/admin/partners',
   partnersRoutes,
 ); // GET /admin/partners, GET /admin/partners/stats, POST /admin/partners
+
+// =========================================================
+// Refunds
+// =========================================================
+
+// GET    /api/v1/admin/refunds
+// POST   /api/v1/admin/refunds
+// PATCH  /api/v1/admin/refunds/:id
+
+rootRouter.use(
+  '/admin',
+  refundsRoutes,
+);
 
 rootRouter.use(
   '/partner/dashboard',
