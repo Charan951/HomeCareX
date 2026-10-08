@@ -119,8 +119,9 @@ export const useBookingDraftStore = create<BookingDraftState>()(
     }),
     {
       name: "booking-draft-storage",
-      // v1 drafts held mock address ids ("addr-1"); the API needs real ids, so drop them.
-      version: 2,
+      // v1 drafts held mock address ids ("addr-1"); v2 drafts held mock service/add-on ids
+      // ("650000...") that the API rejects with SERVICE_NOT_FOUND. The API needs real ids, so drop them.
+      version: 3,
       migrate: () => ({ ...initialState }),
       partialize: (state) => ({
         serviceId: state.serviceId,
