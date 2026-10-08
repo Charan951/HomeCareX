@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShieldCheck, ArrowRight, AlertCircle, AlertTriangle, WifiOff, CheckCircle2 } from 'lucide-react';
+import { ArrowRight, AlertCircle, AlertTriangle, WifiOff, CheckCircle2 } from 'lucide-react';
 import { authApi } from '@/services/authApi';
 import { classifyApiError } from '@/lib/apiError';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { resetStateStore } from '@/features/auth/resetStateStore';
 import OtpInput from '@/components/auth/OtpInput';
 import ResendTimer from '@/components/auth/ResendTimer';
+import AuthFormHeader from '@/components/auth/AuthFormHeader';
 
 export const VerifyOtpPage: React.FC = () => {
   const navigate = useNavigate();
@@ -61,12 +62,12 @@ export const VerifyOtpPage: React.FC = () => {
         throw new Error('Verification succeeded but reset token was not provided.');
       }
 
-      // Store in memory (strictly runtime memory, never in localStorage/cookies)
+      // Store in memory (strictly runtime memory, never in persistent storage/history state)
       resetStateStore.setResetToken(resetToken);
 
-      // Navigate to /reset-password with token in state
+      // Navigate to /reset-password (token is kept strictly in memory)
       navigate('/reset-password', {
-        state: { email, resetToken },
+        state: { email },
         replace: true,
       });
     } catch (err) {
@@ -141,18 +142,17 @@ export const VerifyOtpPage: React.FC = () => {
     : '';
 
   return (
-    <div>
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(67,56,202,0.3)] border border-gray-100 p-6 sm:p-8">
-        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/30 mb-5">
-          <ShieldCheck size={24} className="text-white" />
-        </div>
-
-        <h1 className="text-2xl font-bold text-accent-700 mb-1">Verify your email</h1>
-        <p className="text-gray-500 mb-6 text-sm">
-          We&apos;ve sent a 6-digit verification code to{' '}
-          <strong className="text-gray-800 font-medium">{maskedEmail || email}</strong>.
-          Enter the code below to reset your password.
-        </p>
+    <div className="w-full">
+      <AuthFormHeader
+        title="Verify your email"
+        subtitle={
+          <>
+            We&apos;ve sent a 6-digit verification code to{' '}
+            <strong className="text-gray-800 font-semibold">{maskedEmail || email}</strong>.
+            Enter the code below to reset your password.
+          </>
+        }
+      />
 
         {!isOnline && (
           <div
@@ -267,7 +267,6 @@ export const VerifyOtpPage: React.FC = () => {
             </Link>
           </p>
         </div>
-      </div>
     </div>
   );
 };
