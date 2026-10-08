@@ -22,6 +22,8 @@ import { partnerDashboardRoutes } from '../modules/partners/partner-dashboard.ro
 
 import { earningsRoutes } from '../modules/earnings/earnings.routes';
 
+import { partnerWalletRoutes, partnerWalletSummaryRoutes } from '../modules/partner-wallet/partner-wallet.routes';
+
 import { adminDashboardRoutes } from '../modules/admin-dashboard/admin-dashboard.routes';
 
 import { settingsRoutes } from '../modules/settings/settings.routes';
@@ -49,6 +51,7 @@ import customerDashboardRoutes from '../modules/customer-dashboard/customer-dash
 import { addressesRoutes } from '../modules/addresses/addresses.routes';
 
 import { reviewsRoutes } from '../modules/reviews/reviews.routes';
+
 
 import {
   couponsRoutes,
@@ -153,6 +156,16 @@ rootRouter.use(
   '/partner/earnings',
   earningsRoutes,
 ); // GET /partner/earnings/summary
+
+rootRouter.use(
+  '/partner/transactions',
+  partnerWalletRoutes,
+); // GET /partner/transactions ?type&from&to&page&limit
+
+rootRouter.use(
+  '/partner/wallet',
+  partnerWalletSummaryRoutes,
+); // GET /partner/wallet (available, pending, recent)
 
 rootRouter.use(
   '/addresses',

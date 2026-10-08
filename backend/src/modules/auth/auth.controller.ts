@@ -12,7 +12,9 @@ import {
   loginSchema,
   parseBody,
   registerSchema,
+  resendOtpSchema,
   resetPasswordSchema,
+  verifyOtpSchema,
 } from './auth.validation';
 
 import {
@@ -286,6 +288,38 @@ export const authController = {
       await authService.forgotPassword(
         parseBody(
           forgotPasswordSchema,
+          req.body,
+        ),
+      );
+
+    res.json(result);
+  }),
+
+
+  /**
+   * POST /api/v1/auth/verify-otp
+   */
+  verifyOtp: wrap(async (req, res) => {
+    const result =
+      await authService.verifyOtp(
+        parseBody(
+          verifyOtpSchema,
+          req.body,
+        ),
+      );
+
+    res.json(result);
+  }),
+
+
+  /**
+   * POST /api/v1/auth/resend-otp
+   */
+  resendOtp: wrap(async (req, res) => {
+    const result =
+      await authService.resendOtp(
+        parseBody(
+          resendOtpSchema,
           req.body,
         ),
       );

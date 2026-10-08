@@ -865,14 +865,6 @@ export default function StepReview() {
   );
 }
 
-const METHOD_ICONS: Partial<Record<CheckoutMethod, LucideIcon>> = {
-  upi: Smartphone,
-  card: CreditCard,
-  netbanking: Landmark,
-  wallet: Wallet,
-  cod: Banknote,
-};
-
 /** "2026-10-15" -> "Thu, 15 Oct 2026". Parsed as a local date so the day never shifts with the timezone. */
 function prettyDate(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number);
