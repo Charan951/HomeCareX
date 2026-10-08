@@ -4,10 +4,6 @@ import { HttpError } from '../auth/auth.types';
 import { slugify, uniqueSlug } from '../../utils/slug';
 import { SEED_CATEGORIES } from './categories.constants';
 import { categoryCreateSchema, categoryReorderSchema, categoryUpdateSchema } from './categories.validation';
-import {
-  categoryCreateSchema,
-  categoryUpdateSchema,
-} from './categories.validation';
 import type { CategoryDto } from './categories.types';
 
 const CI = {
@@ -230,5 +226,5 @@ export const categoriesService = {
     await existing.deleteOne();
   },
 };
-};
+
 
