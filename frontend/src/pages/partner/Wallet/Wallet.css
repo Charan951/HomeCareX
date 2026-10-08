@@ -1,0 +1,961 @@
+/* ==================================================
+   Partner wallet
+   Concept: plain and quiet. Colour is used only for
+   money in (green), money out (red) and one indigo link.
+================================================== */
+
+.wl-page {
+  --wl-ink: #1e1b4b;
+  --wl-muted: #64648a;
+  --wl-line: #e4e6f5;
+  --wl-tint: #f3f4fb;
+  --wl-strong: #1e1b4b;
+  --wl-primary: #4338ca;
+  --wl-av: #1e1b4b;
+  --wl-pe: #d9dcf0;
+  --wl-pos: #15803d;
+  --wl-neg: #b91c1c;
+  --wl-neg-bg: #fee2e2;
+  --wl-focus: #ff8a3d;
+
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 0 32px;
+  color: var(--wl-ink);
+}
+
+.wl-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --------------------------------------------------
+   Layout (mobile)
+   Balance, activity, summary (stacked).
+   Desktop layout lives at the bottom of this file.
+-------------------------------------------------- */
+
+.wl-body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.wl-side {
+  display: contents;
+}
+
+.wl-hero {
+  order: 1;
+}
+
+.wl-activity {
+  order: 2;
+}
+
+.wl-summary {
+  order: 3;
+}
+
+/* --------------------------------------------------
+   Balance panel
+-------------------------------------------------- */
+
+.wl-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 18px;
+  border-bottom: 1px solid var(--wl-line);
+}
+
+.wl-hero-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--wl-muted);
+}
+
+.wl-hero-value {
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-split {
+  display: flex;
+  gap: 3px;
+  height: 8px;
+  margin-top: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.wl-split span {
+  display: block;
+  height: 100%;
+}
+
+.wl-split-av {
+  background: var(--wl-av);
+}
+
+.wl-split-pe {
+  background: var(--wl-pe);
+}
+
+.wl-hero-figures {
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 0;
+}
+
+.wl-hero-figures dt {
+  display: flex;
+  align-items: center;
+  font-size: 0.72rem;
+  color: var(--wl-muted);
+  margin-bottom: 2px;
+}
+
+.wl-hero-figures dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-key {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.wl-key-av {
+  background: var(--wl-av);
+}
+
+.wl-key-pe {
+  background: var(--wl-pe);
+}
+
+@media (max-width: 480px) {
+  .wl-hero {
+    padding: 4px 0 16px;
+  }
+
+  .wl-hero-value {
+    font-size: 2.2rem;
+  }
+}
+
+/* --------------------------------------------------
+   Section headings
+-------------------------------------------------- */
+
+.wl-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 12px;
+}
+
+.wl-section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--wl-ink);
+}
+
+.wl-view-all {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--wl-primary);
+  text-decoration: none;
+}
+
+.wl-view-all:hover {
+  text-decoration: underline;
+}
+
+/* --------------------------------------------------
+   Recent summary
+-------------------------------------------------- */
+
+.wl-summary {
+  padding-top: 16px;
+  border-top: 1px solid var(--wl-line);
+}
+
+.wl-summary-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.wl-summary-note {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--wl-muted);
+}
+
+.wl-summary-net {
+  font-size: 0.9rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-summary-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 2px 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wl-chevron {
+  color: var(--wl-muted);
+  transition: transform 0.2s;
+}
+
+.wl-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.wl-summary-body {
+  display: none;
+}
+
+.wl-summary-body.is-open {
+  display: block;
+}
+
+/* In / Out / Net as one ruled strip */
+.wl-flow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 14px 0 6px;
+  border: 1px solid var(--wl-line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.wl-flow-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+}
+
+.wl-flow-cell + .wl-flow-cell {
+  border-left: 1px solid var(--wl-line);
+}
+
+.wl-flow-cell:last-child {
+  background: var(--wl-tint);
+}
+
+.wl-flow-label {
+  font-size: 0.72rem;
+  color: var(--wl-muted);
+}
+
+.wl-flow-value {
+  font-size: 1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Per-type rows with a bar scaled to the largest movement */
+.wl-breakdown {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.wl-bd-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.wl-bd-name {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.wl-bd-name small {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--wl-muted);
+}
+
+.wl-bd-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--wl-tint);
+  overflow: hidden;
+}
+
+.wl-bd-fill {
+  display: block;
+  height: 100%;
+  min-width: 4px;
+  border-radius: 999px;
+  background: var(--wl-ink);
+}
+
+.wl-fill-refund_deduction,
+.wl-bd-fill.is-neg {
+  background: var(--wl-neg);
+}
+
+/* --------------------------------------------------
+   Activity
+-------------------------------------------------- */
+
+.wl-filters {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.wl-filters::-webkit-scrollbar {
+  display: none;
+}
+
+.wl-filter {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border: 1px solid var(--wl-line);
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--wl-muted);
+  cursor: pointer;
+}
+
+.wl-filter.is-active {
+  background: var(--wl-strong);
+  border-color: var(--wl-strong);
+  color: #fff;
+}
+
+.wl-day-label {
+  margin: 18px 0 2px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--wl-muted);
+}
+
+.wl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wl-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 6px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--wl-line);
+  border-radius: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+@media (hover: hover) {
+  .wl-row:hover {
+    background: var(--wl-tint);
+  }
+}
+
+.wl-row-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.wl-desc {
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wl-sub {
+  font-size: 0.78rem;
+  color: var(--wl-muted);
+}
+
+.wl-amount {
+  flex-shrink: 0;
+  font-size: 0.98rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-amount-pos {
+  color: var(--wl-pos);
+}
+
+.wl-amount-neg {
+  color: var(--wl-neg);
+}
+
+/* --------------------------------------------------
+   Transaction icons
+-------------------------------------------------- */
+
+.wl-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--wl-tint);
+  color: var(--wl-muted);
+}
+
+/* --------------------------------------------------
+   Detail sheet
+-------------------------------------------------- */
+
+.wl-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(30, 27, 75, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: wl-fade 0.15s ease-out;
+}
+
+.wl-sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90dvh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  padding: 22px 22px calc(26px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
+  animation: wl-up 0.2s ease-out;
+}
+
+@media (min-width: 600px) {
+  .wl-overlay {
+    align-items: center;
+    padding: 16px;
+  }
+
+  .wl-sheet {
+    border-radius: 24px;
+    padding-bottom: 26px;
+  }
+}
+
+.wl-sheet-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wl-close {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 1.8rem;
+  line-height: 1;
+  color: var(--wl-muted);
+  cursor: pointer;
+}
+
+.wl-close:hover {
+  background: var(--wl-tint);
+}
+
+.wl-sheet-amount {
+  margin: 12px 0 2px;
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-sheet-desc {
+  margin: 0 0 16px;
+  overflow-wrap: anywhere;
+}
+
+.wl-sheet-list {
+  margin: 0 0 18px;
+}
+
+.wl-sheet-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  font-size: 0.9rem;
+  border-top: 1px solid var(--wl-line);
+}
+
+.wl-sheet-row dt {
+  color: var(--wl-muted);
+}
+
+.wl-sheet-row dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.wl-btn-block {
+  width: 100%;
+  padding: 13px 16px;
+}
+
+/* --------------------------------------------------
+   States
+-------------------------------------------------- */
+
+.wl-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 480px;
+}
+
+.wl-muted {
+  margin: 12px 0 0;
+  font-size: 0.9rem;
+  color: var(--wl-muted);
+}
+
+.wl-error {
+  align-self: stretch;
+  margin: 0;
+  padding: 10px 14px;
+  border-left: 4px solid var(--wl-neg);
+  border-radius: 10px;
+  background: var(--wl-neg-bg);
+  color: var(--wl-neg);
+}
+
+.wl-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--wl-strong);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wl-btn:hover {
+  background: var(--wl-primary);
+}
+
+/* --------------------------------------------------
+   Skeleton
+-------------------------------------------------- */
+
+.wl-skel {
+  margin-bottom: 10px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, #eef0fb 25%, #f7f8fe 50%, #eef0fb 75%);
+  background-size: 200% 100%;
+  animation: wl-shimmer 1.2s infinite;
+}
+
+.wl-skel-hero {
+  height: 140px;
+}
+
+.wl-skel-row {
+  height: 64px;
+}
+
+/* --------------------------------------------------
+   Animations
+-------------------------------------------------- */
+
+@keyframes wl-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes wl-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+@keyframes wl-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* --------------------------------------------------
+   Accessibility
+-------------------------------------------------- */
+
+.wl-page :is(a, button):focus-visible,
+.wl-sheet :is(a, button):focus-visible {
+  outline: 3px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-skel,
+  .wl-overlay,
+  .wl-sheet {
+    animation: none;
+  }
+
+  .wl-row,
+  .wl-chevron {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------
+   Mobile scrollbar
+-------------------------------------------------- */
+
+@media (max-width: 699px) {
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ==================================================
+   Desktop: compact summary + activity table
+================================================== */
+
+@media (min-width: 900px) {
+  .wl-hero-figures dd {
+    font-size: 0.9rem;
+  }
+
+  /* summary: small */
+  .wl-summary .wl-section-title {
+    font-size: 0.9rem;
+  }
+
+  .wl-summary-note {
+    font-size: 0.72rem;
+  }
+
+  .wl-flow {
+    margin: 10px 0 2px;
+    border-radius: 10px;
+    max-width: none;
+  }
+
+  .wl-flow-cell {
+    padding: 8px 10px;
+  }
+
+  .wl-flow-label {
+    font-size: 0.68rem;
+  }
+
+  .wl-flow-value {
+    font-size: 0.85rem;
+  }
+
+  .wl-breakdown {
+    margin-top: 12px;
+    gap: 10px;
+  }
+
+  .wl-bd-top {
+    margin-bottom: 4px;
+  }
+
+  .wl-bd-name {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 0.8rem;
+  }
+
+  .wl-bd-name small {
+    font-size: 0.68rem;
+  }
+
+  .wl-breakdown .wl-amount {
+    font-size: 0.8rem;
+  }
+
+  .wl-bd-track {
+    height: 4px;
+  }
+
+  /* activity table */
+  .wl-table-wrap {
+    overflow-x: auto;
+  }
+
+  .wl-table {
+    width: 100%;
+    min-width: 0;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  .wl-table th {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--wl-line);
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--wl-muted);
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .wl-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--wl-line);
+    vertical-align: middle;
+  }
+
+  .wl-table tbody tr {
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+
+  .wl-table tbody tr:hover,
+  .wl-table tbody tr:focus-within {
+    background: var(--wl-tint);
+  }
+
+  .wl-th-amount,
+  .wl-td-amount {
+    text-align: right !important;
+    white-space: nowrap;
+  }
+
+  .wl-td-amount {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wl-td-date {
+    white-space: nowrap;
+  }
+
+  .wl-td-date span {
+    display: block;
+    font-weight: 600;
+  }
+
+  .wl-td-date small {
+    color: var(--wl-muted);
+    font-size: 0.76rem;
+  }
+
+  .wl-td-type {
+    color: var(--wl-muted);
+    white-space: nowrap;
+  }
+
+  .wl-cell-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 100%;
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .wl-cell-btn .wl-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .wl-cell-btn .wl-desc {
+    font-size: 0.9rem;
+    white-space: normal;
+  }
+}
+
+/* ==================================================
+   Desktop layout
+   Top:    balance + detail cards (Available / Pending / Total)
+   Bottom: recent activity table (left) + recent summary (right)
+================================================== */
+
+@media (min-width: 900px) {
+  .wl-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 32px 48px;
+    align-items: start;
+  }
+
+  /* let hero + summary sit directly in the body grid */
+  .wl-side {
+    display: contents;
+  }
+
+  /* ---------- top band ---------- */
+  .wl-hero {
+    order: 0;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) minmax(0, 2fr);
+    grid-template-rows: auto auto auto;
+    align-content: center;
+    gap: 8px 40px;
+    padding: 4px 0 28px;
+    border-bottom: 1px solid var(--wl-line);
+  }
+
+  .wl-hero-label,
+  .wl-hero-value,
+  .wl-split {
+    grid-column: 1;
+  }
+
+  .wl-hero-value {
+    font-size: 2.4rem;
+  }
+
+  /* the three figures become cards */
+  .wl-hero-figures {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-content: stretch;
+    align-self: center;
+    gap: 16px;
+    margin: 0;
+  }
+
+  .wl-hero-figures > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px 18px;
+    background: #fff;
+    border: 1px solid var(--wl-line);
+    border-radius: 14px;
+  }
+
+  .wl-hero-figures > div:last-child {
+    background: var(--wl-tint);
+  }
+
+  .wl-hero-figures dt {
+    margin: 0;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  .wl-hero-figures dd {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---------- bottom row ---------- */
+  .wl-activity {
+    order: 0;
+    grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .wl-summary {
+    order: 0;
+    grid-column: 2;
+    grid-row: 2;
+    position: sticky;
+    top: 16px;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  /* loading skeleton spans the full width */
+  .wl-body > .wl-skel-hero {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    position: static;
+  }
+
+  .wl-body > div:not(.wl-side) {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+}

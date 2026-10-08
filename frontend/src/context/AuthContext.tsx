@@ -1,11 +1,53 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import type { AuthContextValue, AuthStatus, AuthUser, LoginInput, RegisterInput, ProfilePatch } from "../types/auth";
+import type {
+  AuthContextValue,
+  AuthStatus,
+  AuthUser,
+  LoginInput,
+  RegisterInput,
+  ProfilePatch,
+} from "../types/auth";
 import { authApi } from "@/services/authApi";
+import { refreshAccessToken } from "@/lib/http";
 import { SESSION_EXPIRED_EVENT, tokenStore } from "@/lib/tokenStore";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
+
+/**
+ * Non-sensitive hint that this browser previously had a signed-in session.
+ * It only decides whether to TRY a silent refresh on page load, so logged-out
+ * first-time visitors don't make a pointless /auth/refresh call (and don't get
+ * a red 401 in the console). It is not a security control: the refresh cookie
+ * is still the real authority.
+ */
+const SESSION_HINT_KEY = "hcx_session_hint";
+const sessionHint = {
+  has: (): boolean => {
+    try {
+      return localStorage.getItem(SESSION_HINT_KEY) === "1";
+    } catch {
+      return false;
+    }
+  },
+  set: (on: boolean) => {
+    try {
+      if (on) localStorage.setItem(SESSION_HINT_KEY, "1");
+      else localStorage.removeItem(SESSION_HINT_KEY);
+    } catch {
+      /* storage unavailable: ignore */
+    }
+  },
+};
 
 /**
  * Keeps the admin Zustand store in sync with the current authentication session.
@@ -35,6 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         currentUserId.current = nextId;
       }
       tokenStore.set(token);
+      sessionHint.set(nextStatus === "authenticated");
       setUser(next);
       setStatus(nextStatus);
       syncStore(next);
@@ -43,6 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   // Restore the existing session when the application loads.
+  // Uses the shared single-flight refresh from http.ts so that StrictMode's
+  // double-effect and any early 401 retries all share ONE refresh request.
   useEffect(() => {
     let cancelled = false;
     const settleUnauthenticated = () => {
@@ -56,17 +101,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
+    // Never signed in on this browser: skip the refresh call entirely.
+    if (!sessionHint.has()) {
+      settleUnauthenticated();
+      return;
+    }
+
     window.addEventListener("offline", settleUnauthenticated);
 
-    authApi
-      .refresh()
-      .then(({ user: u, accessToken }) => {
-        if (!cancelled) {
-          applySession(u, accessToken, "authenticated");
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
+    // Never rejects: resolves null when the refresh fails
+    refreshAccessToken()
+      .then((session) => {
+        if (cancelled) return;
+        if (session) {
+          applySession(session.user, session.accessToken, "authenticated");
+        } else {
           applySession(null, null, "unauthenticated");
         }
       })
@@ -101,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       return u;
     },
-    [applySession]
+    [applySession],
   );
 
   const register = useCallback(
@@ -112,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       return u;
     },
-    [applySession]
+    [applySession],
   );
 
   const logout = useCallback(async () => {
@@ -134,15 +183,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ user, status, isAuthenticated: status === "authenticated" && user !== null, login, register, logout, updateProfile }),
+    () => ({
+      user,
+      status,
+      isAuthenticated: status === "authenticated" && user !== null,
+      login,
+      register,
+      logout,
+      updateProfile,
+    }),
     [user, status, login, register, logout, updateProfile],
   );
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

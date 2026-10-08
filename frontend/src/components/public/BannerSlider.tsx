@@ -338,12 +338,15 @@ const BannerSlider: React.FC<BannerSliderProps> = ({
                     isActive ? "opacity-100" : "pointer-events-none opacity-0"
                   }`}
                 >
-                  {/* Image: first one loads immediately, the rest are lazy */}
+                  {/* Image: first one loads immediately, the rest are lazy.
+                      FIX: React 18 doesn't know the camelCase `fetchPriority`
+                      prop, so the lowercase DOM attribute is passed through
+                      an object spread (keeps TypeScript happy too). */}
                   <img
                     src={banner.image}
                     alt={isActive ? banner.alt : ""}
                     loading={index === 0 ? "eager" : "lazy"}
-                    fetchPriority={index === 0 ? "high" : "auto"}
+                    {...{ fetchpriority: index === 0 ? "high" : "auto" }}
                     decoding="async"
                     draggable={false}
                     className={`absolute inset-0 h-full w-full object-cover ${imageMotion} ${
@@ -480,10 +483,11 @@ const BannerSlider: React.FC<BannerSliderProps> = ({
             </div>
           )}
 
-          {/* Screen readers hear slide changes only when autoplay is not running */}
+          {/* Screen readers hear slide changes only when autoplay is not running.
+              FIX: optional chaining so a shrinking list can't crash this render. */}
           <p className="sr-only" aria-live={autoplayActive ? "off" : "polite"}>
             {`Banner ${currentIndex + 1} of ${count}: ${
-              banners[currentIndex].title
+              banners[currentIndex]?.title ?? ""
             }`}
           </p>
         </div>

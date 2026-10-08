@@ -57,7 +57,7 @@ export const PasswordField: React.FC<PasswordFieldProps> = ({
           required={required}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? errorId : helperText ? helperId : undefined}
-          className={`w-full rounded-lg border bg-white pl-9 sm:pl-10 pr-10 py-2 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#4338ca]/30 focus:border-[#4338ca] hover:border-gray-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed ${
+          className={`w-full rounded-lg border bg-white pl-9 sm:pl-10 pr-10 py-2 sm:py-2.5 text-sm text-gray-900 placeholder:text-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#4338ca]/30 focus:border-[#4338ca] hover:border-gray-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed [&::-ms-reveal]:hidden [&::-ms-clear]:hidden ${
             error ? 'border-red-400 focus:ring-red-400/30 focus:border-red-500' : 'border-gray-300'
           } ${className}`}
         />

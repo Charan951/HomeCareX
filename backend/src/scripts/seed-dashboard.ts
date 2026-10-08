@@ -97,7 +97,7 @@ async function main() {
     const categoryId = catId.get(cat)!;
     await ServiceModel.updateOne(
       { slug },
-      { $set: { slug, name, categoryId, basePrice, durationMinutes, ratingAvg, ratingCount, bookingsCount, isActive: true } },
+      { $set: { slug, name, categoryId, basePrice, durationMinutes, ratingAvg, ratingCount, bookingsCount, active: true } },
       { upsert: true },
     );
     const doc = await ServiceModel.findOne({ slug }).select('_id').lean();
