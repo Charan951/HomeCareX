@@ -1,10 +1,4 @@
-// src/layouts/PartnerLayout.tsx
-// Issue MU-D01 (TSX) · P01 Partner Layout, Navigation & Dashboard
-// Deps: react-router-dom, lucide-react, tailwindcss
-// Palette: orange #ff8a3d (accent / active / online), indigo #4338ca (shell / brand)
-
 import { useState, useEffect, createContext, useContext } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   Briefcase,
@@ -22,6 +16,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
+
 import { useAuth } from "@/hooks/useAuth";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { HomeCarexMark } from "@/components/band/Homecarexmark";
@@ -29,7 +24,12 @@ import "@/styles/admin.css";
 import OnlineIndicator from "../components/partner/OnlineIndicator";
 import PartnerErrorBoundary from "../components/partner/PartnerErrorBoundary";
 
-// ---- Navigation config (single source of truth for sidebar + bottom nav) ----
+import "@/styles/admin.css";
+
+// -----------------------------------------------------------------------------
+// Navigation
+// -----------------------------------------------------------------------------
+
 export const NAV = [
   {
     key: "home",
@@ -104,7 +104,10 @@ export const NAV = [
   },
 ];
 
-// Exact page names for sub-pages (falls back to the NAV label)
+// -----------------------------------------------------------------------------
+// Page titles
+// -----------------------------------------------------------------------------
+
 const PAGE_TITLES: Record<string, string> = {
   "/partner/availability": "Availability",
   "/partner/working-hours": "Working Hours",
@@ -113,6 +116,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/partner/availability/blackout-dates": "Blackout Dates",
   "/partner/schedule": "Schedule",
   "/partner/earnings": "Earnings",
+  "/partner/jobs": "Job Requests",
 };
 
 // Titles that only change the heading
@@ -520,7 +524,10 @@ function PartnerSidebar({
   );
 }
 
-// ---- Layout ----
+// -----------------------------------------------------------------------------
+// Partner Layout
+// -----------------------------------------------------------------------------
+
 export default function PartnerLayout() {
   const [online, setOnline] =
     useState(false);
@@ -638,6 +645,10 @@ export default function PartnerLayout() {
     );
   };
 
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+
   return (
     <PartnerStatusContext.Provider
       value={{
@@ -654,7 +665,9 @@ export default function PartnerLayout() {
         <div className="min-w-0 flex-1">
           {/* Header */}
           <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white px-2 sm:h-16 sm:px-6">
+
             <div className="flex min-w-0 items-center gap-0.5 sm:gap-3">
+
               {showBack && (
                 <button
                   onClick={goBack}

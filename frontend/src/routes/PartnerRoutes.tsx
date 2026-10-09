@@ -1,7 +1,9 @@
 import { Routes, Route } from "react-router-dom";
+
 import PartnerLayout from "../layouts/PartnerLayout";
+
 import PartnerDashboard from "../pages/partner/Dashboard";
-import ProfileMenu from "../components/partner/ProfileMenu";
+import PartnerJobsPage from "../pages/partner/Jobs";
 import PartnerAvailabilityPage from "../pages/partner/Availability";
 import PartnerWorkingHoursPage from "../pages/partner/WorkingHours";
 import PartnerBlackoutDatesPage from "../pages/partner/BlackoutDates";
@@ -26,9 +28,12 @@ const Placeholder = ({ title }: { title: string }) => (
   </div>
 );
 
-// Placeholder routes + the dashboard index = 35
-export const PARTNER_PAGES: { path: string; title: string }[] = [
-  // Work (7)
+// Placeholder routes + dashboard index
+export const PARTNER_PAGES: {
+  path: string;
+  title: string;
+}[] = [
+  // Work
   { path: "work", title: "Work" },
   { path: "work/requests", title: "Job requests" },
   { path: "work/active", title: "Active job" },

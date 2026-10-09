@@ -36,7 +36,9 @@ export interface PartnerProfileInput {
 
 export type { ActiveJob, EarningsSummary, JobRequest, PartnerDashboard, PartnerNotification };
 
-export type KycDecision = "approve" | "reject";
+export type KycDecision =
+  | "approve"
+  | "reject";
 
 export interface KycUpdatePayload {
   decision: KycDecision;
@@ -59,27 +61,56 @@ export interface PartnerMutationResult {
 
 const STORAGE_PREFIX = "homecarex:partner:";
 
-const delay = (milliseconds: number) =>
+/* =========================================================
+   STORAGE
+========================================================= */
+
+const STORAGE_PREFIX =
+  "homecarex:partner:";
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+const delay = (
+  milliseconds: number,
+) =>
   new Promise<void>((resolve) => {
-    window.setTimeout(resolve, milliseconds);
+    window.setTimeout(
+      resolve,
+      milliseconds,
+    );
   });
 
-const getStorageKey = (id: string): string =>
+const getStorageKey = (
+  id: string,
+): string =>
   `${STORAGE_PREFIX}${id}`;
 
-const savePartner = (partner: PartnerDetails): void => {
+/* =========================================================
+   SAVE PARTNER
+========================================================= */
+
+const savePartner = (
+  partner: PartnerDetails,
+): void => {
   window.localStorage.setItem(
     getStorageKey(partner.id),
-    JSON.stringify(partner)
+    JSON.stringify(partner),
   );
 };
 
+/* =========================================================
+   GET STORED PARTNER
+========================================================= */
+
 const getStoredPartner = (
-  id: string
+  id: string,
 ): PartnerDetails | null => {
-  const storedPartner = window.localStorage.getItem(
-    getStorageKey(id)
-  );
+  const storedPartner =
+    window.localStorage.getItem(
+      getStorageKey(id),
+    );
 
   if (!storedPartner) {
     return null;
@@ -87,23 +118,28 @@ const getStoredPartner = (
 
   try {
     return JSON.parse(
-      storedPartner
+      storedPartner,
     ) as PartnerDetails;
   } catch {
     window.localStorage.removeItem(
-      getStorageKey(id)
+      getStorageKey(id),
     );
 
     return null;
   }
 };
 
+/* =========================================================
+   GET MOCK PARTNER
+========================================================= */
+
 const getMockPartner = (
-  id: string
+  id: string,
 ): PartnerDetails | null => {
-  const partner = PARTNER_DETAILS.find(
-    (item) => item.id === id
-  );
+  const partner =
+    PARTNER_DETAILS.find(
+      (item) => item.id === id,
+    );
 
   if (!partner) {
     return null;
@@ -112,8 +148,12 @@ const getMockPartner = (
   return structuredClone(partner);
 };
 
+/* =========================================================
+   GET CURRENT PARTNER
+========================================================= */
+
 const getCurrentPartner = (
-  id: string
+  id: string,
 ): PartnerDetails | null => {
   const storedPartner =
     getStoredPartner(id);
@@ -130,11 +170,12 @@ const getCurrentPartner = (
    ========================================================= */
 
 export async function getPartnerById(
-  id: string
+  id: string,
 ): Promise<PartnerDetails | null> {
   await delay(500);
 
-  const partner = getCurrentPartner(id);
+  const partner =
+    getCurrentPartner(id);
 
   if (!partner) {
     return null;
@@ -143,24 +184,36 @@ export async function getPartnerById(
   return structuredClone(partner);
 }
 
+/* =========================================================
+   UPDATE PARTNER KYC
+========================================================= */
+
 export async function updatePartnerKyc(
   id: string,
-  payload: KycUpdatePayload
+  payload: KycUpdatePayload,
 ): Promise<PartnerMutationResult> {
   await delay(500);
 
-  const partner = getCurrentPartner(id);
+  const partner =
+    getCurrentPartner(id);
 
   if (!partner) {
-    throw new Error("Partner not found.");
+    throw new Error(
+      "Partner not found.",
+    );
   }
 
-  if (payload.decision === "reject") {
-    const reason = payload.reason?.trim();
+  /* REJECT */
+
+  if (
+    payload.decision === "reject"
+  ) {
+    const reason =
+      payload.reason?.trim();
 
     if (!reason) {
       throw new Error(
-        "Rejection reason is required."
+        "Rejection reason is required.",
       );
     }
 
@@ -173,10 +226,14 @@ export async function updatePartnerKyc(
 
     return {
       success: true,
-      message: "Partner KYC rejected.",
-      partner: structuredClone(partner),
+      message:
+        "Partner KYC rejected.",
+      partner:
+        structuredClone(partner),
     };
   }
+
+  /* APPROVE */
 
   partner.kycStatus = "Approved";
 
@@ -184,30 +241,41 @@ export async function updatePartnerKyc(
     new Date().toISOString();
 
   partner.kyc.checklist =
-    partner.kyc.checklist.map((item) => ({
-      ...item,
-      completed: true,
-    }));
+    partner.kyc.checklist.map(
+      (item) => ({
+        ...item,
+        completed: true,
+      }),
+    );
 
   savePartner(partner);
 
   return {
     success: true,
-    message: "Partner KYC approved.",
-    partner: structuredClone(partner),
+    message:
+      "Partner KYC approved.",
+    partner:
+      structuredClone(partner),
   };
 }
 
+/* =========================================================
+   UPDATE PARTNER STATUS
+========================================================= */
+
 export async function updatePartnerStatus(
   id: string,
-  payload: StatusUpdatePayload
+  payload: StatusUpdatePayload,
 ): Promise<PartnerMutationResult> {
   await delay(500);
 
-  const partner = getCurrentPartner(id);
+  const partner =
+    getCurrentPartner(id);
 
   if (!partner) {
-    throw new Error("Partner not found.");
+    throw new Error(
+      "Partner not found.",
+    );
   }
 
   partner.accountStatus =
@@ -218,25 +286,34 @@ export async function updatePartnerStatus(
   return {
     success: true,
     message: `Partner status changed to ${payload.status}.`,
-    partner: structuredClone(partner),
+    partner:
+      structuredClone(partner),
   };
 }
 
+/* =========================================================
+   NOTIFY PARTNER
+========================================================= */
+
 export async function notifyPartner(
   id: string,
-  message: string
+  message: string,
 ): Promise<void> {
   await delay(200);
 
   console.info(
-    `[MOCK NOTIFY] ${id}: ${message}`
+    `[MOCK NOTIFY] ${id}: ${message}`,
   );
 }
+
+/* =========================================================
+   PARTNER AUDIT
+========================================================= */
 
 export async function recordPartnerAudit(
   id: string,
   action: string,
-  details: Record<string, string>
+  details: Record<string, string>,
 ): Promise<void> {
   await delay(100);
 
@@ -248,11 +325,23 @@ export async function recordPartnerAudit(
       details,
       timestamp:
         new Date().toISOString(),
-    })
+    }),
   );
 }
 
 /* =========================================================
+
+const USE_MOCKS =
+  String(
+    import.meta.env
+      .VITE_USE_MOCKS ?? "true",
+  ) !== "false";
+
+/* =========================================================
+   PARTNER API
+
+export const partnerApi = {
+  /* DASHBOARD */
    P02 - Partner Jobs / My Jobs
    ========================================================= */
 
@@ -625,7 +714,18 @@ export const partnerApi = {
      ------------------------------------------------------- */
 
   async getEarningsSummary(): Promise<EarningsSummary> {
-    return mockEarningsSummary();
+    if (USE_MOCKS) {
+      return mockEarningsSummary();
+    }
+
+    const res =
+      await http.get<
+        ApiResponse<EarningsSummary>
+      >(
+        "/partner/earnings/summary",
+      );
+
+    return res.data.data;
   },
 
   /* -------------------------------------------------------
