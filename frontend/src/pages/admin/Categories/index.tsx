@@ -1,23 +1,23 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  CheckCircle2, Eye, EyeOff, FolderTree, Layers, Plus, X, XCircle, History, Info, WifiOff,
+  CheckCircle2, Eye, EyeOff, FolderTree, Layers, Plus, X, XCircle, History, WifiOff,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { PageHeader } from '@/components/admin/PageHeader';
-import { SearchInput } from '@/components/admin/SearchInput';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
-import { Drawer } from '@/components/admin/Drawer';
+import { FullScreenPanel } from '@/components/admin/FullScreenPanel';
 import { AuditDiffDrawer, type AuditEntry } from '@/components/admin/AuditDiffDrawer';
 import { StatusBadge } from '@/components/admin/StatusBadge';
-import { CategoryTree, type TreeNode } from '@/components/admin/CategoryTree';
+import { CategoryExplorer } from '@/components/admin/CategoryExplorer';
+import { useUIStore } from '@/store/useUIStore';
+import { adminServiceApi } from '@/services/adminServiceApi';
+import type { AdminService } from '@/types/adminService';
 import { adminCategoryApi, getApiMode, getApiModeReason, type CategoryApiError } from '../Services/adminCategoryApi';
 import type { AdminCategory, CategoryAuditEntry, CategoryInput, ReorderItem } from '@/types/adminCatalog';
 import { CategoryFormDrawer } from './CategoryFormDrawer';
 import './index.css';
 
 type Toast = { text: string; tone: 'success' | 'error' } | null;
-
-const bySort = (a: AdminCategory, b: AdminCategory) => a.sortOrder - b.sortOrder;
 
 export const AdminCategoriesPage: React.FC = () => {
   const [items, setItems] = useState<AdminCategory[]>([]);
@@ -26,7 +26,11 @@ export const AdminCategoriesPage: React.FC = () => {
   const [toast, setToast] = useState<Toast>(null);
   const toastTimer = useRef<number>();
 
-  const [search, setSearch] = useState('');
+  // Search text comes from the search bar below the navbar (same as Manage Partners).
+  const search = useUIStore((state) => state.pageSearch);
+  const setPageSearch = useUIStore((state) => state.setPageSearch);
+  const [services, setServices] = useState<AdminService[]>([]);
+  const [servicesStatus, setServicesStatus] = useState<'idle' | 'loading' | 'ready'>('idle');
   const [busyIds, setBusyIds] = useState<Set<string>>(new Set());
 
   const [formOpen, setFormOpen] = useState(false);
@@ -60,24 +64,17 @@ export const AdminCategoriesPage: React.FC = () => {
   }, []);
   useEffect(() => { void load(); }, [load]);
 
-  // ---- derived tree ----
-  const searchActive = search.trim() !== '';
-  const reorderEnabled = !searchActive;
-
-  const nodes: TreeNode[] = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    const matches = (c: AdminCategory) =>
-      !needle || [c.name, c.slug, c.description].some((v) => v.toLowerCase().includes(needle));
-    const parents = items.filter((c) => !c.parentId).sort(bySort);
-    const out: TreeNode[] = [];
-    for (const p of parents) {
-      const kids = items.filter((c) => c.parentId === p.id).sort(bySort);
-      const kidMatches = kids.filter(matches);
-      // A parent stays visible as context when one of its children matches.
-      if (matches(p) || kidMatches.length) out.push({ category: p, children: searchActive ? kidMatches : kids });
-    }
-    return out;
-  }, [items, search, searchActive]);
+  // Services are fetched the first time a category is opened, not on page load.
+  const servicesRequested = useRef(false);
+  const ensureServices = useCallback(() => {
+    if (servicesRequested.current) return;
+    servicesRequested.current = true;
+    setServicesStatus('loading');
+    adminServiceApi.list()
+      .then((list) => setServices(list))
+      .catch(() => setServices([]))
+      .finally(() => setServicesStatus('ready'));
+  }, []);
 
   const stats = useMemo(() => ({
     total: items.length,
@@ -163,7 +160,7 @@ export const AdminCategoriesPage: React.FC = () => {
     <div className="admin-page-container cat-page">
       <PageHeader
         title="Categories"
-        description="Organise services into categories and sub-categories. Use the switch to show or hide a category for customers; drag to reorder."
+        description="Open a category to see its sub-categories, then a sub-category to see its services. Use the switch to show or hide a category for customers; drag to reorder."
         actions={
           <div className="cat-head-actions">
             <button type="button" className="hcx-btn" onClick={() => void openAudit()}><History size={16} /> Audit log</button>
@@ -190,28 +187,21 @@ export const AdminCategoriesPage: React.FC = () => {
         <div className="cat-stat"><span className="cat-stat__i is-info"><Layers size={18} /></span><div><b>{stats.subs}</b><small>Sub-categories</small></div></div>
       </div>
 
-      <div className="cat-toolbar">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search name, slug or description…" ariaLabel="Search categories" className="cat-toolbar__search" />
-      </div>
-
-      {searchActive && <p className="cat-note">Drag-and-drop and Move Up/Down are paused while a search is active.</p>}
-
       {loadError && <div role="alert" className="cat-alert">{loadError} <button type="button" className="hcx-btn" onClick={() => { setLoading(true); void load(); }}>Retry</button></div>}
 
       {loading ? (
         <div className="cat-skel" aria-label="Loading categories">{[0, 1, 2, 3, 4].map((n) => <span key={n} className="hcx-skeleton hcx-skeleton--block" style={{ height: 62 }} />)}</div>
-      ) : nodes.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="cat-empty">
           <FolderTree size={34} />
-          <h3>{items.length === 0 ? 'No categories yet' : 'No categories match your search'}</h3>
-          <p>{items.length === 0 ? 'Create your first category to start organising services.' : 'Try a different name, slug or description.'}</p>
-          {items.length === 0
-            ? <button type="button" className="hcx-btn hcx-btn--primary" onClick={() => openCreate()}><Plus size={16} /> New category</button>
-            : <button type="button" className="hcx-btn" onClick={() => setSearch('')}>Clear search</button>}
+          <h3>No categories yet</h3>
+          <p>Create your first category to start organising services.</p>
+          <button type="button" className="hcx-btn hcx-btn--primary" onClick={() => openCreate()}><Plus size={16} /> New category</button>
         </div>
       ) : (
-        <CategoryTree
-          nodes={nodes} all={items} busyIds={busyIds} reorderEnabled={reorderEnabled}
+        <CategoryExplorer
+          items={items} services={services} servicesStatus={servicesStatus} search={search} busyIds={busyIds}
+          onNeedServices={ensureServices} onClearSearch={() => setPageSearch('')}
           onEdit={openEdit} onDelete={setToDelete}
           onToggle={(c) => void toggle(c)} onAddChild={(p) => openCreate(p.id)} onReorder={(n) => void reorder(n)}
         />
@@ -232,7 +222,7 @@ export const AdminCategoriesPage: React.FC = () => {
         onConfirm={() => (deleteBlockedMsg ? setToDelete(null) : void confirmDelete())}
       />
 
-      <Drawer open={auditOpen} onClose={() => setAuditOpen(false)} title="Category audit log" subtitle={getApiMode() === 'live' ? 'Recorded in this browser until the backend has an audit endpoint.' : 'Every create, edit, status change, move and reorder.'} width="md">
+      <FullScreenPanel open={auditOpen} onClose={() => setAuditOpen(false)} title="Category audit log" subtitle={getApiMode() === 'live' ? 'Recorded in this browser until the backend has an audit endpoint.' : 'Every create, edit, status change, move and reorder.'}>
         {audit.length === 0 ? <p className="cat-note">No activity yet.</p> : (
           <ul className="cat-audit">
             {audit.map((a) => (
@@ -249,7 +239,7 @@ export const AdminCategoriesPage: React.FC = () => {
             ))}
           </ul>
         )}
-      </Drawer>
+      </FullScreenPanel>
       <AuditDiffDrawer entry={auditEntry} onClose={() => setAuditEntry(null)} />
     </div>
   );

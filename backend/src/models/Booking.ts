@@ -64,7 +64,7 @@ export interface IBooking extends Document {
     total: number;
     computedAt: Date;
   };
-  priceBreakdown: { base: number; addOns: number; discount: number; convenienceFee: number; tax: number; total: number };
+  priceBreakdown: { base: number; addOns: number; surge?: number; discount: number; convenienceFee: number; tax: number; total: number };
   partnerEarning: number;
   status: BookingStatus;
   statusHistory: StatusHistoryItem[];
@@ -89,6 +89,7 @@ const PriceBreakdownSchema = new Schema(
   {
     base: { type: Number, default: 0 },
     addOns: { type: Number, default: 0 },
+    surge: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
     convenienceFee: { type: Number, default: 0 },
     tax: { type: Number, default: 0 },

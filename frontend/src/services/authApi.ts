@@ -18,6 +18,10 @@ export const authApi = {
   me: () => http.get<ApiResponse<AuthUser>>("/auth/me").then((r) => r.data.data),
   forgotPassword: (email: string) =>
     http.post<ApiResponse<{ message: string }>>("/auth/forgot-password", { email }).then((r) => r.data),
-  resetPassword: (input: { token: string; newPassword: string }) =>
+  verifyOtp: (input: { email: string; otp: string }) =>
+    http.post<{ success: boolean; resetToken?: string; message: string }>("/auth/verify-otp", input).then((r) => r.data),
+  resendOtp: (email: string) =>
+    http.post<{ success: boolean; message: string }>("/auth/resend-otp", { email }).then((r) => r.data),
+  resetPassword: (input: { resetToken: string; newPassword: string }) =>
     http.post<ApiResponse<{ message: string }>>("/auth/reset-password", input).then((r) => r.data),
 };
