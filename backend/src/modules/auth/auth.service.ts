@@ -902,45 +902,19 @@ export const authService = {
    */
 
   async forgotPassword({
-
     email,
-
   }: ForgotPasswordInput) {
- 
-    const user =
+    const user = await authRepository.findByEmail(email);
 
-      await authRepository.findByEmail(
-
-        email,
-
-      );
- 
- 
-    if (
-
-      user &&
-
-      user.status !== 'blocked'
-
-    ) {
+    if (user && user.status !== 'blocked') {
       await issuePasswordResetOtp(user);
     }
 
-      await issuePasswordResetOtp(user);
-
-    }
- 
- 
     return {
-
       success: true,
- 
       message: OTP_SENT_MESSAGE,
-
     };
-
   },
- 
  
   /**
 

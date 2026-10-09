@@ -26,7 +26,8 @@ import { bookingsRoutes } from '../modules/bookings/bookings.routes';
 import customerDashboardRoutes from '../modules/customer-dashboard/customer-dashboard.routes';
 import { addressesRoutes } from '../modules/addresses/addresses.routes';
 import { reviewsRoutes } from '../modules/reviews/reviews.routes';
-
+import { partnerWalletRoutes, partnerWalletSummaryRoutes } from '../modules/partner-wallet/partner-wallet.routes';
+import { pricingRoutes, adminPricingRoutes } from '../modules/pricing/pricing.routes';
 
 import {
   couponsRoutes,
@@ -235,5 +236,10 @@ rootRouter.use(
   '/banners',
   publicMarketingRoutes,
 );
+
+// Pricing
+// GET/PUT /admin/pricing (pricing:manage), POST /pricing/quote (customer)
+rootRouter.use('/admin/pricing', adminPricingRoutes);
+rootRouter.use('/pricing', pricingRoutes);
 
 export default rootRouter;

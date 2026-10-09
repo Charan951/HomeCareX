@@ -17,7 +17,7 @@ import type { CreateBookingInput, PriceLine, PriceSnapshot } from './bookings.ty
 import { addDays, isRealDate, nowInBookingTz, slotStartMinutes } from './bookings.time';
 import { BOOKING_PAYMENT_STATUS } from '../../models/Booking';
 import { ServiceModel } from '../../models/Service';
-import { calculatePricing } from '../pricing/pricing.service';
+import { calculatePricing, resolveRule } from '../pricing/pricing.service';
 
 export interface SlotAvailability {
   slot: string;
@@ -135,7 +135,7 @@ export const BookingService = {
 
     const row = await ServiceModel.findOne(
       { _id: input.serviceId, active: { $ne: false } },
-      'name basePrice addOns',
+      'name basePrice addOns categoryId',
     ).lean();
     if (!row) throw new AppError(404, 'SERVICE_NOT_FOUND', 'That service was not found');
     const service = {
@@ -183,19 +183,21 @@ export const BookingService = {
       throw new AppError(422, 'COUPON_INVALID', 'Coupons are not available yet. Remove the code to continue.');
     }
 
+    // Same rule lookup + calculation as POST /pricing/quote, so the stored total is what the customer was shown.
+    const rule = await resolveRule(String(row.categoryId), service.id, addressSnapshot.city);
+    const baseUnit = rule?.basePrice ?? service.basePrice;
     const lines: PriceLine[] = [
       {
         kind: 'BASE',
         refId: new Types.ObjectId(service.id),
         name: service.name,
-        unitPrice: service.basePrice,
+        unitPrice: baseUnit,
         quantity: input.quantity,
-        amount: service.basePrice * input.quantity,
+        amount: baseUnit * input.quantity,
       },
       ...addOnLines,
     ];
-    // Same calculation as POST /pricing/quote, so the stored total is what the customer was shown.
-    const pricing = calculatePricing({ lines, slot: input.slot });
+    const pricing = calculatePricing({ lines, slot: input.slot, rule });
     const priceSnapshot: PriceSnapshot = {
       currency: 'INR',
       lines,

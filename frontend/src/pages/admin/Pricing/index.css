@@ -1,0 +1,79 @@
+/* Admin Pricing. Classes prefixed prc-. Reuses cat-* / hcx-* (Categories css is imported by the page). */
+.prc-page { min-width: 0; }
+
+/* ---- rules table ---- */
+.prc-table tbody tr.is-inactive td:not(:last-child):not(:nth-last-child(2)) { opacity: .6; }
+.prc-table tbody tr.is-busy { pointer-events: none; opacity: .7; }
+.prc-scope { display: flex; flex-direction: column; min-width: 0; }
+.prc-scope strong { font-weight: 600; color: #0f172a; }
+.prc-scope small { font-size: 12px; color: #64748b; }
+.prc-price { margin-right: 8px; color: #0f172a; font-weight: 700; }
+.prc-mode { padding: 2px 8px; font-size: 11.5px; font-weight: 600; color: #3730a3; background: #eef2ff; border-radius: 999px; }
+.prc-mode.is-hourly { color: #0369a1; background: #e0f2fe; }
+.prc-dur { display: inline-flex; align-items: center; gap: 4px; color: #475569; white-space: nowrap; }
+.prc-muted { color: #94a3b8; }
+.prc-status { display: inline-flex; align-items: center; gap: 10px; }
+.prc-th-actions { text-align: right !important; }
+.prc-actions { display: flex; justify-content: flex-end; gap: 2px; }
+.prc-table .cat-iconbtn:focus-visible, .prc-table .cat-switch:focus-visible { outline: 2px solid #4338ca; outline-offset: 2px; }
+
+/* Phones: each rule becomes a card so Status, Edit and Remove stay on screen (no sideways scrolling). */
+@media (max-width: 640px) {
+  .prc-table.hcx-table, .prc-table.hcx-table tbody, .prc-table.hcx-table tr, .prc-table.hcx-table td { display: block; width: 100%; }
+  .prc-table.hcx-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .prc-table.hcx-table tbody tr { padding: 14px; border-bottom: 1px solid #e2e8f0; }
+  .prc-table.hcx-table tbody tr:last-child { border-bottom: 0; }
+  .prc-table.hcx-table td, .prc-table.hcx-table td.hcx-hide-sm { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 5px 0; border: 0; font-size: 13.5px; }
+  .prc-table.hcx-table td[data-label]::before { content: attr(data-label); flex-shrink: 0; font-size: 12px; font-weight: 600; color: #64748b; }
+  .prc-table.hcx-table td.prc-td-scope { display: block; padding-bottom: 8px; }
+  .prc-table.hcx-table td.prc-td-actions { justify-content: flex-end; margin-top: 6px; padding-top: 10px; border-top: 1px solid #f1f5f9; }
+  .prc-table tbody tr.is-inactive td:not(.prc-td-actions):not([data-label='Status']) { opacity: .6; }
+  .prc-actions { gap: 8px; }
+  .prc-actions .cat-iconbtn { width: 38px; height: 38px; background: #f8fafc; border: 1px solid #e2e8f0; }
+}
+
+/* ---- form ---- */
+.prc-form { max-width: 1120px; margin: 0 auto; }
+.prc-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.prc-grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 720px) { .prc-grid2, .prc-grid3 { grid-template-columns: 1fr; } }
+.cat-field [aria-invalid='true'] { border-color: #dc2626; }
+.cat-field select:disabled, .cat-field input:disabled { color: #64748b; background: #f8fafc; }
+
+.prc-sechead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.prc-seg { display: inline-flex; padding: 3px; background: #f1f5f9; border-radius: 10px; }
+.prc-seg button { padding: 6px 16px; font: inherit; font-size: 13px; font-weight: 600; color: #64748b; background: none; border: 0; border-radius: 8px; cursor: pointer; }
+.prc-seg button.is-on { color: #4338ca; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.12); }
+.prc-seg button:focus-visible { outline: 2px solid #4338ca; outline-offset: 1px; }
+.prc-seg button:disabled { cursor: not-allowed; opacity: .6; }
+
+/* Add-ons | Surge windows | Quote preview: three vertical cards side by side, stacked on small screens. */
+.prc-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+@media (max-width: 1080px) { .prc-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } .prc-cols > :last-child { grid-column: 1 / -1; } }
+@media (max-width: 720px) { .prc-cols { grid-template-columns: minmax(0, 1fr); } }
+.prc-vcard { min-width: 0; }
+.prc-vcard__head h3 { margin: 0; font-size: 15px; font-weight: 700; color: #0f172a; }
+.prc-vcard__head h3 small { font-weight: 400; color: #94a3b8; }
+.prc-vcard__head p { margin: 3px 0 0; font-size: 12.5px; color: #64748b; }
+.prc-empty { margin: 0; padding: 18px 12px; font-size: 13px; text-align: center; color: #64748b; border: 1px dashed #cbd5e1; border-radius: 12px; }
+.prc-items { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.prc-item { display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; }
+.prc-item__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }
+.prc-item__row--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.prc-item .cat-field input, .prc-vcard .cat-field input, .prc-vcard .cat-field select { width: 100%; min-width: 0; }
+.prc-add { align-self: flex-start; }
+
+/* quote preview */
+.prc-picks { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; border: 0; }
+.prc-picks legend { margin-bottom: 6px; padding: 0; font-size: 13px; font-weight: 600; color: #334155; }
+.prc-pick { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: #334155; cursor: pointer; }
+.prc-pick input { width: 16px; height: 16px; accent-color: #4338ca; }
+.prc-pick span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prc-pick em { font-style: normal; color: #64748b; font-variant-numeric: tabular-nums; }
+.prc-bill { display: flex; flex-direction: column; gap: 8px; margin: 0; padding-top: 14px; border-top: 1px solid #e2e8f0; }
+.prc-row { display: flex; justify-content: space-between; gap: 12px; margin: 0; font-size: 14px; color: #1e293b; }
+.prc-row dt, .prc-row dd { margin: 0; }
+.prc-row dd { font-variant-numeric: tabular-nums; }
+.prc-row.is-muted { color: #64748b; }
+.prc-row--total { padding-top: 10px; font-size: 16px; font-weight: 700; color: #0f172a; border-top: 1px solid #e2e8f0; }
+.prc-note { margin: 0; font-size: 12.5px; color: #64748b; }
