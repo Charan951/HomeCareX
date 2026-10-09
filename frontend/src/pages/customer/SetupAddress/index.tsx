@@ -83,10 +83,6 @@ export default function SetupAddress() {
       setError("Please fill in the house / street, city, state and a 6-digit pincode.");
       return;
     }
-    if (notServiceable) {
-      setError("We don't service this pincode yet. Move the pin to a different spot.");
-      return;
-    }
     setError(null);
     create.mutate(
       {
@@ -200,7 +196,7 @@ export default function SetupAddress() {
               inputMode="numeric"
               autoComplete="postal-code"
               aria-describedby="setup-pin-hint"
-              className={field(notServiceable)}
+              className={field()}
             />
             <p id="setup-pin-hint" role="status" className="mt-1.5 flex min-h-[1.25rem] items-center gap-1.5 text-xs">
               {pincodeReady && serviceability.isFetching && (
@@ -214,8 +210,8 @@ export default function SetupAddress() {
                 </span>
               )}
               {notServiceable && (
-                <span className="inline-flex items-center gap-1.5 font-medium text-danger">
-                  <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> We don't service this pincode yet.
+                <span className="inline-flex items-center gap-1.5 font-medium text-amber-800">
+                  <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> We don't service this pincode yet. You can still save it, but can't book here.
                 </span>
               )}
             </p>
@@ -229,7 +225,7 @@ export default function SetupAddress() {
 
           <button
             type="submit"
-            disabled={create.isPending || notServiceable}
+            disabled={create.isPending}
             className={clsx(
               "group inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full bg-brand px-6 text-sm font-bold text-white shadow-[0_16px_30px_-14px_rgba(67,56,202,.9)] transition-colors hover:bg-[#3730A3] disabled:cursor-not-allowed disabled:opacity-50 motion-safe:active:scale-95",
               FOCUS_RING,

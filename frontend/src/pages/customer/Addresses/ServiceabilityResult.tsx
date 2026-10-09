@@ -32,8 +32,8 @@ export default function ServiceabilityResult({ pincode, id, className }: Service
         </span>
       )}
       {status === "unserviceable" && (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-danger-soft px-3 py-1 font-medium text-danger">
-          <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> Unavailable: we don&apos;t serve this pincode yet.
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-800">
+          <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> Not serviceable yet: you can save it, but can&apos;t book here.
         </span>
       )}
       {status === "error" && (

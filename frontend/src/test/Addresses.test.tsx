@@ -104,7 +104,7 @@ describe("AddressForm", () => {
     expect(screen.getByLabelText(/street \/ road/i)).toBeInTheDocument();
   });
 
-  it("blocks saving and explains why when the pincode is not serviceable", async () => {
+  it("still lets the customer save an address in an area we don't serve, with a heads-up", async () => {
     const { onSubmit } = setup();
     await userEvent.type(screen.getByLabelText(/house \/ flat no/i), "12");
     await userEvent.type(screen.getByLabelText(/street \/ road/i), "Main Rd");
@@ -112,11 +112,11 @@ describe("AddressForm", () => {
     await userEvent.type(screen.getByLabelText(/^state/i), "Maharashtra");
     await userEvent.type(screen.getByLabelText(/pincode/i), "411001");
 
-    await screen.findByText(/we can't save this address/i);
+    await screen.findByText(/you can still save this address/i);
     const save = screen.getByRole("button", { name: /save address/i });
-    expect(save).toBeDisabled();
+    expect(save).toBeEnabled();
     await userEvent.click(save);
-    expect(onSubmit).not.toHaveBeenCalled();
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
   });
 
   it("saves house, street, area, landmark and the chosen label when the area is served", async () => {
@@ -188,6 +188,54 @@ describe("AddressForm", () => {
     await waitFor(() => expect(save).toBeEnabled());
     await userEvent.click(save);
     expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  describe("invalid pincode format", () => {
+    const fillRest = async () => {
+      await userEvent.type(screen.getByLabelText(/house \/ flat no/i), "12");
+      await userEvent.type(screen.getByLabelText(/street \/ road/i), "Main Rd");
+      await userEvent.type(screen.getByLabelText(/^city/i), "Hyderabad");
+      await userEvent.type(screen.getByLabelText(/^state/i), "Telangana");
+    };
+
+    it("rejects a pincode with fewer than 6 digits, without submitting or calling the API", async () => {
+      const { onSubmit } = setup();
+      await fillRest();
+      await userEvent.type(screen.getByLabelText(/pincode/i), "50007");
+      await userEvent.click(screen.getByRole("button", { name: /save address/i }));
+
+      expect(await screen.findByText("Pincode must be 6 digits")).toBeInTheDocument();
+      expect(screen.getByLabelText(/pincode/i)).toHaveAttribute("aria-invalid", "true");
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(checkServiceability).not.toHaveBeenCalled();
+    });
+
+    it("drops letters and symbols as they are typed, so what is left is still too short", async () => {
+      const { onSubmit } = setup();
+      await fillRest();
+      await userEvent.type(screen.getByLabelText(/pincode/i), "5a0-0b7");
+      expect(screen.getByLabelText(/pincode/i)).toHaveValue("5007");
+
+      await userEvent.click(screen.getByRole("button", { name: /save address/i }));
+      expect(await screen.findByText("Pincode must be 6 digits")).toBeInTheDocument();
+      expect(onSubmit).not.toHaveBeenCalled();
+    });
+
+    it("stops at 6 digits and only then checks serviceability", async () => {
+      setup();
+      await userEvent.type(screen.getByLabelText(/pincode/i), "50007234");
+      expect(screen.getByLabelText(/pincode/i)).toHaveValue("500072");
+      await waitFor(() => expect(checkServiceability).toHaveBeenCalledWith("500072"));
+      expect(checkServiceability).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects an empty pincode", async () => {
+      const { onSubmit } = setup();
+      await fillRest();
+      await userEvent.click(screen.getByRole("button", { name: /save address/i }));
+      expect(await screen.findByText("Pincode must be 6 digits")).toBeInTheDocument();
+      expect(onSubmit).not.toHaveBeenCalled();
+    });
   });
 });
 
