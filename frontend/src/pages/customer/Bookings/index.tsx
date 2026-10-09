@@ -1,139 +1,82 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Plus } from "lucide-react";
 import clsx from "clsx";
-import { bookingApi, type NormalizedApiError } from "@/services/bookingApi";
-import { EmptyState, ErrorState, LoadingState } from "@/components/customer";
+import { EmptyState, ErrorState, OfflineState } from "@/components/customer";
+import { Pagination } from "@/components/customer/catalog/Pagination";
 import { FOCUS_RING } from "@/components/customer/focusRing";
-import { NO_SCROLLBAR } from "@/components/customer/noScrollbar";
 import { PaymentResult } from "@/components/customer/payments";
 import { canPayOnline, usePayBooking } from "@/features/payments";
+import { useBookings } from "@/hooks/useBookings";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { customerPath } from "@/routes/customerPath";
-import type { BookingView } from "@/types/booking";
-import {
-  BTN_OUTLINE,
-  BTN_PRIMARY,
-  HistoryList,
-  HistoryRow,
-  LiveCard,
-  SectionHeading,
-  UpcomingCard,
-} from "./BookingCards";
+import { BTN_OUTLINE, BTN_PRIMARY } from "./BookingCards";
+import { BookingCard } from "./components/BookingCard";
+import { BookingFilters, FilterToggle } from "./components/BookingFilters";
+import { BookingListSkeleton } from "./components/BookingListSkeleton";
+import { BookingSearch } from "./components/BookingSearch";
+import { BookingTabs, tabId } from "./components/BookingTabs";
+import { DEFAULT_SORT, EMPTY_COPY, PAGE_SIZE } from "./bookingTabs";
 import {
   cancelNote,
   getBookingCode,
   getBookingId,
   getServiceName,
   getTotal,
-  phaseOf,
   rupees,
-  whenKey,
   type BookingListItem,
-  type Phase,
 } from "./bookingModel";
+import { useBookingsUrlState } from "./useBookingsUrlState";
 
-type TabId = "all" | Phase;
-
-const TABS: { id: TabId; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "live", label: "Live" },
-  { id: "upcoming", label: "Upcoming" },
-  { id: "completed", label: "Completed" },
-  { id: "cancelled", label: "Cancelled" },
-];
-
-/** Section order, used by the "All" tab; a single tab just shows its own section. */
-const SECTIONS: { phase: Phase; title: string }[] = [
-  { phase: "live", title: "Happening now" },
-  { phase: "upcoming", title: "Coming up" },
-  { phase: "completed", title: "Completed" },
-  { phase: "cancelled", title: "Cancelled" },
-];
-
-const EMPTY_COPY: Record<TabId, { title: string; description: string }> = {
-  all: {
-    title: "No bookings yet",
-    description:
-      "Book a service and you can follow it here from confirmation to completion.",
-  },
-  live: {
-    title: "Nothing happening right now",
-    description:
-      "When a partner is on the way or working, you can follow it live here.",
-  },
-  upcoming: {
-    title: "No upcoming bookings",
-    description: "Services you've scheduled will show up here.",
-  },
-  completed: {
-    title: "No completed bookings",
-    description: "Finished services will show up here.",
-  },
-  cancelled: {
-    title: "No cancelled bookings",
-    description: "Cancelled bookings and their refunds will show up here.",
-  },
-};
-
-type Grouped = Record<Phase, BookingListItem[]>;
+const PANEL_ID = "bookings-panel";
 
 export default function MyBookingsPage() {
-  const [selectedTab, setSelectedTab] = useState<TabId | null>(null);
+  const {
+    state,
+    hasFilters,
+    setTab,
+    setSearch,
+    setFilters,
+    setPage,
+    clearFilters,
+  } = useBookingsUrlState();
+  const online = useOnlineStatus();
   const { state: payState, pay, reset, busy: payBusy } = usePayBooking();
 
-  const { data, isLoading, isError, error, refetch } = useQuery<
-    BookingView[],
-    NormalizedApiError
-  >({
-    queryKey: ["customer-bookings"],
-    queryFn: () => bookingApi.getBookings(),
+  // Filter panel: closed by default, open if a shared link already carries filters.
+  const [filtersOpen, setFiltersOpen] = useState(hasFilters);
+  // Count only what the user actually changed, so the badge on the icon is honest.
+  const activeFilterCount =
+    [state.status, state.date, state.service].filter(Boolean).length +
+    (state.sort !== DEFAULT_SORT[state.tab] ? 1 : 0);
+
+  const { data, isError, error, refetch, isPlaceholderData } = useBookings({
+    tab: state.tab,
+    status: state.status || undefined,
+    search: state.search || undefined,
+    date: state.date || undefined,
+    service: state.service || undefined,
+    sort: state.sort,
+    page: state.page,
+    limit: PAGE_SIZE,
   });
 
-  // Sort into sections once per fetch. `now` is shared so every card agrees on what has expired.
-  const { grouped, now } = useMemo(() => {
-    const nowMs = Date.now();
-    const groups: Grouped = {
-      live: [],
-      upcoming: [],
-      completed: [],
-      cancelled: [],
-    };
-    for (const b of (data ?? []) as unknown as BookingListItem[]) {
-      const phase = phaseOf(b, nowMs);
-      if (phase) groups[phase].push(b);
-    }
-    // Soonest first for what's still to come; history keeps the API's newest-first order.
-    groups.live.sort((a, b) => whenKey(a).localeCompare(whenKey(b)));
-    groups.upcoming.sort((a, b) => whenKey(a).localeCompare(whenKey(b)));
-    return { grouped: groups, now: nowMs };
-  }, [data]);
+  // One "now" per fetch so every card agrees on what has expired.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const now = useMemo(() => Date.now(), [data]);
 
-  const counts: Record<TabId, number> = {
-    all:
-      grouped.live.length +
-      grouped.upcoming.length +
-      grouped.completed.length +
-      grouped.cancelled.length,
-    live: grouped.live.length,
-    upcoming: grouped.upcoming.length,
-    completed: grouped.completed.length,
-    cancelled: grouped.cancelled.length,
-  };
-
-  // Until the customer picks a tab: lead with what's live, otherwise show everything.
-  const activeTab: TabId = selectedTab ?? (counts.live > 0 ? "live" : "all");
-  const ready = !isLoading && !isError;
-  const visible = SECTIONS.filter(
-    (s) =>
-      (activeTab === "all" || activeTab === s.phase) &&
-      grouped[s.phase].length > 0,
-  );
+  // A shared link or a filter change can leave us past the last page: step back to it.
+  const totalPages = data?.meta.totalPages ?? 0;
+  useEffect(() => {
+    if (!isPlaceholderData && totalPages > 0 && state.page > totalPages)
+      setPage(totalPages, true);
+  }, [isPlaceholderData, totalPages, state.page, setPage]);
 
   /** Pay-now strip and the payment result for one booking. Kept here so payment state lives in one place. */
   const renderFooter = (b: BookingListItem): ReactNode => {
     const id = getBookingId(b);
-    const payable = canPayOnline(b, now);
+    // No amount on the booking means nothing to collect: don't offer "Pay now" for ₹0.
+    const payable = canPayOnline(b, now) && getTotal(b) > 0;
     const result =
       payState.bookingId === id && payState.phase !== "idle" ? payState : null;
     if (!payable && !result) return null;
@@ -198,63 +141,116 @@ export default function MyBookingsPage() {
     );
   };
 
-  const renderSection = (phase: Phase, title: string) => {
-    const items = grouped[phase];
-    const headingId = `bookings-${phase}`;
-    return (
-      <section key={phase} aria-labelledby={headingId} className="space-y-3">
-        <SectionHeading id={headingId} title={title} count={items.length} />
+  const retry = () => void refetch();
+  const bookNow = (
+    <Link to={customerPath("/services")} className={BTN_OUTLINE}>
+      Book a service
+    </Link>
+  );
 
-        {phase === "live" && (
-          <div className="space-y-4">
-            {items.map((b, i) => (
-              <LiveCard
-                key={getBookingId(b)}
-                booking={b}
-                now={now}
-                index={i}
-                footer={renderFooter(b)}
-              />
-            ))}
-          </div>
-        )}
-
-        {phase === "upcoming" && (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {items.map((b, i) => (
-              <UpcomingCard
-                key={getBookingId(b)}
-                booking={b}
-                now={now}
-                index={i}
-                footer={renderFooter(b)}
-              />
-            ))}
-          </div>
-        )}
-
-        {(phase === "completed" || phase === "cancelled") && (
-          <HistoryList labelledBy={headingId}>
-            {items.map((b, i) => (
-              <HistoryRow
-                key={getBookingId(b)}
-                booking={b}
-                now={now}
-                index={i}
-                footer={renderFooter(b)}
-                actionLabel={phase === "completed" ? "Book again" : "Rebook"}
-                note={phase === "cancelled" ? cancelNote(b, now) : undefined}
-              />
-            ))}
-          </HistoryList>
-        )}
-      </section>
+  let content: ReactNode;
+  if (!data && isError) {
+    // Offline wins over a generic failure: the fix is different.
+    content = online ? (
+      <ErrorState
+        title="Couldn't load bookings"
+        message={error?.message || "Failed to fetch bookings from server"}
+        onRetry={retry}
+      />
+    ) : (
+      <OfflineState message="Reconnect to see your bookings." onRetry={retry} />
     );
-  };
+  } else if (!data) {
+    // While offline, React Query pauses the request, so a skeleton would spin forever.
+    content = online ? (
+      <BookingListSkeleton />
+    ) : (
+      <OfflineState message="Reconnect to see your bookings." onRetry={retry} />
+    );
+  } else if (data.items.length === 0) {
+    content = hasFilters ? (
+      <EmptyState
+        title="No bookings match your filters"
+        description="Try a different search or clear the filters."
+        action={
+          <button
+            type="button"
+            onClick={clearFilters}
+            className={clsx(BTN_OUTLINE)}
+          >
+            Clear filters
+          </button>
+        }
+      />
+    ) : (
+      <EmptyState
+        title={EMPTY_COPY[state.tab].title}
+        description={EMPTY_COPY[state.tab].description}
+        action={state.tab === "upcoming" ? bookNow : undefined}
+      />
+    );
+  } else {
+    const { page, limit, total } = data.meta;
+    const from = (page - 1) * limit + 1;
+    const to = from + data.items.length - 1;
+    content = (
+      <>
+        {isError && (
+          <div
+            role="alert"
+            className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-panel px-4 py-3 text-sm text-ink"
+          >
+            <span>
+              Couldn&apos;t refresh. Showing the bookings loaded earlier.
+            </span>
+            <button
+              type="button"
+              onClick={retry}
+              className={clsx(
+                "min-h-[44px] font-semibold text-brand hover:underline",
+                FOCUS_RING,
+              )}
+            >
+              Try again
+            </button>
+          </div>
+        )}
+        <p className="mb-3 text-sm text-muted" aria-live="polite">
+          Showing {from}–{to} of {total} {total === 1 ? "booking" : "bookings"}
+        </p>
+        <ul
+          aria-busy={isPlaceholderData}
+          className={clsx(
+            "grid grid-cols-[repeat(auto-fill,minmax(min(20rem,100%),1fr))] gap-4 transition-opacity",
+            isPlaceholderData && "opacity-60",
+          )}
+        >
+          {data.items.map((b, i) => (
+            <BookingCard
+              key={getBookingId(b)}
+              booking={b}
+              tab={state.tab}
+              now={now}
+              index={i}
+              note={state.tab === "cancelled" ? cancelNote(b, now) : undefined}
+              footer={renderFooter(b)}
+            />
+          ))}
+        </ul>
+        <div className="mt-6">
+          <Pagination
+            page={page}
+            totalPages={data.meta.totalPages}
+            onPageChange={(p) => setPage(p)}
+            disabled={isPlaceholderData}
+          />
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-6xl">
-      {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
@@ -275,86 +271,45 @@ export default function MyBookingsPage() {
         </Link>
       </div>
 
+      {/* Search + filter button */}
+      <div className="mt-6 flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <BookingSearch value={state.search} onSearch={setSearch} />
+        </div>
+        <FilterToggle
+          open={filtersOpen}
+          activeCount={activeFilterCount}
+          onToggle={() => setFiltersOpen((o) => !o)}
+        />
+      </div>
+
+      {/* Filter fields: Status, Service date, Service, Sort by */}
+      <div className="mt-3">
+        <BookingFilters
+          open={filtersOpen}
+          tab={state.tab}
+          status={state.status}
+          date={state.date}
+          service={state.service}
+          sort={state.sort}
+          hasFilters={hasFilters}
+          onChange={setFilters}
+          onClear={clearFilters}
+        />
+      </div>
+
       {/* Tabs */}
-      <nav
-        aria-label="Booking filters"
-        className={clsx(
-          "mt-6 overflow-x-auto border-b border-line",
-          NO_SCROLLBAR,
-        )}
+      <div className="mt-4">
+        <BookingTabs active={state.tab} onChange={setTab} panelId={PANEL_ID} />
+      </div>
+
+      <div
+        role="tabpanel"
+        id={PANEL_ID}
+        aria-labelledby={tabId(state.tab)}
+        className="mt-6"
       >
-        <ul className="flex min-w-max gap-6 sm:gap-8">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <li key={tab.id}>
-                <button
-                  type="button"
-                  onClick={() => setSelectedTab(tab.id)}
-                  aria-current={isActive ? "true" : undefined}
-                  className={clsx(
-                    "-mb-px flex items-center gap-2 whitespace-nowrap border-b-2 px-0.5 pb-3 text-sm font-medium transition-colors",
-                    isActive
-                      ? "border-brand text-brand"
-                      : "border-transparent text-muted hover:text-ink",
-                    FOCUS_RING,
-                  )}
-                >
-                  {tab.id === "live" && (
-                    <span className="relative flex h-2 w-2" aria-hidden="true">
-                      {counts.live > 0 && (
-                        <span className="absolute inline-flex h-full w-full rounded-full bg-accent opacity-60 motion-safe:animate-ping" />
-                      )}
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
-                    </span>
-                  )}
-                  {tab.label}
-                  {ready && (
-                    <span
-                      className={clsx(
-                        "rounded-full px-2 py-0.5 text-xs font-medium",
-                        isActive
-                          ? "bg-brand-soft text-brand"
-                          : "bg-canvas text-muted",
-                      )}
-                    >
-                      {counts[tab.id]}
-                    </span>
-                  )}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      {/* Content */}
-      <div className="mt-6 space-y-8">
-        {isLoading && <LoadingState label="Loading your bookings…" />}
-
-        {isError && (
-          <ErrorState
-            title="Couldn't load bookings"
-            message={error?.message || "Failed to fetch bookings from server"}
-            onRetry={() => void refetch()}
-          />
-        )}
-
-        {ready && visible.length === 0 && (
-          <EmptyState
-            title={EMPTY_COPY[activeTab].title}
-            description={EMPTY_COPY[activeTab].description}
-            action={
-              activeTab === "all" || activeTab === "upcoming" ? (
-                <Link to={customerPath("/services")} className={BTN_OUTLINE}>
-                  Book a service
-                </Link>
-              ) : undefined
-            }
-          />
-        )}
-
-        {ready && visible.map((s) => renderSection(s.phase, s.title))}
+        {content}
       </div>
     </div>
   );

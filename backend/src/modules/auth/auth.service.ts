@@ -923,6 +923,8 @@ export const authService = {
       user.status !== 'blocked'
 
     ) {
+      await issuePasswordResetOtp(user);
+    }
 
       await issuePasswordResetOtp(user);
 

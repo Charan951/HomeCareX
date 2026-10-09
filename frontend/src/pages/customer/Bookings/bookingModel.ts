@@ -80,7 +80,45 @@ export function getPartner(b: BookingListItem): PartnerLite | undefined {
   return b.partnerId ? {} : undefined;
 }
 
-export const getTotal = (b: BookingListItem): number => b.priceSnapshot?.total ?? 0;
+const asNumber = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const amount = Number(trimmed);
+    return Number.isFinite(amount) ? amount : undefined;
+  }
+  return undefined;
+};
+
+type PriceLike = { total?: unknown; subtotal?: unknown };
+
+export const getTotal = (b: BookingListItem): number => {
+  // Older or alternate API shapes may carry these extra fields; they aren't on BookingView.
+  const extra = b as {
+    priceBreakdown?: PriceLike;
+    totalAmount?: unknown;
+    total?: unknown;
+    amount?: unknown;
+  };
+
+  const candidates = [
+    b.priceSnapshot?.total,
+    b.priceSnapshot?.subtotal,
+    extra.priceBreakdown?.total,
+    extra.priceBreakdown?.subtotal,
+    extra.totalAmount,
+    extra.total,
+    extra.amount,
+  ];
+
+  for (const candidate of candidates) {
+    const amount = asNumber(candidate);
+    if (amount !== undefined) return amount;
+  }
+
+  return 0;
+};
 
 /** "₹449" / "₹1,499" / "₹379.50": whole rupees stay clean, paise are kept when present. */
 export const rupees = (amount: number): string =>

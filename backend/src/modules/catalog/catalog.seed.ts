@@ -14,6 +14,8 @@ import { CATALOG_SEED_SERVICES } from './catalog.seedData';
  * The details-page content (gallery, inclusions, exclusions, FAQs) is filled in only for fields that
  * are still empty, so an admin's edits are never overwritten and re-running is safe. The same goes for the
  * description: it is upgraded to the full text only while it is empty or still the original one-line seed.
+ * Add-ons follow the same rule: a launch service that has none gains the seed's add-ons (e.g. it was created before
+ * they existed, and `$setOnInsert` above never touches an existing document), while a service that has any keeps its own.
  */
 export async function upsertCatalogSeed(opts: BackfillOptions = {}): Promise<{ categories: number; services: number }> {
   await seedDefaultCategories();
@@ -63,17 +65,13 @@ export async function backfillServiceDetails({ refreshMedia = false }: BackfillO
     const describe = full
       ? [{ updateOne: { filter: { slug: sv.slug, $or: [{ description: { $exists: false } }, { description: '' }, { description: sv.description }] }, update: { $set: { description: full } } } }]
       : [];
-    // Add-ons are only written on insert, so a service that already existed without them (older seed, or
-    // created before add-ons were defined) would never get them. Fill them in while the list is still empty.
-    const addOnFill = sv.addOns?.length
-      ? [{ updateOne: { filter: { slug: sv.slug, ...isEmpty('addOns') }, update: { $set: { addOns: sv.addOns } } } }]
-      : [];
-    const d = SERVICE_DETAILS_SEED[sv.slug];
-    if (!d) return [...describe, ...addOnFill];
     const fill = (field: string, value: unknown, force = false) => ({ updateOne: { filter: { slug: sv.slug, ...(force ? {} : isEmpty(field)) }, update: { $set: { [field]: value } } } });
+    const addOns = sv.addOns?.length ? [fill('addOns', sv.addOns)] : [];
+    const d = SERVICE_DETAILS_SEED[sv.slug];
+    if (!d) return [...describe, ...addOns];
     return [
       ...describe,
-      ...addOnFill,
+      ...addOns,
       fill('media', d.images.map((url, i) => ({ url, alt: `${sv.name} (photo ${i + 1})` })), refreshMedia),
       fill('inclusions', d.inclusions),
       fill('exclusions', d.exclusions),

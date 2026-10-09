@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import type { UserRole } from "@/types/auth";
+import CustomerAuthPending from "./CustomerAuthPending";
 
 interface ProtectedRouteProps {
   allowedRoles?: UserRole[];
@@ -14,6 +15,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children 
   const location = useLocation();
 
   if (status === "loading") {
+    // Customer pages show their own page skeleton instead of a full-screen spinner.
+    if (/^\/customer(\/|$)/i.test(location.pathname)) {
+      return <CustomerAuthPending pathname={location.pathname} />;
+    }
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50" role="status" aria-live="polite">
         <div className="text-center">

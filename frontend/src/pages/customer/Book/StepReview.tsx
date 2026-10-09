@@ -32,6 +32,7 @@ import { formatSlotLabel } from "./components/SlotPicker";
 import { couponErrorText } from "./components/CouponInput";
 import PriceBreakdown from "./components/PriceBreakdown";
 import { formatINR } from "./formatMoney";
+import { settledBookingDestination } from "./settledBooking";
 import { PaymentResult } from "@/components/customer/payments";
 import {
   CHECKOUT_METHODS,
@@ -210,7 +211,7 @@ export default function StepReview() {
     setIsSubmitting(false);
     setClickedWhileProcessing(false);
   };
-  const handlePay = async (selectedMethod?: CheckoutMethod) => {
+  const handlePay = async (selectedMethod?: CheckoutMethod, isRetry = false): Promise<void> => {
     const activeMethod = selectedMethod ?? method;
     if (inFlight.current) {
       setClickedWhileProcessing(true);
@@ -264,8 +265,19 @@ export default function StepReview() {
     try {
       const { booking } = await bookingApi.createBooking(payload, idempotencyKey);
       const resolvedBookingId: string = booking._id;
-      const goToFailed = (reason: "failed" | "verification" | "network" | "cancelled") =>
+      // A failed or cancelled attempt is over: the next attempt must not reuse its Idempotency-Key,
+      // or POST /bookings would replay this dead booking and payment would be refused.
+      const goToFailed = (reason: "failed" | "verification" | "network" | "cancelled") => {
+        draft.resetIdempotency();
         navigate(`${customerPath(`/booking/failed/${resolvedBookingId}`)}?reason=${reason}`, { replace: true });
+      };
+      // Already settled (CONFIRMED without payment, or a replay of a paid booking): there is nothing to pay, and a
+      // payment order would fail with BOOKING_NOT_PAYABLE (the retry below would then book it a second time).
+      const settled = settledBookingDestination(booking, activeMethod);
+      if (settled) {
+        navigate(customerPath(settled.path), { replace: true, state: settled.state });
+        return;
+      }
       // Cash on Service Bypass: Immediately confirm booking, leave payment as PENDING
       if (activeMethod === "cod") {
         setStatusMessage("Confirming your booking…");
@@ -401,9 +413,15 @@ export default function StepReview() {
         return;
       }
       if (["HOLD_EXPIRED", "BOOKING_NOT_PAYABLE", "ALREADY_PAID"].includes(apiErr.code)) {
+        // The saved Idempotency-Key pointed at an earlier booking that can no longer be paid. Drop the key.
         draft.resetIdempotency();
+        if (apiErr.code !== "ALREADY_PAID" && !isRetry) {
+          // Start a fresh reservation automatically (once) instead of making the customer tap again.
+          await handlePay(selectedMethod, true);
+          return;
+        }
         setError({
-          message: apiErr.code === "ALREADY_PAID" ? apiErr.message : "Your earlier reservation is no longer valid. Please tap Confirm & Pay again to start a fresh one.",
+          message: apiErr.code === "ALREADY_PAID" ? apiErr.message : "Your slot reservation expired. Please tap the button again to reserve it afresh.",
         });
         return;
       }
@@ -436,14 +454,9 @@ export default function StepReview() {
   const hiddenCouponCount = Math.max(compactCoupons.length - 4, 0);
   const address = draft.addressSnapshot;
   const dateLabel = draft.date ? prettyDate(draft.date) : "";
-  const payLabel = isSubmitting
-    ? "Processing…"
-    : method === "cod"
-      ? "Place order"
-      : "Confirm & Pay";
+  const payLabel = isSubmitting ? "Processing…" : method === "cod" ? "Place order" : "Confirm & Pay";
   const totalText = quoteReady && quote ? formatINR(quote.total) : "—";
-  const saving =
-    quoteReady && quote && quote.discount > 0 ? quote.discount : 0;
+  const saving = quoteReady && quote && quote.discount > 0 ? quote.discount : 0;
   const couponBusy = !online || isSubmitting || isValidating;
 
   const applyDraftCoupon = () => {
@@ -464,9 +477,7 @@ export default function StepReview() {
     >
       <Lock className="h-4 w-4" aria-hidden="true" />
       {payLabel}
-      {quoteReady && !isSubmitting && (
-        <span className="tabular-nums">· {totalText}</span>
-      )}
+      {quoteReady && !isSubmitting && <span className="tabular-nums">· {totalText}</span>}
     </button>
   );
 

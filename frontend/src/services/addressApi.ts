@@ -23,7 +23,7 @@ export const addressApi = {
 
   async update(id: string, payload: Partial<CreateAddressRequest>): Promise<AddressView> {
     try {
-      const { data } = await http.put<ApiResponse<{ address: AddressView }>>(`/addresses/${id}`, payload);
+      const { data } = await http.patch<ApiResponse<{ address: AddressView }>>(`/addresses/${id}`, payload);
       return data.data.address;
     } catch (err) {
       throw normalizeApiError(err);
@@ -50,7 +50,7 @@ export const addressApi = {
 
   async checkServiceability(pincode: string): Promise<ServiceabilityResult> {
     try {
-      const { data } = await http.get<ApiResponse<ServiceabilityResult>>("/addresses/serviceability", {
+      const { data } = await http.get<ApiResponse<ServiceabilityResult>>("/serviceability", {
         params: { pincode },
       });
       return data.data;

@@ -1,28 +1,21 @@
-import http, {
-  type ApiResponse,
-} from "@/lib/http";
+import http, { type ApiResponse } from "@/lib/http";
 
 import {
   mockDashboard,
   mockEarningsSummary,
+  mockJobRequests,
   mockNotifications,
 } from "@/mocks/partnerDashboard";
-
-import {
-  mockJobRequests,
-} from "@/services/mockPartnerJobs";
-
-import {
-  acceptMockJob,
-  rejectMockJob,
-  type MockJobActionResult,
-} from "@/services/mockPartnerJobActions";
 
 import type {
   ActiveJob,
   EarningsSummary,
+  JobMutationResult,
   JobRequest,
+  JobTab,
+  JobsResponse,
   PartnerDashboard,
+  PartnerJob,
   PartnerNotification,
 } from "@/types/partner";
 
@@ -30,24 +23,18 @@ import {
   PARTNER_DETAILS,
   type PartnerDetails,
   type AccountStatus,
-} from "@/mocks/partnerDetails";
+} from "../mocks/partnerDetails";
 
 /* =========================================================
-   TYPES
-========================================================= */
+   Existing Partner Profile / KYC / Status types
+   ========================================================= */
 
 export interface PartnerProfileInput {
   name: string;
   phone: string;
 }
 
-export type {
-  ActiveJob,
-  EarningsSummary,
-  JobRequest,
-  PartnerDashboard,
-  PartnerNotification,
-} from "@/types/partner";
+export type { ActiveJob, EarningsSummary, JobRequest, PartnerDashboard, PartnerNotification };
 
 export type KycDecision =
   | "approve"
@@ -68,11 +55,11 @@ export interface PartnerMutationResult {
   partner: PartnerDetails;
 }
 
-/** Result of POST /partner/jobs/:id/accept or /reject */
-export type JobActionResult = Pick<
-  MockJobActionResult,
-  "status" | "message"
->;
+/* =========================================================
+   Mock storage helpers
+   ========================================================= */
+
+const STORAGE_PREFIX = "homecarex:partner:";
 
 /* =========================================================
    STORAGE
@@ -179,8 +166,8 @@ const getCurrentPartner = (
 };
 
 /* =========================================================
-   GET PARTNER BY ID
-========================================================= */
+   Existing Partner Details APIs
+   ========================================================= */
 
 export async function getPartnerById(
   id: string,
@@ -343,11 +330,6 @@ export async function recordPartnerAudit(
 }
 
 /* =========================================================
-   MOCK CONFIGURATION
-
-   Mocks are ON by default. To use the backend later set
-   VITE_USE_MOCKS=false
-========================================================= */
 
 const USE_MOCKS =
   String(
@@ -357,10 +339,324 @@ const USE_MOCKS =
 
 /* =========================================================
    PARTNER API
-========================================================= */
 
 export const partnerApi = {
   /* DASHBOARD */
+   P02 - Partner Jobs / My Jobs
+   ========================================================= */
+
+/**
+ * Mocks are ON unless VITE_USE_MOCKS=false.
+ *
+ * P02 currently has no backend task for this day,
+ * so jobs use local mock data while the backend endpoint
+ * is not available.
+ */
+const USE_MOCKS =
+  String(
+    import.meta.env.VITE_USE_MOCKS ?? "true"
+  ) !== "false";
+
+/**
+ * Mock jobs used by the P02 My Jobs page.
+ *
+ * These are kept here so the Jobs page can be developed
+ * and tested before GET /partner/jobs is available.
+ */
+const MOCK_PARTNER_JOBS: PartnerJob[] = [
+  {
+    id: "job-001",
+    bookingId: "HCX-10001",
+    service: "Deep Home Cleaning",
+    customer: "Rahul Sharma",
+    location: "Gachibowli, Hyderabad",
+    distance: 2.4,
+    scheduledAt: "2026-10-08T14:00:00+05:30",
+    amount: 1499,
+    status: "requested",
+    instructions:
+      "Please call the customer before arriving.",
+    expiresAt: new Date(
+      Date.now() + 60 * 1000
+    ).toISOString(),
+  },
+  {
+    id: "job-002",
+    bookingId: "HCX-10002",
+    service: "Washing Machine Repair",
+    customer: "Priya Reddy",
+    location: "Kondapur, Hyderabad",
+    distance: 4.1,
+    scheduledAt: "2026-10-09T10:30:00+05:30",
+    amount: 599,
+    status: "upcoming",
+    instructions:
+      "Customer reported unusual vibration.",
+  },
+  {
+    id: "job-003",
+    bookingId: "HCX-10003",
+    service: "AC Service",
+    customer: "Arjun Kumar",
+    location: "Madhapur, Hyderabad",
+    distance: 5.2,
+    scheduledAt: "2026-10-08T12:30:00+05:30",
+    amount: 899,
+    status: "active",
+    instructions:
+      "Check cooling performance and clean filters.",
+  },
+  {
+    id: "job-004",
+    bookingId: "HCX-10004",
+    service: "Kitchen Cleaning",
+    customer: "Sneha Patel",
+    location: "Jubilee Hills, Hyderabad",
+    distance: 7.8,
+    scheduledAt: "2026-10-05T11:00:00+05:30",
+    amount: 1299,
+    status: "completed",
+    instructions:
+      "Focus on kitchen cabinets and chimney area.",
+  },
+  {
+    id: "job-005",
+    bookingId: "HCX-10005",
+    service: "Plumbing Repair",
+    customer: "Vikram Singh",
+    location: "Manikonda, Hyderabad",
+    distance: 6.3,
+    scheduledAt: "2026-10-04T15:30:00+05:30",
+    amount: 749,
+    status: "cancelled",
+    instructions:
+      "Customer cancelled the booking.",
+  },
+];
+
+/**
+ * Converts the UI tab "requests" to the backend/mock
+ * status "requested".
+ */
+const matchesJobTab = (
+  job: PartnerJob,
+  tab: JobTab
+): boolean => {
+  if (tab === "all") {
+    return true;
+  }
+
+  if (tab === "requests") {
+    return job.status === "requested";
+  }
+
+  return job.status === tab;
+};
+
+/**
+ * GET /partner/jobs
+ *
+ * Backend contract:
+ * GET /partner/jobs?tab=all|requests|upcoming|active|completed|cancelled
+ *
+ * For now, because P02 has no backend task today,
+ * this function uses mock data when mocks are enabled.
+ */
+async function getJobs(
+  tab: JobTab = "all",
+  page = 1,
+  limit = 10,
+  search = ""
+): Promise<JobsResponse> {
+  if (!USE_MOCKS) {
+    const res = await http.get<
+      ApiResponse<JobsResponse>
+    >("/partner/jobs", {
+      params: {
+        tab,
+        page,
+        limit,
+        ...(search.trim()
+          ? { search: search.trim() }
+          : {}),
+      },
+    });
+
+    return res.data.data;
+  }
+
+  await delay(400);
+
+  const normalizedSearch =
+    search.trim().toLowerCase();
+
+  const filteredJobs =
+    MOCK_PARTNER_JOBS.filter((job) => {
+      const matchesTab = matchesJobTab(
+        job,
+        tab
+      );
+
+      if (!matchesTab) {
+        return false;
+      }
+
+      if (!normalizedSearch) {
+        return true;
+      }
+
+      return [
+        job.bookingId,
+        job.service,
+        job.customer,
+        job.location,
+        job.status,
+      ].some((value) =>
+        value
+          .toLowerCase()
+          .includes(normalizedSearch)
+      );
+    });
+
+  const startIndex =
+    (page - 1) * limit;
+
+  const paginatedJobs =
+    filteredJobs.slice(
+      startIndex,
+      startIndex + limit
+    );
+
+  return {
+    jobs: paginatedJobs.map((job) =>
+      structuredClone(job)
+    ),
+    total: filteredJobs.length,
+    page,
+    limit,
+  };
+}
+
+/**
+ * Accept a partner job.
+ *
+ * Backend contract:
+ * POST /partner/jobs/:id/accept
+ *
+ * Until the backend endpoint is available, this updates
+ * the mock job in memory for the current browser session.
+ */
+async function acceptJob(
+  id: string
+): Promise<JobMutationResult> {
+  if (!USE_MOCKS) {
+    const res = await http.post<
+      ApiResponse<JobMutationResult>
+    >(`/partner/jobs/${id}/accept`);
+
+    return res.data.data;
+  }
+
+  await delay(400);
+
+  const jobIndex =
+    MOCK_PARTNER_JOBS.findIndex(
+      (job) => job.id === id
+    );
+
+  if (jobIndex === -1) {
+    throw new Error("Job not found.");
+  }
+
+  const job =
+    MOCK_PARTNER_JOBS[jobIndex];
+
+  if (job.status !== "requested") {
+    throw new Error(
+      "This job is no longer available."
+    );
+  }
+
+  if (
+    job.expiresAt &&
+    new Date(job.expiresAt).getTime() <=
+      Date.now()
+  ) {
+    throw new Error(
+      "This job request has expired."
+    );
+  }
+
+  MOCK_PARTNER_JOBS[jobIndex] = {
+    ...job,
+    status: "upcoming",
+  };
+
+  return {
+    success: true,
+    message: "Job accepted successfully.",
+  };
+}
+
+/**
+ * Reject a partner job.
+ *
+ * Backend contract:
+ * POST /partner/jobs/:id/reject
+ *
+ * Until the backend endpoint is available, this removes
+ * the job from the request state by marking it cancelled.
+ */
+async function rejectJob(
+  id: string
+): Promise<JobMutationResult> {
+  if (!USE_MOCKS) {
+    const res = await http.post<
+      ApiResponse<JobMutationResult>
+    >(`/partner/jobs/${id}/reject`);
+
+    return res.data.data;
+  }
+
+  await delay(400);
+
+  const jobIndex =
+    MOCK_PARTNER_JOBS.findIndex(
+      (job) => job.id === id
+    );
+
+  if (jobIndex === -1) {
+    throw new Error("Job not found.");
+  }
+
+  const job =
+    MOCK_PARTNER_JOBS[jobIndex];
+
+  if (job.status !== "requested") {
+    throw new Error(
+      "This job is no longer available."
+    );
+  }
+
+  MOCK_PARTNER_JOBS[jobIndex] = {
+    ...job,
+    status: "cancelled",
+  };
+
+  return {
+    success: true,
+    message: "Job rejected successfully.",
+  };
+}
+
+/* =========================================================
+   Partner API
+   ========================================================= */
+
+export const partnerApi = {
+  /* -------------------------------------------------------
+     Dashboard
+     ------------------------------------------------------- */
 
   async getDashboard(): Promise<PartnerDashboard> {
     if (USE_MOCKS) {
@@ -376,85 +672,46 @@ export const partnerApi = {
   },
 
   /* -------------------------------------------------------
-     JOB REQUESTS
+     Job Requests
+     ------------------------------------------------------- */
 
-     Backend later: GET /partner/job-requests
-     (the backend knows the partner from the login token)
-  ------------------------------------------------------- */
-
-  async getJobRequests(
-    partnerId?: string,
-  ): Promise<JobRequest[]> {
-    if (USE_MOCKS) {
-      return mockJobRequests(partnerId);
-    }
-
-    const res =
-      await http.get<
-        ApiResponse<JobRequest[]>
-      >("/partner/job-requests");
-
-    return res.data.data;
+  async getJobRequests(): Promise<JobRequest[]> {
+    return mockJobRequests();
   },
 
   /* -------------------------------------------------------
-     ACCEPT JOB
+     P02 - My Jobs
+     ------------------------------------------------------- */
 
-     POST /partner/jobs/:id/accept
-       200 → you got the job (first wins)
-       404 → no such job for you
-       409 → expired, rejected, taken, or not eligible
-  ------------------------------------------------------- */
+  async getJobs(
+    tab: JobTab = "all",
+    page = 1,
+    limit = 10,
+    search = ""
+  ): Promise<JobsResponse> {
+    return getJobs(
+      tab,
+      page,
+      limit,
+      search
+    );
+  },
 
   async acceptJob(
-    id: string,
-    partnerId: string,
-  ): Promise<JobActionResult> {
-    if (USE_MOCKS) {
-      return acceptMockJob(id, partnerId);
-    }
+    id: string
+  ): Promise<JobMutationResult> {
+    return acceptJob(id);
+  },
 
-    /* validateStatus lets 404 / 409 come back as results.
-       This assumes @/lib/http is an axios instance. */
-    const res = await http.post(
-      `/partner/jobs/${id}/accept`,
-      undefined,
-      { validateStatus: () => true },
-    );
-
-    return {
-      status: res.status,
-      message: res.data?.message ?? "",
-    };
+  async rejectJob(
+    id: string
+  ): Promise<JobMutationResult> {
+    return rejectJob(id);
   },
 
   /* -------------------------------------------------------
-     REJECT JOB
-
-     POST /partner/jobs/:id/reject  →  200 | 404 | 409
-  ------------------------------------------------------- */
-
-  async rejectJob(
-    id: string,
-    partnerId: string,
-  ): Promise<JobActionResult> {
-    if (USE_MOCKS) {
-      return rejectMockJob(id, partnerId);
-    }
-
-    const res = await http.post(
-      `/partner/jobs/${id}/reject`,
-      undefined,
-      { validateStatus: () => true },
-    );
-
-    return {
-      status: res.status,
-      message: res.data?.message ?? "",
-    };
-  },
-
-  /* EARNINGS SUMMARY */
+     Earnings
+     ------------------------------------------------------- */
 
   async getEarningsSummary(): Promise<EarningsSummary> {
     if (USE_MOCKS) {
@@ -471,43 +728,26 @@ export const partnerApi = {
     return res.data.data;
   },
 
-  /* UPDATE PROFILE */
+  /* -------------------------------------------------------
+     Profile
+     ------------------------------------------------------- */
 
   async updateProfile(
-    input: PartnerProfileInput,
+    input: PartnerProfileInput
   ): Promise<PartnerProfileInput> {
-    if (USE_MOCKS) {
-      await delay(500);
-      return input;
-    }
+    await new Promise<void>(
+      (resolve) =>
+        setTimeout(resolve, 500)
+    );
 
-    const res =
-      await http.patch<
-        ApiResponse<PartnerProfileInput>
-      >(
-        "/partner/profile",
-        input,
-      );
-
-    return res.data.data;
+    return input;
   },
 
-  /* NOTIFICATIONS */
+  /* -------------------------------------------------------
+     Notifications
+     ------------------------------------------------------- */
 
-  async getNotifications(): Promise<
-    PartnerNotification[]
-  > {
-    if (USE_MOCKS) {
-      return mockNotifications();
-    }
-
-    const res =
-      await http.get<
-        ApiResponse<PartnerNotification[]>
-      >(
-        "/partner/notifications",
-      );
-
-    return res.data.data;
+  async getNotifications(): Promise<PartnerNotification[]> {
+    return mockNotifications();
   },
 };

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Tag, ArrowRight, ArrowLeft, UserCheck, AlertCircle, AlertTriangle } from 'lucide-react';
+import { User, Mail, Phone, Tag, ArrowRight, ArrowLeft, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { classifyApiError } from '@/lib/apiError';
 import { ROUTES } from '@/constants/routes';
 import PasswordField from '@/components/auth/PasswordField';
 import PasswordStrength from '@/components/auth/PasswordStrength';
+import AuthFormHeader from '@/components/auth/AuthFormHeader';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[6-9]\d{9}$/;
@@ -36,20 +37,23 @@ export const RegisterPage: React.FC = () => {
   // If already authenticated
   if (isAuthenticated && user && !loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-6 sm:p-8">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#4338ca] to-[#312e81] flex items-center justify-center shadow-md shadow-[#4338ca]/20 mb-4">
-          <UserCheck size={22} className="text-white" aria-hidden="true" />
+      <div className="w-full text-center">
+        <AuthFormHeader
+          title="Account already active"
+          subtitle={
+            <>
+              You are already signed in as <b className="text-gray-900">{user.name}</b> ({user.role}).
+            </>
+          }
+        />
+        <div className="mt-6">
+          <Link
+            to={user.home || (user.role === 'admin' ? '/admin' : `/${user.role}`)}
+            className="w-full text-center block rounded-lg bg-[#ff8a3d] hover:bg-[#e0600f] text-white font-medium py-2.5 shadow-sm transition"
+          >
+            Go to my dashboard
+          </Link>
         </div>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Account already active</h1>
-        <p className="text-xs sm:text-sm text-gray-600 mb-6">
-          You are already signed in as <b className="text-gray-900">{user.name}</b> ({user.role}).
-        </p>
-        <Link
-          to={user.home || (user.role === 'admin' ? '/admin' : `/${user.role}`)}
-          className="w-full text-center block rounded-lg bg-[#ff8a3d] hover:bg-[#e0600f] text-white font-medium py-2.5 shadow-sm transition"
-        >
-          Go to my dashboard
-        </Link>
       </div>
     );
   }
@@ -172,9 +176,9 @@ export const RegisterPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-4 sm:p-5 relative">
+    <div className="w-full">
       {/* Top Navigation: Back to Home + Status badge */}
-      <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-gray-100">
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200/60">
         <Link
           to="/"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-[#4338ca] hover:-translate-x-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#4338ca] rounded px-1.5 py-0.5 -ml-1.5"
@@ -183,25 +187,19 @@ export const RegisterPage: React.FC = () => {
           <ArrowLeft size={15} />
           Back to Home
         </Link>
-        <span className="text-[11px] font-medium text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-full">
+        <span className="text-[11px] font-medium text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
           Create Account
         </span>
       </div>
 
-      {/* Header */}
-      <div className="mb-2">
-        <div className="flex items-center gap-2 mb-0.5">
-          <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-[#4338ca] to-[#312e81] flex items-center justify-center shadow-sm shadow-[#4338ca]/20 shrink-0">
-            <UserCheck size={15} className="text-white" aria-hidden="true" />
-          </div>
-          <h1 className="text-lg sm:text-xl font-extrabold text-gray-900 leading-tight">
+      <AuthFormHeader
+        title={
+          <>
             Create your <span className="text-[#4338ca]">HomeCare<span className="text-[#ff8a3d]">X</span></span> account
-          </h1>
-        </div>
-        <p className="text-[11px] text-gray-500">
-          Join HomeCareX to book trusted home services
-        </p>
-      </div>
+          </>
+        }
+        subtitle="Join HomeCareX to book trusted home services"
+      />
 
       {error && (
         <div

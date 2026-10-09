@@ -13,19 +13,15 @@ import PartnerIncentivesPage from "../pages/partner/Incentives";
 import PartnerPayoutsPage from "../pages/partner/Payouts";
 import PartnerWalletPage from "../pages/partner/Wallet";
 import PartnerTransactionsPage from "../pages/partner/Transactions";
-
-import ProfileMenu from "../components/partner/ProfileMenu";
+import PartnerJobsPage from "../pages/partner/Jobs";
 
 import "../styles/calm-overrides.css";
 import "../styles/mobile-plain.css";
 
-// Placeholder for pages that are not implemented yet.
+// Placeholder for pages that have not been implemented yet.
 const Placeholder = ({ title }: { title: string }) => (
   <div className="rounded border border-dashed border-line bg-panel p-8 text-center">
-    <h2 className="text-lg font-semibold text-brand">
-      {title}
-    </h2>
-
+    <h2 className="text-lg font-semibold text-brand">{title}</h2>
     <p className="mt-1 text-sm text-muted">
       This page is coming soon.
     </p>
@@ -46,7 +42,11 @@ export const PARTNER_PAGES: {
   { path: "work/cancelled", title: "Cancelled jobs" },
   { path: "work/:jobId", title: "Job details" },
 
-  // Services
+  // Availability pages
+  // availability, working hours, blackout dates, schedule
+  // are real routes below.
+
+  // Services (4)
   { path: "services", title: "Services" },
   { path: "services/categories", title: "My categories" },
   { path: "services/radius", title: "Service radius" },
@@ -57,49 +57,43 @@ export const PARTNER_PAGES: {
   { path: "earnings/statements", title: "Earnings statements" },
   { path: "earnings/bank-details", title: "Bank / UPI details" },
 
-  // Performance
+  // Performance (3)
   { path: "performance", title: "Performance" },
   { path: "performance/reviews", title: "Customer reviews" },
   { path: "performance/improvement", title: "Improvement tips" },
 
-  // Profile
+  // Profile (5)
   { path: "profile", title: "Profile" },
   { path: "profile/edit", title: "Edit profile" },
   { path: "profile/documents", title: "Documents" },
   { path: "profile/verification", title: "Verification status" },
   { path: "profile/preferences", title: "Preferences" },
 
-  // Support
+  // Support (5)
   { path: "support", title: "Support" },
   { path: "support/tickets", title: "My tickets" },
   { path: "support/tickets/new", title: "Raise a ticket" },
   { path: "support/tickets/:ticketId", title: "Ticket details" },
   { path: "support/safety", title: "Safety & SOS" },
 
-  // System
+  // System (2)
   { path: "system", title: "System settings" },
   { path: "system/notifications", title: "Notification settings" },
 ];
 
 // Mounted by AppRoutes at /partner/*.
-// Already protected by:
-// <ProtectedRoute allowedRoles={["partner"]} />
+// Already wrapped in:
+// <ProtectedRoute allowedRoles={["partner"]}>
+//
+// Wrong role -> /unauthorized.
+// Errors inside a page are caught by PartnerErrorBoundary in the layout.
 export default function PartnerRoutes() {
   return (
     <Routes>
       <Route element={<PartnerLayout />}>
 
         {/* Partner Dashboard */}
-        <Route
-          index
-          element={<PartnerDashboard />}
-        />
-
-        {/* Partner Jobs */}
-        <Route
-          path="jobs"
-          element={<PartnerJobsPage />}
-        />
+        <Route index element={<PartnerDashboard />} />
 
         {/* Availability */}
         <Route
@@ -158,6 +152,7 @@ export default function PartnerRoutes() {
           element={<PartnerPayoutsPage />}
         />
 
+        {/* Wallet / Transactions */}
         <Route
           path="wallet"
           element={<PartnerWalletPage />}
@@ -168,11 +163,28 @@ export default function PartnerRoutes() {
           element={<PartnerTransactionsPage />}
         />
 
-        {/* Remaining placeholder pages */}
+        {/* =======================================================
+            P02 - Job Requests & My Jobs
+            ======================================================= */}
+
+        {/* All jobs */}
+        <Route
+          path="jobs"
+          element={<PartnerJobsPage />}
+        />
+
+        {/* Job requests */}
+        <Route
+          path="jobs/requests"
+          element={<PartnerJobsPage />}
+        />
+
+        {/* =======================================================
+            Remaining placeholder pages
+            ======================================================= */}
+
         {PARTNER_PAGES
-          .filter(
-            ({ path }) => path !== "earnings/payouts"
-          )
+          .filter(({ path }) => path !== "earnings/payouts")
           .map(({ path, title }) => (
             <Route
               key={path}
@@ -187,12 +199,10 @@ export default function PartnerRoutes() {
             />
           ))}
 
-        {/* Unknown partner route */}
+        {/* Catch-all */}
         <Route
           path="*"
-          element={
-            <Placeholder title="Page not found" />
-          }
+          element={<Placeholder title="Page not found" />}
         />
 
       </Route>
