@@ -49,6 +49,18 @@ export const bookingsController = {
     res.json({ success: true, data: booking });
   },
 
+  async decideExtraCharge(req: Request, res: Response) {
+    const customerId = requireUserId(req);
+    const { id, chargeId } = req.params;
+    const { decision } = req.body as { decision: 'approve' | 'reject' };
+    const booking = await BookingService.decideExtraCharge(customerId, id, chargeId, decision);
+    res.json({
+      success: true,
+      message: decision === 'approve' ? 'Extra charge approved' : 'Extra charge rejected',
+      data: booking,
+    });
+  },
+
   async listBookings(req: Request, res: Response) {
     // The customer is always the token's user. Nothing in the query string can widen this.
     const customerId = requireUserId(req);

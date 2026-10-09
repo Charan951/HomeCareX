@@ -42,6 +42,15 @@ export const BOOKING_STATUS = {
   CANCELLED_BY_ADMIN: 'cancelled_by_admin',
 } as const satisfies Record<string, BookingStatus>;
 
+/** The customer can approve or reject an extra charge only while the partner is on site. */
+export const EXTRA_CHARGE_DECISION_STATUSES: BookingStatus[] = ['arrived', 'in_progress'];
+
+/** Customer-facing partner phone is only shown while the job is active. */
+export const PARTNER_CONTACT_STATUSES: BookingStatus[] = ['assigned', 'en_route', 'arrived', 'in_progress'];
+
+/** Statuses a booking may be in for the customer to see the start OTP: the partner has arrived, work not started. */
+export const START_OTP_STATUS: BookingStatus = 'arrived';
+
 /** Statuses that hold a slot seat. */
 export const SLOT_HOLDING_STATUSES: BookingStatus[] = [
   'pending_payment',

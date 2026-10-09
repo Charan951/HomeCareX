@@ -6,12 +6,15 @@ import { bookingsRepository } from './bookings.repository';
 import type { ListBookingsQuery } from './bookings.query';
 import { bookingSettings } from './bookings.settings';
 import { withSlotLock } from './bookings.lock';
+import { buildDetailView, INTERNAL_KEYS, type PaymentInfo, type ServiceInfo } from './bookings.detail';
+import { PaymentModel } from '../../models/Payment';
 import {
   BOOKING_HOLD_MS,
   BOOKING_STATUS,
   BOOKING_WINDOW_DAYS,
   PRICE_CHANGED_TOLERANCE,
   SERVICE_SLOTS,
+  START_OTP_STATUS,
 } from './bookings.constants';
 import type { CreateBookingInput, PriceLine, PriceSnapshot } from './bookings.types';
 import { addDays, isRealDate, nowInBookingTz, slotStartMinutes } from './bookings.time';
@@ -57,13 +60,68 @@ function hasSlotStarted(date: string, slot: string): boolean {
   return date === now.date && slotStartMinutes(slot) <= now.minutes;
 }
 
+/** A mongoose document (or plain object) as a plain object. */
+function rawObject(doc: unknown): Record<string, unknown> {
+  const d = doc as { toObject?: () => Record<string, unknown> };
+  return typeof d.toObject === 'function' ? d.toObject() : { ...(doc as Record<string, unknown>) };
+}
+
+/** Catalog details for the details page. Best effort: a missing or deleted service never breaks the booking. */
+async function loadServiceInfo(serviceId: unknown, serviceName?: unknown): Promise<ServiceInfo | null> {
+  const hasId = Boolean(serviceId) && Types.ObjectId.isValid(String(serviceId));
+  if (!hasId && (typeof serviceName !== 'string' || !serviceName.trim())) return null;
+  try {
+    // Partner-side bookings carry no serviceId, so fall back to the name snapshot.
+    const query = hasId
+      ? ServiceModel.findById(String(serviceId))
+      : ServiceModel.findOne({ name: String(serviceName).trim() });
+    const svc = (await query
+      .select('name description durationMinutes media categoryId')
+      .populate('categoryId', 'name')
+      .lean()
+      .exec()) as {
+      name?: string;
+      description?: string;
+      durationMinutes?: number;
+      media?: Array<{ url?: string }>;
+      categoryId?: { name?: string } | null;
+    } | null;
+    if (!svc) return null;
+    return {
+      name: svc.name,
+      description: svc.description || undefined,
+      durationMinutes: svc.durationMinutes,
+      image: svc.media?.[0]?.url || undefined,
+      categoryName: svc.categoryId && typeof svc.categoryId === 'object' ? svc.categoryId.name : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** The latest payment attempt, preferring a paid one. Best effort. */
+async function loadPaymentInfo(bookingId: string): Promise<PaymentInfo | null> {
+  try {
+    const rows = await PaymentModel.find({ bookingId: new Types.ObjectId(bookingId) })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .lean()
+      .exec();
+    const pick = rows.find((r) => r.status === 'PAID') ?? rows[0];
+    if (!pick) return null;
+    return { status: pick.status, method: pick.method, transactionId: pick.razorpayPaymentId, paidAt: pick.paidAt };
+  } catch {
+    return null;
+  }
+}
+
 function toView(doc: { toObject?: () => Record<string, unknown> } | Record<string, unknown>): Record<string, unknown> {
   const obj =
     typeof (doc as { toObject?: unknown }).toObject === 'function'
       ? (doc as { toObject: () => Record<string, unknown> }).toObject()
       : { ...(doc as Record<string, unknown>) };
- const rest = { ...obj };
-for (const key of ['requestHash', 'idempotencyKey', 'slotSeat', '__v', 'otp']) delete rest[key];
+  const rest = { ...obj };
+  for (const key of INTERNAL_KEYS) delete rest[key];
   return rest;
 }
 
@@ -287,12 +345,50 @@ export const BookingService = {
     }
   },
 
+  /**
+   * One booking for its owner. A booking that belongs to someone else is indistinguishable from one
+   * that does not exist: both are 404, so ids can't be probed.
+   */
   async getBooking(customerId: string, bookingId: string) {
     const booking = await bookingsRepository.findByIdForCustomer(bookingId, customerId);
     if (!booking) {
       throw new AppError(404, 'BOOKING_NOT_FOUND', 'Booking not found');
     }
-    return toView(booking as never);
+    const startOtp =
+      booking.status === START_OTP_STATUS ? await bookingsRepository.getOrCreateStartOtp(String(booking._id)) : null;
+    const raw = rawObject(booking);
+    const [service, payment] = await Promise.all([loadServiceInfo(raw.serviceId, raw.serviceName), loadPaymentInfo(bookingId)]);
+    return buildDetailView(raw, startOtp, { service, payment });
+  },
+
+  /** Approve or reject one pending extra charge, then return the refreshed booking. */
+  async decideExtraCharge(
+    customerId: string,
+    bookingId: string,
+    chargeId: string,
+    decision: 'approve' | 'reject',
+  ) {
+    const next = decision === 'approve' ? 'approved' : 'rejected';
+    const updated = await bookingsRepository.decideExtraCharge(bookingId, customerId, chargeId, next);
+
+    if (!updated) {
+      // Nothing was changed. Work out why so the client gets an honest answer (own bookings only).
+      const booking = await bookingsRepository.findByIdForCustomer(bookingId, customerId);
+      if (!booking) throw new AppError(404, 'BOOKING_NOT_FOUND', 'Booking not found');
+
+      const charge = booking.extraCharges?.find((c) => String(c._id) === chargeId);
+      if (!charge) throw new AppError(404, 'EXTRA_CHARGE_NOT_FOUND', 'Extra charge not found');
+      if (charge.status !== 'pending') {
+        throw new AppError(409, 'EXTRA_CHARGE_ALREADY_DECIDED', `This extra charge was already ${charge.status}`);
+      }
+      throw new AppError(
+        409,
+        'INVALID_STATE_TRANSITION',
+        `An extra charge can't be decided while the booking is ${booking.status}`,
+      );
+    }
+
+    return BookingService.getBooking(customerId, bookingId);
   },
 
   async listBookings(customerId: string, query: ListBookingsQuery) {

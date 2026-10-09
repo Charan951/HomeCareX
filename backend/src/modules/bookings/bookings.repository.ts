@@ -1,6 +1,7 @@
+import { randomInt } from 'crypto';
 import { Types } from 'mongoose';
 import { BookingModel, type IBooking } from '../../models/Booking';
-import { BOOKING_STATUS, SLOT_HOLDING_STATUSES } from './bookings.constants';
+import { BOOKING_STATUS, EXTRA_CHARGE_DECISION_STATUSES, SLOT_HOLDING_STATUSES } from './bookings.constants';
 import { buildBookingFilter, SORT_SPECS, type ListBookingsQuery } from './bookings.query';
 
 export class BookingsRepository {
@@ -103,8 +104,72 @@ export class BookingsRepository {
       _id: new Types.ObjectId(id),
       customerId: new Types.ObjectId(customerId),
     })
-      .populate('partnerId', 'name rating phone avatar')
+      // Name and phone live on the partner's User; rating lives on the Partner profile.
+      .populate({
+        path: 'partnerId',
+        select: 'userId city ratingAvg ratingCount kyc.status',
+        populate: { path: 'userId', select: 'name phone' },
+      })
       .exec();
+  }
+
+  /**
+   * The start OTP for a booking whose partner has arrived. Created on first read (4 digits) and then
+   * stable, so the code the customer sees is the code the partner must enter. Safe under concurrent
+   * reads: only one writer wins the conditional update, the other re-reads the winner's code.
+   */
+  async getOrCreateStartOtp(id: string): Promise<string | null> {
+    if (!Types.ObjectId.isValid(id)) return null;
+    const _id = new Types.ObjectId(id);
+    type WithOtp = { otpCodes?: { start?: string } } | null;
+
+    const existing = (await BookingModel.findById(_id).select('+otpCodes.start').lean().exec()) as WithOtp;
+    if (existing?.otpCodes?.start) return existing.otpCodes.start;
+
+    const code = String(randomInt(0, 10_000)).padStart(4, '0');
+    const updated = (await BookingModel.findOneAndUpdate(
+      {
+        _id,
+        status: BOOKING_STATUS.ARRIVED,
+        $or: [{ 'otpCodes.start': { $exists: false } }, { 'otpCodes.start': null }, { 'otpCodes.start': '' }],
+      },
+      { $set: { 'otpCodes.start': code } },
+      { new: true },
+    )
+      .select('+otpCodes.start')
+      .lean()
+      .exec()) as WithOtp;
+    if (updated?.otpCodes?.start) return updated.otpCodes.start;
+
+    const winner = (await BookingModel.findById(_id).select('+otpCodes.start').lean().exec()) as WithOtp;
+    return winner?.otpCodes?.start ?? null;
+  }
+
+  /**
+   * Records the customer's decision on ONE pending extra charge, atomically.
+   * The filter is the whole rule: own booking, partner on site, charge still pending. Returns null when
+   * any of those is false, so a double tap or a stale screen can never decide a charge twice.
+   */
+  decideExtraCharge(
+    bookingId: string,
+    customerId: string,
+    chargeId: string,
+    decision: 'approved' | 'rejected',
+    now: Date = new Date(),
+  ): Promise<IBooking | null> {
+    if (![bookingId, customerId, chargeId].every((v) => Types.ObjectId.isValid(v))) return Promise.resolve(null);
+    const charge = new Types.ObjectId(chargeId);
+
+    return BookingModel.findOneAndUpdate(
+      {
+        _id: new Types.ObjectId(bookingId),
+        customerId: new Types.ObjectId(customerId),
+        status: { $in: EXTRA_CHARGE_DECISION_STATUSES },
+        extraCharges: { $elemMatch: { _id: charge, status: 'pending' } },
+      },
+      { $set: { 'extraCharges.$[c].status': decision, 'extraCharges.$[c].decidedAt': now } },
+      { new: true, arrayFilters: [{ 'c._id': charge, 'c.status': 'pending' }] },
+    ).exec();
   }
 
   /** Return all bookings for a customer sorted by creation time with partner details populated */

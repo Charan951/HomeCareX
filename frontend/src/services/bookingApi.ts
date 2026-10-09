@@ -14,6 +14,7 @@ import type {
 } from "@/types/booking";
 import type { PageMeta } from "@/types/catalog";
 import type { BookingListParams, BookingPage } from "@/types/bookingList";
+import type { BookingDetailView, ExtraChargeDecision } from "@/types/bookingDetail";
 import type { BookingListItem } from "@/pages/customer/Bookings/bookingModel";
 
 export interface NormalizedApiError {
@@ -193,6 +194,48 @@ export const bookingApi = {
           `/bookings/${id}`,
         );
 
+      return data.data;
+    } catch (err) {
+      throw normalizeApiError(err);
+    }
+  },
+
+  /**
+   * One of the customer's own bookings with everything the details page shows.
+   * 404 for a booking that doesn't exist or belongs to someone else.
+   *
+   * GET /bookings/:id
+   */
+  async getBookingDetail(
+    id: string,
+    signal?: AbortSignal,
+  ): Promise<BookingDetailView> {
+    try {
+      const { data } = await http.get<ApiResponse<BookingDetailView>>(
+        `/bookings/${encodeURIComponent(id)}`,
+        { signal },
+      );
+      return data.data;
+    } catch (err) {
+      throw normalizeApiError(err);
+    }
+  },
+
+  /**
+   * Approve or reject one pending extra charge. Returns the refreshed booking.
+   *
+   * POST /bookings/:id/extra-charges/:chargeId/decision
+   */
+  async decideExtraCharge(
+    bookingId: string,
+    chargeId: string,
+    decision: ExtraChargeDecision,
+  ): Promise<BookingDetailView> {
+    try {
+      const { data } = await http.post<ApiResponse<BookingDetailView>>(
+        `/bookings/${encodeURIComponent(bookingId)}/extra-charges/${encodeURIComponent(chargeId)}/decision`,
+        { decision },
+      );
       return data.data;
     } catch (err) {
       throw normalizeApiError(err);

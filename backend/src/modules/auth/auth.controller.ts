@@ -65,13 +65,7 @@ const cookieOptions = (): CookieOptions => ({
  
   secure: process.env.NODE_ENV === 'production',
  
-  sameSite:
-
-    process.env.NODE_ENV === 'production'
-
-      ? 'strict'
-
-      : 'lax',
+  sameSite: 'strict',
  
   path: REFRESH_COOKIE_PATH,
  

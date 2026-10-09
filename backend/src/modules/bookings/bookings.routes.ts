@@ -7,6 +7,8 @@ import { bookingsController } from './bookings.controller';
 import {
   createBookingBodySchema,
   getBookingParamsSchema,
+  extraChargeDecisionParamsSchema,
+  extraChargeDecisionBodySchema,
   getSlotsParamsSchema,
   getSlotsQuerySchema,
   checkSlotBodySchema,
@@ -54,6 +56,15 @@ bookingsRoutes.get(
   roleMiddleware('customer'),
   validationMiddleware({ params: getBookingParamsSchema }),
   asyncHandler(async (req, res) => bookingsController.getBooking(req, res))
+);
+
+// POST /bookings/:id/extra-charges/:chargeId/decision — approve or reject one pending extra charge (own booking only)
+bookingsRoutes.post(
+  '/bookings/:id/extra-charges/:chargeId/decision',
+  authMiddleware,
+  roleMiddleware('customer'),
+  validationMiddleware({ params: extraChargeDecisionParamsSchema, body: extraChargeDecisionBodySchema }),
+  asyncHandler(async (req, res) => bookingsController.decideExtraCharge(req, res))
 );
 
 export default bookingsRoutes;

@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 
+import ProfileMenu from "../components/partner/ProfileMenu";
 import PartnerLayout from "../layouts/PartnerLayout";
 
 import PartnerDashboard from "../pages/partner/Dashboard";
@@ -13,7 +14,6 @@ import PartnerIncentivesPage from "../pages/partner/Incentives";
 import PartnerPayoutsPage from "../pages/partner/Payouts";
 import PartnerWalletPage from "../pages/partner/Wallet";
 import PartnerTransactionsPage from "../pages/partner/Transactions";
-import PartnerJobsPage from "../pages/partner/Jobs";
 
 import "../styles/calm-overrides.css";
 import "../styles/mobile-plain.css";

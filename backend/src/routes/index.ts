@@ -26,7 +26,10 @@ import { bookingsRoutes } from '../modules/bookings/bookings.routes';
 import customerDashboardRoutes from '../modules/customer-dashboard/customer-dashboard.routes';
 import { addressesRoutes } from '../modules/addresses/addresses.routes';
 import { reviewsRoutes } from '../modules/reviews/reviews.routes';
-
+import {
+  partnerWalletRoutes,
+  partnerWalletSummaryRoutes,
+} from '../modules/partner-wallet/partner-wallet.routes';
 
 import {
   couponsRoutes,

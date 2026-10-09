@@ -57,3 +57,12 @@ export const checkSlotBodySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
   slot: z.string().min(1, 'Slot is required'),
 });
+
+export const extraChargeDecisionParamsSchema = z.object({
+  id: objectIdString,
+  chargeId: objectIdString,
+});
+
+export const extraChargeDecisionBodySchema = z.object({
+  decision: z.enum(['approve', 'reject']),
+});

@@ -7,7 +7,7 @@ import Addresses from "../pages/customer/Addresses";
 import SetupAddress from "../pages/customer/SetupAddress";
 import Bookings from "../pages/customer/Bookings";
 // ✅ Correct import targeting the new details component inside Bookings/
-import BookingDetails from "../pages/customer/BookingDetails/BookingDetailsPage";
+import BookingDetails from "../pages/customer/BookingDetails";
 import Categories from "../pages/customer/Categories";
 import Notifications from "../pages/customer/Notifications";
 import Payments from "../pages/customer/Payments";
