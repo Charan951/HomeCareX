@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, ArrowRight, ArrowLeft, KeyRound, AlertCircle, AlertTriangle, WifiOff } from 'lucide-react';
+import { Mail, ArrowRight, ArrowLeft, AlertCircle, AlertTriangle, WifiOff } from 'lucide-react';
 import { authApi } from '@/services/authApi';
 import { classifyApiError } from '@/lib/apiError';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { resetStateStore } from '@/features/auth/resetStateStore';
+import AuthFormHeader from '@/components/auth/AuthFormHeader';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -69,16 +70,11 @@ export const ForgotPasswordPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(67,56,202,0.3)] border border-gray-100 p-6 sm:p-8">
-        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/30 mb-5">
-          <KeyRound size={22} className="text-white" />
-        </div>
-
-        <h1 className="text-2xl font-bold text-accent-700 mb-1">Forgot your password?</h1>
-        <p className="text-gray-500 mb-6 text-sm">
-          Enter your email and we&apos;ll send you a 6-digit verification code to reset it.
-        </p>
+    <div className="w-full">
+      <AuthFormHeader
+        title="Forgot your password?"
+        subtitle="Enter your email and we'll send you a 6-digit verification code to reset it."
+      />
 
         {!isOnline && (
           <div
@@ -163,7 +159,6 @@ export const ForgotPasswordPage: React.FC = () => {
             </Link>
           </div>
         </form>
-      </div>
     </div>
   );
 };

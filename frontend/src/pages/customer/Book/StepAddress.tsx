@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { ArrowLeft, ArrowRight, Check, MapPin, Pencil, Plus, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Briefcase, CheckCircle2, Home, Loader2, MapPin, Pencil, Plus, Trash2, TriangleAlert, type LucideIcon } from "lucide-react";
 import clsx from "clsx";
-import { formatINR } from "./formatMoney";
+import BookingSummary from "./components/BookingSummary";
 import MapAddressPicker, { type PickedLocation } from "@/components/customer/maps/MapAddressPicker";
 import { useQuery } from "@tanstack/react-query";
 import { useAddresses, useBookingDraftStore } from "@/features/booking";
@@ -9,20 +9,26 @@ import { LoadingState, ErrorState, EmptyState } from "@/components/customer";
 import { FOCUS_RING } from "@/components/customer/focusRing";
 import { addressApi } from "@/services/addressApi";
 import type { NormalizedApiError } from "@/services/bookingApi";
-import type { AddressView } from "@/types/address";
+import { ADDRESS_LABELS, type AddressView } from "@/types/address";
 import type { AddressSnapshot } from "@/types/booking";
 
-const LABELS = ["Home", "Office", "Other"] as const;
+const LABELS = ADDRESS_LABELS;
+const LABEL_ICONS: Record<string, LucideIcon> = { Home, Work: Briefcase, Other: MapPin };
 
 interface FormState {
   label: string;
-  line1: string;
+  /** Typed by the customer. */
+  house: string;
+  /** Filled from the map until the customer types their own. */
+  street: string;
+  /** Filled from the map (locality / neighbourhood). */
+  area: string;
   landmark: string;
   city: string;
   state: string;
   pincode: string;
 }
-const EMPTY_FORM: FormState = { label: "Home", line1: "", landmark: "", city: "", state: "", pincode: "" };
+const EMPTY_FORM: FormState = { label: "Home", house: "", street: "", area: "", landmark: "", city: "", state: "", pincode: "" };
 
 function toSnapshot(a: AddressView): AddressSnapshot {
   return {
@@ -38,16 +44,12 @@ function toSnapshot(a: AddressView): AddressSnapshot {
   };
 }
 
-const inputClass = `min-h-[48px] w-full rounded-xl border border-line bg-canvas px-4 text-sm text-ink placeholder:text-muted/60 ${FOCUS_RING}`;
+const inputClass = `min-h-[42px] w-full rounded-xl border border-line bg-canvas px-3.5 py-1.5 text-base text-ink transition-colors placeholder:text-[13px] placeholder:text-muted/60 focus:border-brand sm:placeholder:text-sm sm:min-h-[48px] sm:px-4 sm:py-2.5 sm:text-sm ${FOCUS_RING}`;
 
 export default function StepAddress() {
   const selectedAddressId = useBookingDraftStore((s) => s.addressId);
   const setAddress = useBookingDraftStore((s) => s.setAddress);
   const setStep = useBookingDraftStore((s) => s.setStep);
-  const serviceName = useBookingDraftStore((s) => s.serviceName);
-  const quantity = useBookingDraftStore((s) => s.quantity);
-  const addOns = useBookingDraftStore((s) => s.addOns);
-  const basePrice = useBookingDraftStore((s) => s.basePrice);
 
   // Destructure create, update, and delete mutations/functions from your hook if available
   const { addresses, isLoading, isError, error, refetch, createAddress, isCreating } = useAddresses();
@@ -60,7 +62,7 @@ export default function StepAddress() {
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const [editingLocation, setEditingLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [line1Edited, setLine1Edited] = useState(false);
+  const [streetEdited, setStreetEdited] = useState(false);
 
   // Live serviceability hint once a full 6-digit pincode is typed
   const pincodeReady = /^\d{6}$/.test(form.pincode);
@@ -87,7 +89,8 @@ export default function StepAddress() {
     setLocation({ lat: p.lat, lng: p.lng });
     setForm((f) => ({
       ...f,
-      line1: line1Edited || !p.line1 ? f.line1 : p.line1,
+      street: streetEdited || !p.line1 ? f.street : p.line1,
+      area: p.area || f.area,
       city: p.city || f.city,
       state: p.state || f.state,
       pincode: p.pincode ? p.pincode.slice(0, 6) : f.pincode,
@@ -114,7 +117,9 @@ export default function StepAddress() {
     setEditingId(addr.id);
     setForm({
       label: addr.label,
-      line1: addr.line1,
+      house: addr.house ?? (addr.street ? "" : addr.line1),
+      street: addr.street ?? "",
+      area: addr.area ?? addr.line2 ?? "",
       landmark: addr.landmark ?? "",
       city: addr.city,
       state: addr.state,
@@ -123,7 +128,7 @@ export default function StepAddress() {
     setFormError(null);
     setLocation(addr.location);
     setEditingLocation(addr.location ?? null);
-    setLine1Edited(true);
+    setStreetEdited(true);
     setMode("new");
   };
 
@@ -145,8 +150,11 @@ export default function StepAddress() {
   const submitNew = async (e: FormEvent) => {
     e.preventDefault();
     if (isCreating) return; 
-    if (!form.line1.trim() || !form.city.trim() || !form.state.trim() || !/^\d{4,10}$/.test(form.pincode.trim())) {
-      setFormError("Please fill in the address line, city, state and a valid pincode.");
+    // Addresses saved before house / street existed only have one line, so don't force a street on those.
+    const editing = addresses.find((a) => a.id === editingId);
+    const streetRequired = !(editing && !editing.house && !editing.street);
+    if (!form.house.trim() || (streetRequired && !form.street.trim()) || !form.city.trim() || !form.state.trim() || !/^\d{6}$/.test(form.pincode.trim())) {
+      setFormError(`Please fill in your house number, ${streetRequired ? "street, " : ""}city, state and a 6-digit pincode.`);
       return;
     }
     setFormError(null);
@@ -159,9 +167,12 @@ export default function StepAddress() {
       }
 
       const payload = {
-        label: form.label,
-        line1: form.line1.trim(),
-        landmark: form.landmark.trim() || undefined,
+        label: ADDRESS_LABELS.find((l) => l === form.label) ?? "Home",
+        house: form.house.trim(),
+        ...(form.street.trim() ? { street: form.street.trim() } : {}),
+        // An empty string clears the field when editing (the API sets what it is given).
+        ...(form.area.trim() || editingId ? { area: form.area.trim() } : {}),
+        ...(form.landmark.trim() || editingId ? { landmark: form.landmark.trim() } : {}),
         city: form.city.trim(),
         state: form.state.trim(),
         pincode: form.pincode.trim(),
@@ -179,7 +190,7 @@ export default function StepAddress() {
       setForm(EMPTY_FORM);
       setLocation(undefined);
       setEditingLocation(null);
-      setLine1Edited(false);
+      setStreetEdited(false);
       setEditingId(null);
       setMode("list");
       refetch();
@@ -188,14 +199,20 @@ export default function StepAddress() {
     }
   };
 
-const estimate = basePrice * quantity + addOns.reduce((sum, a) => sum + a.price * a.quantity, 0);
+const startNew = () => {
+  setEditingId(null);
+  setForm(EMPTY_FORM);
+  setFormError(null);
+  setLocation(undefined);
+  setEditingLocation(null);
+  setStreetEdited(false);
+  setMode("new");
+};
 
-const tabBtn = (active: boolean) =>
-  clsx(
-    "inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-colors",
-    FOCUS_RING,
-    active ? "bg-brand text-white shadow-sm" : "border border-line bg-white text-ink hover:border-brand/50",
-  );
+const backToList = () => {
+  setEditingId(null);
+  setMode("list");
+};
 
 const backBtn = (
   <button
@@ -259,43 +276,24 @@ return (
         </div>
       </div>
 
-      <section aria-label="Service address" className="rounded-3xl border border-line bg-panel p-5 shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)] sm:p-6">
+      <section aria-label="Service address" className="rounded-3xl border border-line bg-panel p-3.5 shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)] sm:p-6">
         {notServiceable && (
           <div role="alert" className="mb-4 rounded-2xl border border-danger bg-danger-soft px-4 py-3 text-sm text-ink">
             Sorry, we don't currently service that area. Please choose a different address.
           </div>
         )}
 
-        <div className="mb-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setEditingId(null);
-              setMode("list");
-            }}
-            aria-pressed={mode === "list"}
-            className={tabBtn(mode === "list")}
-          >
-            Saved addresses
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingId(null);
-              setForm(EMPTY_FORM);
-              setFormError(null);
-              setLocation(undefined);
-              setEditingLocation(null);
-              setLine1Edited(false);
-              setMode("new");
-            }}
-            aria-pressed={mode === "new"}
-            className={tabBtn(mode === "new")}
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            Add new
-          </button>
-        </div>
+        {mode === "new" && (
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <h4 className="text-base font-bold text-ink">{editingId ? "Edit address" : "Add a new address"}</h4>
+            {addresses.length > 0 && (
+              <button type="button" onClick={backToList} className={clsx("inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-brand hover:bg-brand-soft", FOCUS_RING)}>
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Saved addresses
+              </button>
+            )}
+          </div>
+        )}
 
         {mode === "list" && (
           <>
@@ -318,68 +316,101 @@ return (
             )}
             {!isLoading && !isError && addresses.length > 0 && (
               <div role="radiogroup" aria-label="Saved addresses" className="grid gap-3">
+                <button
+                  type="button"
+                  onClick={startNew}
+                  className={clsx("flex items-center gap-3 rounded-2xl border-[1.5px] border-dashed border-brand/50 bg-brand-soft/60 p-3.5 text-left transition-colors hover:bg-brand-soft", FOCUS_RING)}
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-white">
+                    <Plus className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-brand">Add new address</span>
+                    <span className="block text-xs text-muted">Pin it on the map and we'll fill in the rest</span>
+                  </span>
+                </button>
                 {sortedAddresses.map((addr) => {
                   const isSelected = selectedAddressId === addr.id;
                   const isDeleting = isDeletingId === addr.id;
+                  const Icon = LABEL_ICONS[addr.label] ?? MapPin;
                   return (
                     <div
                       key={addr.id}
                       role="radio"
                       aria-checked={isSelected}
+                      aria-disabled={!addr.serviceable}
                       tabIndex={0}
                       onClick={() => choose(addr)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") choose(addr);
                       }}
                       className={clsx(
-                        "relative flex w-full cursor-pointer items-start gap-3.5 rounded-2xl border p-4 text-left transition-all duration-200 motion-reduce:transition-none",
+                        "relative w-full cursor-pointer overflow-hidden rounded-2xl border bg-panel text-left transition-all duration-200 motion-reduce:transition-none",
                         FOCUS_RING,
                         isSelected
-                          ? "border-brand bg-brand-soft shadow-[0_14px_26px_-20px_rgba(67,56,202,.8)] ring-1 ring-brand"
-                          : "border-line bg-panel hover:border-brand/50 motion-safe:hover:-translate-y-px",
-                        addr.serviceable && !isDeleting ? "" : "opacity-60",
+                          ? "border-brand shadow-[0_14px_26px_-20px_rgba(67,56,202,.8)] ring-2 ring-brand/20"
+                          : addr.serviceable
+                            ? "border-line hover:border-brand/50 motion-safe:hover:-translate-y-px"
+                            : "border-danger/40",
+                        isDeleting && "opacity-50",
                       )}
                     >
-                      <span
-                        aria-hidden="true"
-                        className={clsx(
-                          "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2",
-                          isSelected ? "border-brand bg-brand text-white" : "border-line text-transparent",
-                        )}
-                      >
-                        <Check className="h-3.5 w-3.5" strokeWidth={3.5} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <span className="flex flex-wrap items-center gap-2">
-                          <span className="text-sm font-bold text-ink">{addr.label}</span>
-                          {addr.isDefault && <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-semibold text-brand">Default</span>}
-                          {!addr.serviceable && <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[10px] font-semibold text-ink">Not serviceable</span>}
+                      <div className="flex items-start gap-3 p-3 sm:gap-3.5 sm:p-4">
+                        <span className={clsx("flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 sm:rounded-2xl", isSelected ? "bg-brand text-white" : addr.serviceable ? "bg-brand-soft text-brand" : "bg-canvas text-muted")}>
+                          <Icon className="h-5 w-5" aria-hidden="true" />
                         </span>
-                        <span className="mt-0.5 block break-words text-sm text-muted">
-                          {addr.line1}, {addr.city}, {addr.state} {addr.pincode}
-                        </span>
+                        <div className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-bold text-ink">{addr.label}</span>
+                            {isSelected && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-white">
+                                <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> Selected
+                              </span>
+                            )}
+                            {addr.isDefault && <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-semibold text-brand">Default</span>}
+                            {!addr.serviceable && <span className="rounded-full bg-danger-soft px-2 py-0.5 text-[10px] font-semibold text-danger">Not serviceable</span>}
+                          </span>
+                          <span className="mt-1 block break-words text-sm text-ink">
+                            {addr.line1}
+                            {addr.line2 ? `, ${addr.line2}` : ""}
+                          </span>
+                          <span className="block break-words text-xs text-muted">
+                            {addr.city}, {addr.state} {addr.pincode}
+                            {addr.landmark ? ` · Near ${addr.landmark}` : ""}
+                          </span>
+                        </div>
+                        <div className="flex shrink-0 items-center">
+                          <button
+                            type="button"
+                            onClick={(e) => handleEdit(addr, e)}
+                            className={clsx("flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-canvas sm:h-10 sm:w-10 hover:text-brand", FOCUS_RING)}
+                            aria-label={`Edit ${addr.label} address`}
+                            title="Edit address"
+                          >
+                            <Pencil className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isDeleting}
+                            onClick={(e) => handleDelete(addr.id, e)}
+                            className={clsx("flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors hover:bg-canvas sm:h-10 sm:w-10 hover:text-danger disabled:opacity-50", FOCUS_RING)}
+                            aria-label={`Delete ${addr.label} address`}
+                            title="Delete address"
+                          >
+                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Trash2 className="h-4 w-4" aria-hidden="true" />}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={(e) => handleEdit(addr, e)}
-                          className={clsx("inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-white hover:text-brand", FOCUS_RING)}
-                          title="Edit address"
-                        >
-                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isDeleting}
-                          onClick={(e) => handleDelete(addr.id, e)}
-                          className={clsx("inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-semibold text-muted transition-colors hover:bg-white hover:text-danger disabled:opacity-50", FOCUS_RING)}
-                          title="Delete address"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                          {isDeleting ? "…" : "Delete"}
-                        </button>
-                      </div>
+                      {!addr.serviceable && (
+                        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-danger/20 bg-danger-soft px-3 py-2 text-xs text-ink sm:px-4 sm:py-2.5">
+                          <span className="inline-flex items-center gap-1.5">
+                            <TriangleAlert className="h-3.5 w-3.5 text-danger" aria-hidden="true" /> We don&apos;t serve this area yet.
+                          </span>
+                          <button type="button" onClick={(e) => handleEdit(addr, e)} className={clsx("rounded font-semibold text-danger underline", FOCUS_RING)}>
+                            Edit pincode
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -406,44 +437,51 @@ return (
                 {formError}
               </div>
             )}
-            <div className="grid gap-4 sm:grid-cols-2">
+            <fieldset>
+              <legend className="mb-2 text-xs font-semibold text-ink">Save as</legend>
+              <div className="grid grid-cols-3 gap-2">
+                {LABELS.map((l) => {
+                  const Icon = LABEL_ICONS[l];
+                  const active = form.label === l;
+                  return (
+                    <button
+                      key={l}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setForm((f) => ({ ...f, label: l }))}
+                      className={clsx(
+                        "flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border text-[13px] font-medium transition-colors sm:min-h-[48px] sm:gap-2 sm:text-sm",
+                        active ? "border-brand bg-brand-soft text-brand" : "border-line bg-canvas text-muted hover:border-brand/50",
+                        FOCUS_RING,
+                      )}
+                    >
+                      <Icon className="h-4 w-4" aria-hidden="true" /> {l}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
               <div>
-                <label htmlFor="addr-label" className="mb-1.5 block text-xs font-semibold text-ink">Label</label>
-                <select id="addr-label" value={form.label} onChange={setField("label")} className={inputClass}>
-                  {LABELS.map((l) => (
-                    <option key={l} value={l}>{l}</option>
-                  ))}
-                </select>
+                <label htmlFor="addr-house" className="mb-1.5 block text-xs font-semibold text-ink">House / flat no.</label>
+                <input id="addr-house" value={form.house} onChange={setField("house")} maxLength={100} autoComplete="address-line1" placeholder="Flat 302, Manjeera Trinity" className={inputClass} />
               </div>
               <div>
-                <label htmlFor="addr-pincode" className="mb-1.5 block text-xs font-semibold text-ink">Pincode</label>
-                <input
-                  id="addr-pincode"
-                  value={form.pincode}
-                  onChange={setField("pincode")}
-                  inputMode="numeric"
-                  maxLength={6}
-                  autoComplete="postal-code"
-                  aria-describedby="addr-pincode-hint"
-                  className={inputClass}
-                />
-                <p id="addr-pincode-hint" role="status" className="mt-1 min-h-[1rem] text-xs text-muted">
-                  {pincodeReady && serviceability.isFetching && "Checking your area…"}
-                  {pincodeReady && serviceability.data?.serviceable && `✓ We serve ${serviceability.data.city}.`}
-                  {pincodeReady && serviceability.data && !serviceability.data.serviceable && "We don't service this pincode yet."}
-                  {pincodeReady && serviceability.isError && "Couldn't check this pincode right now."}
-                </p>
+                <label htmlFor="addr-street" className="mb-1.5 block text-xs font-semibold text-ink">Street / road</label>
+                <input id="addr-street" value={form.street} onChange={(e) => { setField("street")(e); setStreetEdited(true); }} maxLength={150} autoComplete="address-line2" className={inputClass} />
               </div>
             </div>
-            <div>
-              <label htmlFor="addr-line1" className="mb-1.5 block text-xs font-semibold text-ink">Address line</label>
-              <input id="addr-line1" value={form.line1} onChange={(e) => { setField("line1")(e); setLine1Edited(true); }} autoComplete="address-line1" className={inputClass} />
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+              <div>
+                <label htmlFor="addr-area" className="mb-1.5 block text-xs font-semibold text-ink">Area / locality (optional)</label>
+                <input id="addr-area" value={form.area} onChange={setField("area")} maxLength={150} className={inputClass} />
+              </div>
+              <div>
+                <label htmlFor="addr-landmark" className="mb-1.5 block text-xs font-semibold text-ink">Landmark (optional)</label>
+                <input id="addr-landmark" value={form.landmark} onChange={setField("landmark")} maxLength={200} className={inputClass} />
+              </div>
             </div>
-            <div>
-              <label htmlFor="addr-landmark" className="mb-1.5 block text-xs font-semibold text-ink">Landmark (optional)</label>
-              <input id="addr-landmark" value={form.landmark} onChange={setField("landmark")} className={inputClass} />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
               <div>
                 <label htmlFor="addr-city" className="mb-1.5 block text-xs font-semibold text-ink">City</label>
                 <input id="addr-city" value={form.city} onChange={setField("city")} autoComplete="address-level2" className={inputClass} />
@@ -452,6 +490,38 @@ return (
                 <label htmlFor="addr-state" className="mb-1.5 block text-xs font-semibold text-ink">State</label>
                 <input id="addr-state" value={form.state} onChange={setField("state")} autoComplete="address-level1" className={inputClass} />
               </div>
+            </div>
+            <div>
+              <label htmlFor="addr-pincode" className="mb-1.5 block text-xs font-semibold text-ink">Pincode</label>
+              <input
+                id="addr-pincode"
+                value={form.pincode}
+                onChange={(e) => setForm((f) => ({ ...f, pincode: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
+                inputMode="numeric"
+                maxLength={6}
+                autoComplete="postal-code"
+                aria-describedby="addr-pincode-hint"
+                className={clsx(inputClass, "sm:max-w-[16rem]")}
+              />
+              <p id="addr-pincode-hint" role="status" aria-live="polite" className="mt-2 flex min-h-[1.75rem] items-center text-xs">
+                {!pincodeReady && <span className="text-muted">Enter your 6-digit pincode to check we serve your area.</span>}
+                {pincodeReady && serviceability.isFetching && (
+                  <span className="inline-flex items-center gap-1.5 text-muted">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> Checking your area…
+                  </span>
+                )}
+                {pincodeReady && !serviceability.isFetching && serviceability.data?.serviceable && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 font-medium text-emerald-700">
+                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> We serve {serviceability.data.city}.
+                  </span>
+                )}
+                {pincodeReady && !serviceability.isFetching && serviceability.data && !serviceability.data.serviceable && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-danger-soft px-3 py-1 font-medium text-danger">
+                    <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> We don&apos;t service this pincode yet.
+                  </span>
+                )}
+                {pincodeReady && serviceability.isError && <span className="text-muted">Couldn&apos;t check this pincode right now.</span>}
+              </p>
             </div>
           </form>
         )}
@@ -464,49 +534,7 @@ return (
     </div>
 
     {/* Desktop: sticky summary */}
-    <aside className="hidden lg:sticky lg:top-24 lg:block" aria-label="Your booking">
-      <div className="overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_30px_70px_-44px_rgba(67,56,202,.6)]">
-        <div className="bg-gradient-to-br from-brand to-[#6D5BE8] px-5 py-5 text-white">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">Service address</p>
-          {selected ? (
-            <>
-              <p className="mt-1.5 text-lg font-bold leading-snug">{selected.label}</p>
-              <p className="mt-0.5 break-words text-sm text-white/85">
-                {selected.line1}, {selected.city} – {selected.pincode}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="mt-1.5 text-lg font-bold leading-snug">Select an address</p>
-              <p className="mt-0.5 text-sm text-white/75">Your choice will appear here.</p>
-            </>
-          )}
-        </div>
-        <dl className="space-y-4 px-5 py-5 text-sm">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
-              <Sparkles className="h-4 w-4" aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <dt className="text-xs text-muted">Service</dt>
-              <dd className="font-semibold text-ink">
-                {serviceName ?? "Home service"} × {quantity}
-              </dd>
-              {addOns.length > 0 && <dd className="text-xs text-muted">+ {addOns.length} add-on{addOns.length > 1 ? "s" : ""}</dd>}
-            </div>
-          </div>
-          <div className="flex items-baseline justify-between border-t border-line pt-4">
-            <dt className="text-muted">Estimated</dt>
-            <dd className="text-lg font-bold tabular-nums text-ink">{formatINR(estimate)}</dd>
-          </div>
-        </dl>
-        <div className="flex items-center gap-2 px-5 pb-5">{actions}</div>
-        <p className="flex items-center justify-center gap-1.5 border-t border-line bg-canvas px-5 py-3 text-xs text-muted">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
-          Only serviceable areas can be selected
-        </p>
-      </div>
-    </aside>
+    <BookingSummary ariaLabel="Your booking" actions={actions} footnote="Only serviceable areas can be selected" />
   </div>
 );
 }

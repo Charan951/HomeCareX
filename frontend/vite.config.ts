@@ -16,6 +16,16 @@ export default defineConfig({
     },
   },
 
+  optimizeDeps: {
+    exclude: ["jspdf"],
+  },
+
+  build: {
+    rollupOptions: {
+      external: ["jspdf"],
+    },
+  },
+
   server: {
     port: 3000,
     open: true,

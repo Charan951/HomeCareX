@@ -1,6 +1,7 @@
 import { Types } from 'mongoose';
 import { BookingModel, type IBooking } from '../../models/Booking';
 import { BOOKING_STATUS, SLOT_HOLDING_STATUSES } from './bookings.constants';
+import { buildBookingFilter, SORT_SPECS, type ListBookingsQuery } from './bookings.query';
 
 export class BookingsRepository {
   /** Active (slot-holding) bookings for a service/date/slot, used to compute remaining seats. */
@@ -114,6 +115,27 @@ export class BookingsRepository {
       .populate('partnerId', 'name rating phone avatar')
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  /** One page of a customer's bookings, with the filters, sort and total the list screen needs. */
+  async listPageForCustomer(
+    customerId: string,
+    query: ListBookingsQuery,
+    now: Date = new Date()
+  ): Promise<{ items: IBooking[]; total: number }> {
+    if (!Types.ObjectId.isValid(customerId)) return { items: [], total: 0 };
+
+    const filter = buildBookingFilter(customerId, query, now);
+    const [items, total] = await Promise.all([
+      BookingModel.find(filter)
+        .populate('partnerId', 'name rating phone avatar')
+        .sort(SORT_SPECS[query.sort])
+        .skip((query.page - 1) * query.limit)
+        .limit(query.limit)
+        .exec(),
+      BookingModel.countDocuments(filter).exec(),
+    ]);
+    return { items, total };
   }
 }
 

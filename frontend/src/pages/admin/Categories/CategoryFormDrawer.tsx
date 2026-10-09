@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FolderTree, ImageIcon, Link2, Lock, Unlock } from 'lucide-react';
-import { Drawer } from '@/components/admin/Drawer';
+import { FullScreenPanel } from '@/components/admin/FullScreenPanel';
 import { ImageUploader } from '@/components/admin/ImageUploader';
 import { MultiImageUploader } from '@/components/admin/MultiImageUploader';
 import { fileToDataUrl } from '@/lib/imageFile';
@@ -65,8 +65,8 @@ export const CategoryFormDrawer: React.FC<Props> = ({ open, editing, presetParen
   };
 
   return (
-    <Drawer
-      open={open} onClose={() => !saving && onClose()} width="lg"
+    <FullScreenPanel
+      open={open} onClose={() => !saving && onClose()}
       title={editing ? `Edit ${editing.name}` : presetParentId ? 'New sub-category' : 'New category'}
       subtitle={editing ? 'Changes are written to the audit log.' : 'Create a parent category or nest it under one.'}
       footer={
@@ -78,26 +78,11 @@ export const CategoryFormDrawer: React.FC<Props> = ({ open, editing, presetParen
         </>
       }
     >
-      <form id="category-form" className="cat-form" onSubmit={submit} noValidate>
+      <form id="category-form" onSubmit={submit} noValidate>
         {serverError && <div role="alert" className="cat-alert">{serverError}</div>}
 
-        <div className="cat-preview" aria-label="Preview">
-          <span className="cat-preview__label">Preview</span>
-          <div className={`cat-preview__card ${form.active ? '' : 'is-off'}`}>
-            <div className="cat-preview__cover">
-              {coverUrl ? <img src={coverUrl} alt="Cover preview" /> : <span><ImageIcon size={22} />No cover image</span>}
-              <span className="cat-preview__icon">
-                {form.iconUrl ? <img src={form.iconUrl} alt="Icon preview" /> : <FolderTree size={16} />}
-              </span>
-              <span className={`cat-preview__state ${form.active ? 'is-on' : ''}`}>{form.active ? 'Active' : 'Inactive'}</span>
-            </div>
-            <div className="cat-preview__text">
-              <strong>{form.name.trim() || 'Category name'}</strong>
-              <small>{form.description.trim() || 'Description shown to customers'}</small>
-            </div>
-          </div>
-        </div>
-
+        <div className="fs-split">
+        <div className="cat-form">
         <section className="cat-form__sec">
           <h3>Basics</h3>
           <label className="cat-field">
@@ -166,8 +151,28 @@ export const CategoryFormDrawer: React.FC<Props> = ({ open, editing, presetParen
           <h3>Cover image <small>the image marked Primary (star) is the cover; extra images form the gallery</small></h3>
           <MultiImageUploader images={form.images} onChange={(imgs) => set('images', imgs)} disabled={saving} />
         </section>
+        </div>
+        <aside className="fs-split__side">
+        <div className="cat-preview" aria-label="Preview">
+          <span className="cat-preview__label">Preview</span>
+          <div className={`cat-preview__card ${form.active ? '' : 'is-off'}`}>
+            <div className="cat-preview__cover">
+              {coverUrl ? <img src={coverUrl} alt="Cover preview" /> : <span><ImageIcon size={22} />No cover image</span>}
+              <span className="cat-preview__icon">
+                {form.iconUrl ? <img src={form.iconUrl} alt="Icon preview" /> : <FolderTree size={16} />}
+              </span>
+              <span className={`cat-preview__state ${form.active ? 'is-on' : ''}`}>{form.active ? 'Active' : 'Inactive'}</span>
+            </div>
+            <div className="cat-preview__text">
+              <strong>{form.name.trim() || 'Category name'}</strong>
+              <small>{form.description.trim() || 'Description shown to customers'}</small>
+            </div>
+          </div>
+        </div>
+        </aside>
+        </div>
       </form>
-    </Drawer>
+    </FullScreenPanel>
   );
 };
 

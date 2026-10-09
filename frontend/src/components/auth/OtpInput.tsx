@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export interface OtpInputProps {
   value: string;
@@ -23,8 +23,29 @@ export const OtpInput: React.FC<OtpInputProps> = ({
 }) => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Split value into array of 6 characters
-  const digits = Array.from({ length: OTP_LENGTH }, (_, i) => value[i] || '');
+  // Maintain separate state for each of the 6 individual boxes
+  const [digits, setDigits] = useState<string[]>(() => {
+    const initial = Array(OTP_LENGTH).fill('');
+    if (value) {
+      for (let i = 0; i < Math.min(value.length, OTP_LENGTH); i++) {
+        initial[i] = value[i];
+      }
+    }
+    return initial;
+  });
+
+  // Sync when parent clears value (e.g. on resend code) or updates value externally
+  useEffect(() => {
+    if (!value) {
+      setDigits(Array(OTP_LENGTH).fill(''));
+    } else if (value !== digits.join('')) {
+      const updated = Array(OTP_LENGTH).fill('');
+      for (let i = 0; i < Math.min(value.length, OTP_LENGTH); i++) {
+        updated[i] = value[i] || '';
+      }
+      setDigits(updated);
+    }
+  }, [value]);
 
   useEffect(() => {
     if (autoFocus && inputRefs.current[0] && !disabled) {
@@ -32,28 +53,42 @@ export const OtpInput: React.FC<OtpInputProps> = ({
     }
   }, [autoFocus, disabled]);
 
-  const setDigit = (index: number, char: string) => {
-    const chars = value.split('').slice(0, OTP_LENGTH);
-    while (chars.length < OTP_LENGTH) chars.push('');
-    chars[index] = char;
-    const nextValue = chars.join('').trimEnd();
-    onChange(nextValue);
-
-    if (nextValue.length === OTP_LENGTH && onComplete) {
-      onComplete(nextValue);
-    }
-  };
-
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace') {
       e.preventDefault();
+
       if (digits[index]) {
-        // Clear current digit
-        setDigit(index, '');
-      } else if (index > 0) {
-        // Move to previous digit and clear it
+        // Case 1: Current box contains a digit
+        // Clear only current box's digit; focus remains on the current box
+        const next = [...digits];
+        next[index] = '';
+        setDigits(next);
+        onChange(next.join(''));
+        inputRefs.current[index]?.focus();
+        return;
+      }
+
+      // Case 2 & 3: Current box is already empty
+      if (index > 0) {
+        // Case 2: Clear previous box and move focus to previous box
+        const next = [...digits];
+        next[index - 1] = '';
+        setDigits(next);
+        onChange(next.join(''));
         inputRefs.current[index - 1]?.focus();
-        setDigit(index - 1, '');
+      }
+      // Case 3: index === 0 and empty -> no-op, stay on box 0, no crash
+      return;
+    }
+
+    if (e.key === 'Delete') {
+      e.preventDefault();
+      if (digits[index]) {
+        const next = [...digits];
+        next[index] = '';
+        setDigits(next);
+        onChange(next.join(''));
+        inputRefs.current[index]?.focus();
       }
       return;
     }
@@ -69,25 +104,47 @@ export const OtpInput: React.FC<OtpInputProps> = ({
       inputRefs.current[index + 1]?.focus();
       return;
     }
+
+    // Reject non-numeric keys except functional/navigation keys
+    if (
+      !/^[0-9]$/.test(e.key) &&
+      !['Tab', 'ArrowLeft', 'ArrowRight', 'Backspace', 'Delete'].includes(e.key) &&
+      !e.ctrlKey &&
+      !e.metaKey
+    ) {
+      e.preventDefault();
+    }
   };
 
   const handleChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
-    // Extract only digits
     const numeric = raw.replace(/\D/g, '');
 
     if (!numeric) {
-      setDigit(index, '');
+      // If cleared
+      const next = [...digits];
+      next[index] = '';
+      setDigits(next);
+      onChange(next.join(''));
       return;
     }
 
-    // Take the last entered character if single digit entry
+    // Take the last entered character for this box
     const char = numeric.slice(-1);
-    setDigit(index, char);
+    const next = [...digits];
+    next[index] = char;
+    setDigits(next);
+
+    const combined = next.join('');
+    onChange(combined);
 
     // Auto-advance to next box if not on the last box
     if (index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
+    }
+
+    if (next.every((d) => d !== '') && onComplete) {
+      onComplete(combined);
     }
   };
 
@@ -99,14 +156,19 @@ export const OtpInput: React.FC<OtpInputProps> = ({
     const numeric = pasted.replace(/\D/g, '').slice(0, OTP_LENGTH);
     if (!numeric) return;
 
-    onChange(numeric);
+    const next = Array(OTP_LENGTH).fill('');
+    for (let i = 0; i < numeric.length; i++) {
+      next[i] = numeric[i];
+    }
+    setDigits(next);
 
-    // Focus the box after the pasted digits, or the last box
     const focusIndex = Math.min(numeric.length, OTP_LENGTH - 1);
     inputRefs.current[focusIndex]?.focus();
 
+    const otpValue = next.join('');
+    onChange(otpValue);
     if (numeric.length === OTP_LENGTH && onComplete) {
-      onComplete(numeric);
+      onComplete(otpValue);
     }
   };
 
@@ -131,7 +193,7 @@ export const OtpInput: React.FC<OtpInputProps> = ({
             autoComplete="one-time-code"
             value={digit}
             disabled={disabled}
-            aria-label={`Verification code digit ${index + 1} of ${OTP_LENGTH}`}
+            aria-label={`OTP digit ${index + 1}`}
             onChange={(e) => handleChange(index, e)}
             onKeyDown={(e) => handleKeyDown(index, e)}
             onPaste={handlePaste}

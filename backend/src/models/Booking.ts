@@ -64,7 +64,7 @@ export interface IBooking extends Document {
     total: number;
     computedAt: Date;
   };
-  priceBreakdown: { base: number; addOns: number; discount: number; convenienceFee: number; tax: number; total: number };
+  priceBreakdown: { base: number; addOns: number; surge?: number; discount: number; convenienceFee: number; tax: number; total: number };
   partnerEarning: number;
   status: BookingStatus;
   statusHistory: StatusHistoryItem[];
@@ -89,6 +89,7 @@ const PriceBreakdownSchema = new Schema(
   {
     base: { type: Number, default: 0 },
     addOns: { type: Number, default: 0 },
+    surge: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
     convenienceFee: { type: Number, default: 0 },
     tax: { type: Number, default: 0 },
@@ -198,6 +199,8 @@ BookingSchema.index(
   { serviceId: 1, date: 1, slot: 1, slotSeat: 1 },
   { unique: true, name: 'uniq_active_slot_seat', partialFilterExpression: { slotSeat: { $exists: true } } },
 );
+/** Customer list screen: scoped by customer, filtered by status, newest first. */
+BookingSchema.index({ customerId: 1, status: 1, createdAt: -1 });
 BookingSchema.index({ partnerId: 1, scheduledAt: 1 });
 BookingSchema.index({ 'offers.partnerId': 1, status: 1 });
 

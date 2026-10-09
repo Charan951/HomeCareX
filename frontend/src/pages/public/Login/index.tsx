@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { Mail, ArrowRight, ArrowLeft, ShieldCheck, AlertCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { classifyApiError } from '@/lib/apiError';
 import { ADMIN_ROLES, type AuthUser } from '@/types/auth';
 import { ROUTES } from '@/constants/routes';
 import PasswordField from '@/components/auth/PasswordField';
+import AuthFormHeader from '@/components/auth/AuthFormHeader';
 
 /** Only same-origin paths are allowed as returnUrl (blocks //evil.com, https://..., javascript:). */
 function safeReturnUrl(raw: string | null): string | null {
@@ -83,6 +84,7 @@ function clearCredentials() {
 export const LoginPage: React.FC = () => {
   const { login, logout, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [params] = useSearchParams();
   const returnUrl = safeReturnUrl(params.get('returnUrl'));
 
@@ -93,6 +95,11 @@ export const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(Boolean(initialCreds));
   const [termsAccepted, setTermsAccepted] = useState(Boolean(initialCreds));
   const [error, setError] = useState(params.get('expired') ? 'Your session has expired. Please log in again.' : '');
+  const [successMessage] = useState(
+    params.get('reset') === 'success' || (location.state as { resetSuccess?: boolean } | null)?.resetSuccess
+      ? 'Password reset successful. Please log in with your new password.'
+      : ''
+  );
   const [fieldErrors, setFieldErrors] = useState<{ identifier?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
@@ -117,16 +124,17 @@ export const LoginPage: React.FC = () => {
   // Already signed in state
   if (isAuthenticated && user && !loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-6 sm:p-8">
-        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-[#4338ca] to-[#312e81] flex items-center justify-center shadow-md shadow-[#4338ca]/20 mb-4">
-          <ShieldCheck size={22} className="text-white" aria-hidden="true" />
-        </div>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">You&apos;re already signed in</h1>
-        <p className="text-xs sm:text-sm text-gray-600 mb-6">
-          Signed in as <b className="text-gray-900">{user.name}</b>
-          {user.email ? ` (${user.email})` : ''} &middot; role: <b className="capitalize text-gray-900">{user.role}</b>
-        </p>
-        <div className="flex flex-col gap-3">
+      <div className="w-full text-center">
+        <AuthFormHeader
+          title="Already signed in"
+          subtitle={
+            <>
+              Signed in as <b className="text-gray-900">{user.name}</b>
+              {user.email ? ` (${user.email})` : ''} &middot; role: <b className="capitalize text-gray-900">{user.role}</b>
+            </>
+          }
+        />
+        <div className="flex flex-col gap-3 mt-6">
           <Link
             to={destinationFor(user, returnUrl)}
             className="w-full text-center rounded-lg bg-[#ff8a3d] hover:bg-[#e0600f] text-white font-medium py-2.5 shadow-sm hover:shadow-md hover:shadow-[#ff8a3d]/25 transition"
@@ -220,9 +228,9 @@ export const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 p-5 sm:p-6 relative">
-      {/* Top Navigation: Back to Home (logo removed from form) */}
-      <div className="flex items-center justify-between mb-2.5 pb-2 border-b border-gray-100">
+    <div className="w-full">
+      {/* Top Navigation: Back to Home */}
+      <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200/60">
         <Link
           to="/"
           className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-500 hover:text-[#4338ca] hover:-translate-x-0.5 transition-all focus:outline-none focus:ring-2 focus:ring-[#4338ca] rounded px-1.5 py-0.5 -ml-1.5"
@@ -233,15 +241,24 @@ export const LoginPage: React.FC = () => {
         </Link>
       </div>
 
-      {/* Brand Icon Header */}
-      <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#4338ca] to-[#312e81] flex items-center justify-center shadow-md shadow-[#4338ca]/20 mb-2">
-        <ShieldCheck size={19} className="text-white" aria-hidden="true" />
-      </div>
+      <AuthFormHeader
+        title={
+          <>
+            Welcome back to <span className="text-[#4338ca]">HomeCare<span className="text-[#ff8a3d]">X</span></span>
+          </>
+        }
+        subtitle="Sign in to manage your home care and connect with trusted services."
+      />
 
-      <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-0.5">
-        Welcome back to <span className="text-[#4338ca]">HomeCare<span className="text-[#ff8a3d]">X</span></span>
-      </h1>
-      <p className="text-xs text-gray-500 mb-3.5">Sign in to manage your home care and connect with trusted services.</p>
+      {successMessage && !error && (
+        <div
+          role="status"
+          className="mb-4 text-xs sm:text-sm rounded-lg p-3 flex items-start gap-2.5 bg-green-50 border border-green-200 text-green-800 animate-fadeUp"
+        >
+          <ShieldCheck size={17} className="shrink-0 mt-0.5 text-green-600" aria-hidden="true" />
+          <span className="leading-snug">{successMessage}</span>
+        </div>
+      )}
 
       {error && (
         <div

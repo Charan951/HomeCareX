@@ -182,14 +182,38 @@ export const categoriesService = {
     );
   },
 
-  /** Saves a whole new order in one atomic-ish bulk write, so the public site never sees a half-applied order. */
+  /**
+   * Saves a whole new order in one atomic-ish bulk write,
+   * so the public site never sees a half-applied order.
+   */
   async reorder(input: unknown): Promise<CategoryDto[]> {
     const { items } = categoryReorderSchema.parse(input);
-    const found = await CategoryModel.countDocuments({ _id: { $in: items.map((i) => i.id) } });
-    if (found !== items.length) throw new HttpError(404, 'One or more categories were not found', 'NOT_FOUND');
+
+    const found = await CategoryModel.countDocuments({
+      _id: { $in: items.map((i) => i.id) },
+    });
+
+    if (found !== items.length) {
+      throw new HttpError(
+        404,
+        'One or more categories were not found',
+        'NOT_FOUND',
+      );
+    }
+
     await CategoryModel.bulkWrite(
-      items.map((i) => ({ updateOne: { filter: { _id: i.id }, update: { $set: { sortOrder: i.sortOrder } } } })),
+      items.map((i) => ({
+        updateOne: {
+          filter: { _id: i.id },
+          update: {
+            $set: {
+              sortOrder: i.sortOrder,
+            },
+          },
+        },
+      })),
     );
+
     return this.list();
   },
 

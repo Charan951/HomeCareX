@@ -7,6 +7,7 @@ import { FOCUS_RING } from "@/components/customer/focusRing";
 import MapAddressPicker, { type PickedLocation } from "@/components/customer/maps/MapAddressPicker";
 import { useCreateAddress } from "@/features/customer";
 import { addressApi } from "@/services/addressApi";
+import type { AddressLabel } from "@/types/address";
 import { customerPath } from "@/routes/customerPath";
 
 /** Set when the customer taps "Skip for now", so the gate doesn't send them back during this session. */
@@ -14,7 +15,7 @@ export const SKIP_ADDRESS_SETUP_KEY = "hcx:address-setup-skipped";
 
 const LABELS = [
   { name: "Home", icon: Home },
-  { name: "Office", icon: Briefcase },
+  { name: "Work", icon: Briefcase },
   { name: "Other", icon: MapPin },
 ] as const;
 
@@ -34,7 +35,7 @@ export default function SetupAddress() {
   const { state } = useLocation() as { state?: { from?: string } };
   const create = useCreateAddress();
 
-  const [label, setLabel] = useState("Home");
+  const [label, setLabel] = useState<AddressLabel>("Home");
   const [line1, setLine1] = useState("");
   const [line1Edited, setLine1Edited] = useState(false);
   const [landmark, setLandmark] = useState("");
@@ -78,7 +79,7 @@ export default function SetupAddress() {
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (create.isPending) return;
-    if (!line1.trim() || !city.trim() || !stateName.trim() || !/^\d{6}$/.test(pincode.trim()) || !label.trim()) {
+    if (!line1.trim() || !city.trim() || !stateName.trim() || !/^\d{6}$/.test(pincode.trim())) {
       setError("Please fill in the house / street, city, state and a 6-digit pincode.");
       return;
     }
@@ -89,7 +90,7 @@ export default function SetupAddress() {
     setError(null);
     create.mutate(
       {
-        label: label.trim(),
+        label,
         line1: line1.trim(),
         ...(landmark.trim() ? { landmark: landmark.trim() } : {}),
         city: city.trim(),
@@ -135,13 +136,13 @@ export default function SetupAddress() {
             <span className="mb-2 block text-xs font-semibold text-ink">Save as</span>
             <div className="flex flex-wrap gap-2">
               {LABELS.map(({ name, icon: Icon }) => {
-                const active = name === "Other" ? !["Home", "Office"].includes(label) : label === name;
+                const active = label === name;
                 return (
                   <button
                     key={name}
                     type="button"
                     aria-pressed={active}
-                    onClick={() => setLabel(name === "Other" ? "" : name)}
+                    onClick={() => setLabel(name)}
                     className={clsx(
                       "inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition-colors",
                       active ? "border-brand bg-brand-soft text-brand" : "border-line text-muted hover:border-brand/50",
@@ -154,9 +155,6 @@ export default function SetupAddress() {
                 );
               })}
             </div>
-            {!["Home", "Office"].includes(label) && (
-              <input value={label} onChange={(e) => setLabel(e.target.value)} maxLength={30} placeholder="e.g. Parents' home" aria-label="Address name" className={clsx(field(), "mt-2")} />
-            )}
           </div>
 
           <div>

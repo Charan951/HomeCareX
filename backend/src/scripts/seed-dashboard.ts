@@ -123,7 +123,7 @@ async function main() {
 
   await AddressModel.insertMany([
     { customerId: A._id, label: 'Home', line1: 'Flat 302, Manjeera Trinity', line2: 'Kukatpally', state: 'Telangana', city: 'Hyderabad', pincode: '500072', isDefault: true },
-    { customerId: A._id, label: 'Office', line1: 'WeWork, Prestige Tech Park', line2: 'Hitech City', state: 'Telangana', city: 'Hyderabad', pincode: '500081', isDefault: false },
+    { customerId: A._id, label: 'Work', line1: 'WeWork, Prestige Tech Park', line2: 'Hitech City', state: 'Telangana', city: 'Hyderabad', pincode: '500081', isDefault: false },
     { customerId: B._id, label: 'Home', line1: '14, Road No. 5, Jubilee Hills', line2: 'Jubilee Hills', state: 'Telangana', city: 'Hyderabad', pincode: '500033', isDefault: true },
   ]);
 
