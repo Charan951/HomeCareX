@@ -298,6 +298,16 @@ test('default seed only fills an EMPTY gallery (an admin\'s own photos are never
   for (const o of ops) assert.ok('$or' in o.updateOne.filter, 'media filter must require an empty gallery');
 });
 
+test('seed fills add-ons only while a service has none (an admin\'s own add-ons are never overwritten)', async () => {
+  const ops = (await runBackfill()).filter((o) => 'addOns' in o.updateOne.update.$set);
+  const expected = CATALOG_SEED_SERVICES.filter((s) => s.addOns?.length).map((s) => s.slug).sort();
+  assert.ok(expected.length >= 9);
+  assert.deepEqual(ops.map((o) => o.updateOne.filter.slug as string).sort(), expected);
+  for (const o of ops) assert.ok('$or' in o.updateOne.filter, 'add-on filter must require an empty list');
+  const ac = ops.find((o) => o.updateOne.filter.slug === 'ac-service-gas-refill');
+  assert.deepEqual(ac?.updateOne.update.$set.addOns, [{ name: 'Gas Top-up', price: 400 }, { name: 'Filter Replacement', price: 250 }]);
+});
+
 test('--refresh-media replaces the gallery of every launch service, and nothing else changes', async () => {
   const normal = await runBackfill();
   const refreshed = await runBackfill({ refreshMedia: true });

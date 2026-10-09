@@ -12,4 +12,13 @@ export const categoryUpdateSchema = categoryCreateSchema.partial().refine((v) =>
   message: 'Nothing to update',
 });
 
-export const categoriesValidation = { categoryCreateSchema, categoryUpdateSchema };
+/** Bulk reorder: every item carries the final sortOrder; ids must be unique. */
+export const categoryReorderSchema = z.object({
+  items: z
+    .array(z.object({ id: z.string().min(1), sortOrder: z.number().int().min(0).max(9999) }))
+    .min(1)
+    .max(500)
+    .refine((a) => new Set(a.map((i) => i.id)).size === a.length, { message: 'Duplicate ids in reorder request' }),
+});
+
+export const categoriesValidation = { categoryCreateSchema, categoryUpdateSchema, categoryReorderSchema };

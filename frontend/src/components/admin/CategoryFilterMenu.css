@@ -1,0 +1,39 @@
+/* Same look as the Customers page filter (icon button + "Filters" sheet with pill chips). */
+.cfm { position: relative; flex: 0 0 auto; }
+.cfm__btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: var(--hcx-ink); background: var(--hcx-surface); border: 1px solid var(--hcx-line); border-radius: 8px; cursor: pointer; }
+.cfm__btn:hover { background: var(--hcx-canvas); }
+.cfm__btn.is-active { color: var(--hcx-accent); border-color: var(--hcx-accent); background: var(--hcx-accent-soft); }
+.cfm__btn:focus-visible { outline: 2px solid var(--hcx-accent); outline-offset: 2px; }
+.cfm__dot { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; background: var(--hcx-accent); border-radius: 50%; }
+.admin-search-slot { display: flex; align-items: center; }
+
+.cfm-overlay { position: fixed; inset: 0; z-index: 75; display: flex; align-items: flex-end; justify-content: center; background: rgba(15, 23, 42, 0.5); animation: cfm-fade 0.18s ease-out; }
+.cfm-sheet { position: relative; display: flex; flex-direction: column; width: 100%; max-height: 88vh; max-height: 88dvh; background: var(--hcx-surface); border-radius: 24px 24px 0 0; box-shadow: 0 -10px 40px rgba(15, 23, 42, 0.18); outline: none; animation: cfm-up 0.22s cubic-bezier(.2, .8, .2, 1); }
+.cfm-sheet__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 20px 20px 14px; border-bottom: 1px solid var(--hcx-line); }
+.cfm-sheet__title { margin: 0; font-size: 17px; font-weight: 700; line-height: 1.25; color: var(--hcx-ink); }
+.cfm-sheet__sub { margin: 2px 0 0; font-size: 13px; color: var(--hcx-muted); }
+.cfm-sheet__head-actions { display: flex; align-items: center; gap: 4px; }
+.cfm-sheet__clear { padding: 6px 10px; font-size: 13px; font-weight: 600; color: var(--hcx-accent); background: none; border: 0; border-radius: 8px; cursor: pointer; }
+.cfm-sheet__clear:hover { background: var(--hcx-accent-soft); }
+.cfm-sheet__close { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: var(--hcx-ink); background: none; border: 0; border-radius: 50%; cursor: pointer; }
+.cfm-sheet__close:hover { background: var(--hcx-canvas); }
+.cfm-sheet__body { flex: 1; min-height: 0; padding: 16px 20px 8px; overflow-y: auto; overscroll-behavior: contain; }
+.cfm-sheet__label { margin: 0 0 12px; font-size: 14px; font-weight: 700; color: var(--hcx-ink); }
+.cfm-sheet__chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.cfm-chip { min-height: 38px; padding: 0 16px; font-size: 14px; font-weight: 500; color: var(--hcx-ink); background: var(--hcx-surface); border: 1px solid var(--hcx-line); border-radius: 999px; cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.cfm-chip:hover { background: var(--hcx-canvas); }
+.cfm-chip.is-selected { color: var(--hcx-accent); font-weight: 600; background: var(--hcx-accent-soft); border-color: var(--hcx-accent); }
+.cfm-chip:focus-visible, .cfm-sheet__close:focus-visible, .cfm-sheet__clear:focus-visible, .cfm-sheet__cta:focus-visible { outline: 2px solid var(--hcx-accent); outline-offset: 2px; }
+.cfm-sheet__foot { padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--hcx-surface); border-top: 1px solid var(--hcx-line); }
+.cfm-sheet__cta { width: 100%; min-height: 50px; padding: 0 20px; font-size: 15px; font-weight: 700; color: #fff; background: var(--hcx-accent); border: 0; border-radius: 999px; box-shadow: 0 8px 20px rgba(67, 56, 202, 0.25); cursor: pointer; }
+.cfm-sheet__cta:hover { background: #3730a3; }
+.cfm-sheet__cta:active { transform: scale(0.985); }
+
+@media (min-width: 768px) {
+  .cfm-overlay { align-items: stretch; justify-content: flex-end; }
+  .cfm-sheet { width: 400px; max-width: 100%; max-height: none; margin: 12px 12px 12px 0; border-radius: 20px; box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25); animation: cfm-left 0.22s cubic-bezier(.2, .8, .2, 1); }
+}
+@keyframes cfm-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cfm-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes cfm-left { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .cfm-overlay, .cfm-sheet { animation: none; } .cfm-chip { transition: none; } }

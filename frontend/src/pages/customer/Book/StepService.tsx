@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ArrowRight, Clock3, Minus, Plus, ShieldCheck, Sparkles, Star } from "lucide-react";
 import clsx from "clsx";
 
@@ -11,77 +11,51 @@ import { formatDuration } from "@/components/customer/catalog/format";
 import { useService } from "@/hooks/useService";
 import { Icon3D, serviceVisual } from "@/pages/customer/Shared/visuals";
 import { formatINR } from "./formatMoney";
-import { findMockServiceBySlug, type MockAddOn } from "./serviceCatalog.mock";
+import type { ServiceAddOn } from "@/types/catalog";
 import AddOnSelector from "./components/AddOnSelector";
 
-/** Simulates the future GET /services/:slug endpoint. Step 1 is explicitly mock-backed today
- *  (see the R01 acceptance criteria) — swap this for a real fetch once the Services API ships. */
-function fetchServiceBySlug(slug: string | undefined, signal: AbortSignal) {
-  return new Promise<ReturnType<typeof findMockServiceBySlug>>((resolve, reject) => {
-    const timer = setTimeout(() => resolve(findMockServiceBySlug(slug)), 500);
-    signal.addEventListener("abort", () => {
-      clearTimeout(timer);
-      reject(new DOMException("aborted", "AbortError"));
-    });
-  });
-}
-
 export default function StepService({ serviceSlug }: { serviceSlug?: string }) {
-  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [service, setService] = useState<ReturnType<typeof findMockServiceBySlug>>(undefined);
+  // Live catalog data (GET /services/:slug). The booking API validates the service id and the
+  // add-on ids against the database, so ids and prices must come from here, never a local list.
+  const { data: service, isLoading, error, refetch } = useService(serviceSlug);
   const [quantity, setQuantity] = useState(1);
-  const [selectedAddOns, setSelectedAddOns] = useState<Map<string, MockAddOn>>(new Map());
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [attempt, setAttempt] = useState(0);
-  // Display only (photo, category, duration, rating). Prices and ids still come from the booking catalog above.
-  const { data: real } = useService(serviceSlug);
+  const restoredFor = useRef<string | null>(null);
 
   const setServiceDetails = useBookingDraftStore((s) => s.setServiceDetails);
   const draftServiceId = useBookingDraftStore((s) => s.serviceId);
   const draftQuantity = useBookingDraftStore((s) => s.quantity);
   const draftAddOns = useBookingDraftStore((s) => s.addOns);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    setStatus("loading");
-    fetchServiceBySlug(serviceSlug, controller.signal)
-      .then((found) => {
-        setService(found);
-        setStatus("ready");
-      })
-      .catch((err: unknown) => {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        setStatus("error");
-      });
-    return () => controller.abort();
-  }, [serviceSlug, attempt]);
-
   // Restore selections if the customer comes back to Step 1 with a draft already in progress.
+  // Runs once per service (a background refetch must not undo edits made since), and drops any
+  // add-on the service no longer offers, because the server would reject it (ADDON_NOT_FOUND).
   useEffect(() => {
-    if (!service || service.id !== draftServiceId) return;
+    if (!service || service.id !== draftServiceId || restoredFor.current === service.id) return;
+    restoredFor.current = service.id;
     setQuantity(draftQuantity || 1);
-    setSelectedAddOns(
-      new Map(
-        draftAddOns.map((a) => [a.id, service.addOns.find((o) => o.id === a.id) ?? { id: a.id, name: a.name ?? "Add-on", price: a.price }]),
-      ),
-    );
+    const offered = new Set(service.addOns.map((a) => a.id));
+    setSelectedIds(new Set(draftAddOns.map((a) => a.id).filter((id) => offered.has(id))));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore once, when the matching service loads
   }, [service]);
 
-  const toggleAddOn = (addOn: MockAddOn) => {
-    setSelectedAddOns((prev) => {
-      const next = new Map(prev);
+  // Always derived from the current catalog data, so a refreshed price is never stale here.
+  const selected = useMemo(() => (service ? service.addOns.filter((a) => selectedIds.has(a.id)) : []), [service, selectedIds]);
+
+  const toggleAddOn = (addOn: ServiceAddOn) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
       if (next.has(addOn.id)) next.delete(addOn.id);
-      else next.set(addOn.id, addOn);
+      else next.add(addOn.id);
       return next;
     });
   };
 
   const runningEstimate = useMemo(() => {
     if (!service) return 0;
-    const addOnsTotal = [...selectedAddOns.values()].reduce((sum, a) => sum + a.price, 0);
-    return service.basePrice * quantity + addOnsTotal;
-  }, [service, quantity, selectedAddOns]);
+    return service.basePrice * quantity + selected.reduce((sum, a) => sum + a.price, 0);
+  }, [service, quantity, selected]);
 
   const handleNextStep = () => {
     if (!service || isSubmitting) return; // guards the double-click case
@@ -91,26 +65,27 @@ export default function StepService({ serviceSlug }: { serviceSlug?: string }) {
       service.slug,
       service.basePrice,
       quantity,
-      [...selectedAddOns.values()].map((a) => ({ id: a.id, quantity: 1, price: a.price, name: a.name })),
+      selected.map((a) => ({ id: a.id, quantity: 1, price: a.price, name: a.name })),
       service.name,
     );
   };
 
-  if (status === "loading") return <LoadingState label="Loading service details…" />;
-  if (status === "error" || !service) {
+  if (isLoading) return <LoadingState label="Loading service details…" />;
+  if (!service) {
+    // 404 = unknown or inactive slug: retrying cannot help. Anything else may be a blip.
+    const notFound = error?.status === 404;
     return (
       <ErrorState
-        title="Couldn't load this service"
-        message="This service may no longer be available."
-        onRetry={() => setAttempt((n) => n + 1)}
+        title={notFound ? "Service not found" : "Couldn't load this service"}
+        message={notFound ? "This service may no longer be available." : "Please check your connection and try again."}
+        onRetry={notFound ? undefined : () => void refetch()}
       />
     );
   }
 
 const stagger = (i: number): CSSProperties => ({ "--i": i }) as CSSProperties;
-const visual = serviceVisual(service.slug, real?.category.slug ?? "");
-const photo = real?.media[0]?.url ?? visual.image;
-const selected = [...selectedAddOns.values()];
+const visual = serviceVisual(service.slug, service.category.slug);
+const photo = service.media[0]?.url ?? visual.image;
 
 const stepBtn = clsx(
   "flex h-11 w-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-brand-soft hover:text-brand disabled:cursor-not-allowed disabled:text-muted/40 disabled:hover:bg-transparent",
@@ -187,20 +162,18 @@ return (
         )}
       </div>
       <div className="min-w-0">
-        {real && <p className="inline-flex rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-semibold text-brand">{real.category.name}</p>}
+        <p className="inline-flex rounded-full bg-brand-soft px-2.5 py-0.5 text-[11px] font-semibold text-brand">{service.category.name}</p>
         <h3 className="mt-1 text-xl font-bold leading-tight tracking-tight text-ink">{service.name}</h3>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
           <span>Base price: {formatINR(service.basePrice)} per unit</span>
-          {real && (
-            <span className="inline-flex items-center gap-1">
-              <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
-              {formatDuration(real.durationMinutes)}
-            </span>
-          )}
-          {real && real.ratingCount > 0 && (
+          <span className="inline-flex items-center gap-1">
+            <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+            {formatDuration(service.durationMinutes)}
+          </span>
+          {service.ratingCount > 0 && (
             <span className="inline-flex items-center gap-1 font-medium text-ink">
               <Star className="h-3.5 w-3.5 fill-accent text-accent" aria-hidden="true" />
-              {real.rating.toFixed(1)}
+              {service.rating.toFixed(1)}
             </span>
           )}
         </div>
@@ -230,9 +203,11 @@ return (
       </div>
     </section>
 
-    <div className="sd-rise rounded-3xl border border-line bg-panel p-4 shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)] sm:p-5" style={stagger(2)}>
-      <AddOnSelector addOns={service.addOns} selectedIds={new Set(selectedAddOns.keys())} onToggle={toggleAddOn} />
-    </div>
+    {service.addOns.length > 0 && (
+      <div className="sd-rise rounded-3xl border border-line bg-panel p-4 shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)] sm:p-5" style={stagger(2)}>
+        <AddOnSelector addOns={service.addOns} selectedIds={selectedIds} onToggle={toggleAddOn} />
+      </div>
+    )}
 
     {/* Mobile / tablet: price details inline, estimate bar floats above the bottom navigation */}
     <div className="sd-rise lg:hidden" style={stagger(3)}>{priceDetails("price-heading-inline")}</div>

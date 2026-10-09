@@ -1,12 +1,12 @@
 import { Check } from "lucide-react";
 import clsx from "clsx";
 import { formatINR } from "../formatMoney";
-import type { MockAddOn } from "../serviceCatalog.mock";
+import type { ServiceAddOn } from "@/types/catalog";
 
 interface AddOnSelectorProps {
-  addOns: MockAddOn[];
+  addOns: ServiceAddOn[];
   selectedIds: ReadonlySet<string>;
-  onToggle: (addOn: MockAddOn) => void;
+  onToggle: (addOn: ServiceAddOn) => void;
 }
 
 /** Add-ons as tappable cards (a real, visually hidden checkbox keeps keyboard and screen-reader behaviour). */

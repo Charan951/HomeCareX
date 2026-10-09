@@ -29,7 +29,6 @@ import AdminProfilePage from '@/pages/admin/Profile';
 import AdminNotificationsPage from '@/pages/admin/Notifications';
 import AdminPartnerDetailsPage from '@/pages/admin/PartnerDetails';
 
-
 interface AdminRoute {
   /** Relative to /admin. Empty string is the index route. */
   path: string;
@@ -38,9 +37,10 @@ interface AdminRoute {
   permission?: string;
 }
 
-// 22 routes. To swap a placeholder for a real page, change only its `element` import.
+// Admin routes
 export const adminRoutes: AdminRoute[] = [
   { path: '', element: <AdminDashboardPage /> },
+
   // Operations
   { path: 'leads', element: <AdminLeadsPage /> },
   { path: 'bookings', element: <AdminBookingsPage /> },
@@ -50,24 +50,37 @@ export const adminRoutes: AdminRoute[] = [
   { path: 'manage-partners', element: <AdminManagePartnersPage /> },
   { path: 'partners/:id', element: <AdminPartnerDetailsPage /> },
   { path: 'support', element: <AdminSupportPage /> },
+
   // Catalog
-  { path: 'categories', element: <AdminCategoriesPage /> },
-  { path: 'services', element: <AdminServicesPage /> },
+  { path: 'categories', element: <AdminCategoriesPage />, permission: 'catalog:manage' },
+  { path: 'services', element: <AdminServicesPage />, permission: 'catalog:manage' },
   { path: 'pricing', element: <AdminPricingPage /> },
+
+  // Coupons
   { path: 'coupons', element: <AdminCouponsPage /> },
+  { path: 'coupons/create', element: <AdminCouponsPage /> },
+  { path: 'coupons/:id/edit', element: <AdminCouponsPage /> },
+
+  // Marketing
   { path: 'marketing', element: <AdminMarketingPage /> },
+{ path: 'marketing/create', element: <AdminMarketingPage /> },
+{ path: 'marketing/:id/edit', element: <AdminMarketingPage /> },
+
   // Finance
   { path: 'payments', element: <AdminPaymentsPage /> },
   { path: 'refunds', element: <AdminRefundsPage /> },
   { path: 'payouts', element: <AdminPayoutsPage /> },
+
   // Quality + Reporting
   { path: 'reviews', element: <AdminReviewsPage /> },
   { path: 'reports', element: <AdminReportsPage /> },
+
   // System
   { path: 'roles-permissions', element: <AdminRolesPermissionsPage /> },
   { path: 'staff', element: <AdminStaffPage /> },
   { path: 'audit-logs', element: <AdminAuditLogsPage /> },
   { path: 'settings', element: <AdminSettingsPage /> },
+
   // Header-only pages
   { path: 'profile', element: <AdminProfilePage /> },
   { path: 'notifications', element: <AdminNotificationsPage /> },
@@ -76,7 +89,9 @@ export const adminRoutes: AdminRoute[] = [
 const NotFound: React.FC = () => (
   <div className="admin-page-container">
     <h1 className="hcx-page-header__title">Page not found</h1>
-    <p className="hcx-page-header__desc">That admin page doesn&apos;t exist.</p>
+    <p className="hcx-page-header__desc">
+      That admin page doesn&apos;t exist.
+    </p>
   </div>
 );
 
@@ -84,13 +99,21 @@ export const AdminRoutes: React.FC = () => (
   <Routes>
     <Route element={<AdminLayout />}>
       {adminRoutes.map(({ path, element, permission }) => {
-        const guarded = permission ? <RequirePermission permission={permission}>{element}</RequirePermission> : element;
+        const guarded = permission ? (
+          <RequirePermission permission={permission}>
+            {element}
+          </RequirePermission>
+        ) : (
+          element
+        );
+
         return path === '' ? (
           <Route key="index" index element={guarded} />
         ) : (
           <Route key={path} path={path} element={guarded} />
         );
       })}
+
       <Route path="*" element={<NotFound />} />
     </Route>
   </Routes>

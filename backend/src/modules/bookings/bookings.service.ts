@@ -3,20 +3,21 @@ import { Types } from 'mongoose';
 import { AppError } from '../../utils/AppError';
 import { addressesService, type ResolvedAddress } from '../addresses/addresses.service';
 import { bookingsRepository } from './bookings.repository';
+import type { ListBookingsQuery } from './bookings.query';
 import { bookingSettings } from './bookings.settings';
 import { withSlotLock } from './bookings.lock';
 import {
   BOOKING_HOLD_MS,
   BOOKING_STATUS,
   BOOKING_WINDOW_DAYS,
-  BOOKINGS_SERVICE_CATALOG,
-  CONVENIENCE_FEE,
   PRICE_CHANGED_TOLERANCE,
   SERVICE_SLOTS,
 } from './bookings.constants';
 import type { CreateBookingInput, PriceLine, PriceSnapshot } from './bookings.types';
 import { addDays, isRealDate, nowInBookingTz, slotStartMinutes } from './bookings.time';
 import { BOOKING_PAYMENT_STATUS } from '../../models/Booking';
+import { ServiceModel } from '../../models/Service';
+import { calculatePricing } from '../pricing/pricing.service';
 
 export interface SlotAvailability {
   slot: string;
@@ -61,7 +62,8 @@ function toView(doc: { toObject?: () => Record<string, unknown> } | Record<strin
     typeof (doc as { toObject?: unknown }).toObject === 'function'
       ? (doc as { toObject: () => Record<string, unknown> }).toObject()
       : { ...(doc as Record<string, unknown>) };
-  const { requestHash: _h, idempotencyKey: _k, slotSeat: _s, __v: _v, otp: _o, ...rest } = obj;
+ const rest = { ...obj };
+for (const key of ['requestHash', 'idempotencyKey', 'slotSeat', '__v', 'otp']) delete rest[key];
   return rest;
 }
 
@@ -131,8 +133,15 @@ export const BookingService = {
     const replayed = await replay();
     if (replayed) return replayed;
 
-    const service = BOOKINGS_SERVICE_CATALOG.getById(input.serviceId);
-    if (!service) throw new AppError(404, 'SERVICE_NOT_FOUND', 'That service was not found');
+    const row = await ServiceModel.findOne(
+      { _id: input.serviceId, active: { $ne: false } },
+      'name basePrice addOns',
+    ).lean();
+    if (!row) throw new AppError(404, 'SERVICE_NOT_FOUND', 'That service was not found');
+    const service = {
+      id: String(row._id), name: row.name, basePrice: row.basePrice,
+      addOns: (row.addOns ?? []).map((a) => ({ id: String(a._id), name: a.name, price: a.price })),
+    };
 
     const addOnLines: PriceLine[] = input.addOns.map((a) => {
       const addOn = service.addOns.find((x) => x.id === a.addOnId);
@@ -164,7 +173,7 @@ export const BookingService = {
     if (input.addressId) {
       addressSnapshot = await addressesService.resolveForBooking(customerId, input.addressId);
     } else if (input.newAddress) {
-      addressesService.assertServiceable(input.newAddress.pincode);
+      await addressesService.assertServiceable(input.newAddress.pincode);
       addressSnapshot = { ...input.newAddress };
     } else {
       throw new AppError(400, 'VALIDATION_ERROR', 'Provide exactly one of addressId or newAddress');
@@ -185,14 +194,12 @@ export const BookingService = {
       },
       ...addOnLines,
     ];
-    const subtotal = lines.reduce((sum, l) => sum + l.amount, 0);
+    // Same calculation as POST /pricing/quote, so the stored total is what the customer was shown.
+    const pricing = calculatePricing({ lines, slot: input.slot });
     const priceSnapshot: PriceSnapshot = {
       currency: 'INR',
       lines,
-      subtotal,
-      discount: 0,
-      convenienceFee: CONVENIENCE_FEE,
-      total: subtotal + CONVENIENCE_FEE,
+      ...pricing,
       computedAt: new Date(),
     };
 
@@ -239,10 +246,11 @@ export const BookingService = {
           scheduledAt: slotStartDate(input.date, input.slot),
           priceBreakdown: {
             base: lines[0].amount,
-            addOns: addOnLines.reduce((sum, l) => sum + l.amount, 0),
+            addOns: pricing.addOnsTotal,
+            surge: pricing.surge,
             discount: priceSnapshot.discount,
             convenienceFee: priceSnapshot.convenienceFee,
-            tax: 0,
+            tax: pricing.gst,
             total: priceSnapshot.total,
           },
           date: input.date,
@@ -287,8 +295,11 @@ export const BookingService = {
     return toView(booking as never);
   },
 
-  async listBookings(customerId: string) {
-    const bookings = await bookingsRepository.listForCustomer(customerId);
-    return bookings.map((b) => toView(b as never));
+  async listBookings(customerId: string, query: ListBookingsQuery) {
+    const { items, total } = await bookingsRepository.listPageForCustomer(customerId, query);
+    return {
+      items: items.map((b) => toView(b as never)),
+      meta: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) },
+    };
   },
 };

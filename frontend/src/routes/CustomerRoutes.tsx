@@ -6,7 +6,8 @@ import Dashboard from "../pages/customer/Dashboard";
 import Addresses from "../pages/customer/Addresses";
 import SetupAddress from "../pages/customer/SetupAddress";
 import Bookings from "../pages/customer/Bookings";
-import BookingDetails from "../pages/customer/BookingDetails";
+// ✅ Correct import targeting the new details component inside Bookings/
+import BookingDetails from "../pages/customer/BookingDetails/BookingDetailsPage";
 import Categories from "../pages/customer/Categories";
 import Notifications from "../pages/customer/Notifications";
 import Payments from "../pages/customer/Payments";
@@ -25,8 +26,6 @@ import EditProfile from "@/pages/customer/Profile/EditProfile";
 
 import BookingSuccess from "../pages/customer/BookingSuccess";
 import BookingFailed from "../pages/customer/BookingFailed";
-
-// ✅ 1. Import your new ServiceBooked component here:
 import ServiceBooked from "../pages/customer/BookingSuccess/ServiceBooked";
 
 /**
@@ -36,13 +35,17 @@ import ServiceBooked from "../pages/customer/BookingSuccess/ServiceBooked";
 export default function CustomerRoutes() {
   return (
     <Routes>
-      {/* First-login map setup: full screen, outside the dashboard layout. */}
+      {/* First-login map setup: full screen, outside the dashboard layout */}
       <Route path="/setup-address" element={<SetupAddress />} />
+
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/addresses" element={<Addresses />} />
         <Route path="/bookings" element={<Bookings />} />
+
+        {/* ✅ View Details route with :id matching useParams in BookingDetails */}
         <Route path="/bookings/:id" element={<BookingDetails />} />
+
         <Route path="/book/:serviceSlug" element={<BookServiceShell />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/notifications" element={<Notifications />} />
@@ -58,12 +61,9 @@ export default function CustomerRoutes() {
         <Route path="/support/tickets" element={<Tickets />} />
         <Route path="/tracking" element={<Tracking />} />
         <Route path="/wallet" element={<Wallet />} />
-        
-        {/* ✅ 2. Changed :bookingId to :id to perfectly match your component logic */}
+
         <Route path="/booking/success/:id" element={<BookingSuccess />} />
         <Route path="/booking/failed/:id" element={<BookingFailed />} />
-        
-        {/* ✅ 3. Added the brand new route for Cash on Service */}
         <Route path="/booking/booked/:id" element={<ServiceBooked />} />
       </Route>
     </Routes>
