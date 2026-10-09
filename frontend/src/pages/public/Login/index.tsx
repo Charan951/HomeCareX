@@ -8,10 +8,12 @@ import { ROUTES } from '@/constants/routes';
 import PasswordField from '@/components/auth/PasswordField';
 import AuthFormHeader from '@/components/auth/AuthFormHeader';
 
-/** Only same-origin paths are allowed as returnUrl (blocks //evil.com, https://..., javascript:). */
+import isSafeReturnUrl from '@/utils/isSafeReturnUrl';
+
+/** Only same-origin paths are allowed as returnUrl (blocks //evil.com, https://..., javascript:, /\...). */
 function safeReturnUrl(raw: string | null): string | null {
   if (!raw) return null;
-  return raw.startsWith('/') && !raw.startsWith('//') && !raw.startsWith('/\\') ? raw : null;
+  return isSafeReturnUrl(raw) ? raw : null;
 }
 
 /** A returnUrl is only honoured when it belongs to the role's own area. */
