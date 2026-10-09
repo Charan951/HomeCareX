@@ -286,22 +286,29 @@ test('refresh: valid refresh succeeds, returns new access token, increments toke
     headers: { cookie: `hcx_refresh=${tokenV1}` },
   } as any;
 
-  await new Promise<void>((resolve, reject) => {
-    const next = (err?: any) => {
-      if (err) reject(err);
-      else resolve();
-    };
-    const res = {
-      cookie: (name: string, val: string, opts: any) => {
-        cookieCalls.push({ name, val, opts });
-      },
-      json: (body: any) => {
-        responseData = body;
-        resolve();
-      },
-    } as any;
-    authController.refresh(req, res, next);
-  });
+  const originalNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const next = (err?: any) => {
+        if (err) reject(err);
+        else resolve();
+      };
+      const res = {
+        cookie: (name: string, val: string, opts: any) => {
+          cookieCalls.push({ name, val, opts });
+        },
+        json: (body: any) => {
+          responseData = body;
+          resolve();
+        },
+      } as any;
+      authController.refresh(req, res, next);
+    });
+  } finally {
+    if (originalNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = originalNodeEnv;
+  }
 
   assert.equal(cookieCalls.length, 1, 'res.cookie must be called once');
   assert.equal(cookieCalls[0].name, 'hcx_refresh');
@@ -372,21 +379,24 @@ test('forgotPassword: sends 6-digit OTP email, stores hashed OTP with 10m expiry
   });
 
   let createdOtpData: any = null;
+  let otpCreateCalls = 0;
   Object.defineProperty(authRepository, 'createOtp', {
     configurable: true,
-    value: async (data: any) => { createdOtpData = data; return data; },
+    value: async (data: any) => { otpCreateCalls += 1; createdOtpData = data; return data; },
   });
 
   let invalidatedPurpose: string | undefined;
+  let invalidationCalls = 0;
   Object.defineProperty(authRepository, 'invalidateActiveOtps', {
     configurable: true,
-    value: async (_id: string, purpose: string) => { invalidatedPurpose = purpose; },
+    value: async (_id: string, purpose: string) => { invalidationCalls += 1; invalidatedPurpose = purpose; },
   });
 
   let sentMail: any = null;
+  let emailCalls = 0;
   Object.defineProperty(mailService, 'sendPasswordResetOtpEmail', {
     configurable: true,
-    value: async (data: any) => { sentMail = data; },
+    value: async (data: any) => { emailCalls += 1; sentMail = data; },
   });
 
   const res = await authService.forgotPassword({ email: 'resetuser@example.com' });
@@ -395,6 +405,9 @@ test('forgotPassword: sends 6-digit OTP email, stores hashed OTP with 10m expiry
 
   // Previous OTPs were invalidated
   assert.equal(invalidatedPurpose, 'PASSWORD_RESET');
+  assert.equal(invalidationCalls, 1, 'Only one active OTP should be invalidated');
+  assert.equal(otpCreateCalls, 1, 'Only one OTP should be created');
+  assert.equal(emailCalls, 1, 'Only one OTP email should be sent');
 
   // OTP was stored hashed
   assert.ok(createdOtpData);
@@ -431,6 +444,29 @@ test('forgotPassword: returns identical generic message and does not send email 
   assert.equal(res.success, true);
   assert.equal(res.message, 'If an account exists, a verification code has been sent.');
   assert.equal(mailSent, false, 'No email should be sent for unknown address');
+});
+
+test('forgotPassword: does not issue an OTP for blocked users', async () => {
+  Object.defineProperty(authRepository, 'findByEmail', {
+    configurable: true,
+    value: async () => ({ id: 'blocked-user', name: 'Blocked User', email: 'blocked@example.com', status: 'blocked' }),
+  });
+
+  let otpCreated = false;
+  let mailSent = false;
+  Object.defineProperty(authRepository, 'createOtp', {
+    configurable: true,
+    value: async () => { otpCreated = true; },
+  });
+  Object.defineProperty(mailService, 'sendPasswordResetOtpEmail', {
+    configurable: true,
+    value: async () => { mailSent = true; },
+  });
+
+  const res = await authService.forgotPassword({ email: 'blocked@example.com' });
+  assert.equal(res.message, 'If an account exists, a verification code has been sent.');
+  assert.equal(otpCreated, false);
+  assert.equal(mailSent, false);
 });
 
 test('verifyOtp: valid 6-digit OTP marks OTP as used, generates single-use reset token and returns it', async () => {
@@ -738,5 +774,3 @@ test('resetPassword: expired token or invalid token is rejected with 400', async
     { status: 400, code: 'INVALID_RESET_TOKEN', message: 'This password reset link is invalid or has expired.' }
   );
 });
-
-

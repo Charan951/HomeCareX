@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   Briefcase,
@@ -23,8 +24,6 @@ import { HomeCarexMark } from "@/components/band/Homecarexmark";
 import "@/styles/admin.css";
 import OnlineIndicator from "../components/partner/OnlineIndicator";
 import PartnerErrorBoundary from "../components/partner/PartnerErrorBoundary";
-
-import "@/styles/admin.css";
 
 // -----------------------------------------------------------------------------
 // Navigation

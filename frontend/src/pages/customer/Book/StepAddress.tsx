@@ -72,6 +72,8 @@ export default function StepAddress() {
     enabled: mode === "new" && pincodeReady,
     staleTime: 5 * 60 * 1000,
   });
+  // A pincode we don't serve can't be used for a booking, so the save button is really disabled (not just ignored).
+  const pincodeBlocked = mode === "new" && pincodeReady && !serviceability.isFetching && serviceability.data?.serviceable === false;
 
   // Sort addresses so the default address appears first
   const sortedAddresses = [...addresses].sort((a, b) => (b.isDefault ? 1 : 0) - (a.isDefault ? 1 : 0));
@@ -241,8 +243,9 @@ const actions =
       <button
         type="submit"
         form="address-form"
-        disabled={isCreating}
-        className={clsx("inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-brand px-6 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#3730A3] disabled:opacity-50", FOCUS_RING)}
+        disabled={isCreating || pincodeBlocked}
+        title={pincodeBlocked ? "We don't serve this pincode yet. Change the pincode to continue." : undefined}
+        className={clsx("inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full bg-brand px-6 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#3730A3] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-brand", FOCUS_RING)}
       >
         {isCreating ? "Saving…" : editingId ? "Update address" : "Save & select"}
       </button>
@@ -517,7 +520,7 @@ return (
                 )}
                 {pincodeReady && !serviceability.isFetching && serviceability.data && !serviceability.data.serviceable && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-danger-soft px-3 py-1 font-medium text-danger">
-                    <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> We don&apos;t service this pincode yet.
+                    <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" /> We don&apos;t service this pincode yet. Change it to continue.
                   </span>
                 )}
                 {pincodeReady && serviceability.isError && <span className="text-muted">Couldn&apos;t check this pincode right now.</span>}

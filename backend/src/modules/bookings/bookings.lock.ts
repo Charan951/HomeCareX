@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { getRedisClient } from '../../config/redis';
+import { getRedisClient } from '../../models/config/redis';
 import { AppError } from '../../utils/AppError';
 import { BOOKING_LOCK_TTL_MS, BOOKING_LOCK_WAIT_MS } from './bookings.constants';
 

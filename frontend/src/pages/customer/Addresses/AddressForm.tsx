@@ -6,6 +6,7 @@ import { useServiceability, type AddressDto, type AddressInput } from "@/feature
 import { ADDRESS_LABELS, type AddressLabel } from "@/types/address";
 import MapAddressPicker, { type PickedLocation } from "@/components/customer/maps/MapAddressPicker";
 import ServiceabilityResult from "./ServiceabilityResult";
+import { validateAddress, type AddressFormErrors } from "./addressFormSchema";
 
 const LABEL_ICONS: Record<AddressLabel, LucideIcon> = { Home, Work: Briefcase, Other: MapPin };
 
@@ -19,27 +20,6 @@ interface AddressFormProps {
   serverError?: string;
   onSubmit: (input: AddressInput) => void;
   onCancel: () => void;
-}
-
-type Field = "house" | "street" | "city" | "state" | "pincode";
-type Errors = Partial<Record<Field, string>>;
-
-interface Values {
-  house: string;
-  street: string;
-  city: string;
-  state: string;
-  pincode: string;
-}
-
-function validate(v: Values, streetRequired: boolean): Errors {
-  const e: Errors = {};
-  if (!v.house.trim()) e.house = "Enter your house or flat number";
-  if (streetRequired && !v.street.trim()) e.street = "Enter the street or road";
-  if (!v.city.trim()) e.city = "Enter the city";
-  if (!v.state.trim()) e.state = "Enter the state";
-  if (!/^\d{6}$/.test(v.pincode.trim())) e.pincode = "Pincode must be 6 digits";
-  return e;
 }
 
 const inputClass = (invalid: boolean) =>
@@ -67,11 +47,10 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
   const [location, setLocation] = useState<{ lat: number; lng: number } | undefined>(initial?.location);
   // Once the customer types their own street, the map stops overwriting it.
   const [streetEdited, setStreetEdited] = useState(Boolean(initial?.street));
-  const [errors, setErrors] = useState<Errors>({});
+  const [errors, setErrors] = useState<AddressFormErrors>({});
 
   const serviceability = useServiceability(pincode);
   const unavailable = serviceability.status === "unserviceable";
-  const checking = serviceability.status === "checking";
 
   function applyPick(p: PickedLocation) {
     setLocation({ lat: p.lat, lng: p.lng });
@@ -85,8 +64,7 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    if (unavailable || checking) return;
-    const found = validate({ house, street, city, state, pincode }, !legacy);
+    const found = validateAddress({ house, street, city, state, pincode }, !legacy);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     onSubmit({
@@ -116,7 +94,7 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
   const sectionTitle = "text-[11px] font-semibold uppercase tracking-wider text-muted";
 
   return (
-    <form onSubmit={submit} noValidate aria-label={initial ? "Edit address" : "Add a new address"} className="rounded-3xl  bg-panel shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)]">
+    <form onSubmit={submit} noValidate aria-label={initial ? "Edit address" : "Add a new address"} className="rounded-3xl border border-line bg-panel shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)]">
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         {/* Map: on top for phones, pinned on the left for desktop */}
         <div className="space-y-2.5 p-3.5 pb-0 sm:space-y-3 sm:p-5 sm:pb-0 lg:sticky lg:top-24 lg:self-start lg:pb-5">
@@ -133,7 +111,7 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
         </div>
 
         {/* Details */}
-        <div className="space-y-4 p-3.5 sm:space-y-5 sm:p-5 ">
+        <div className="space-y-4 p-3.5 sm:space-y-5 sm:p-5 lg:border-l lg:border-line">
           <fieldset>
             <legend className={clsx(sectionTitle, "mb-2")}>Save as</legend>
             <div className="grid grid-cols-3 gap-2">
@@ -203,9 +181,9 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
                 inputMode="numeric"
                 autoComplete="postal-code"
                 placeholder="500072"
-                aria-invalid={!!errors.pincode || unavailable}
+                aria-invalid={!!errors.pincode}
                 aria-describedby={clsx("addr-pin-status", errors.pincode && "addr-pin-err")}
-                className={clsx(inputClass(!!errors.pincode || unavailable), "sm:max-w-[16rem]")}
+                className={clsx(inputClass(!!errors.pincode), "sm:max-w-[16rem]")}
               />
               {err("addr-pin-err", errors.pincode)}
               <ServiceabilityResult pincode={pincode} id="addr-pin-status" className="mt-2" />
@@ -215,19 +193,19 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
           {!initial?.isDefault && !isFirst && (
             <label className="flex min-h-[48px] cursor-pointer items-center justify-between gap-3 rounded-2xl border border-line bg-canvas px-3.5 py-2 sm:min-h-[56px] sm:px-4 sm:py-3">
               <span>
-                <span className="block text-sm font-medium text-ink">Use this as my delivery address on the dashboard</span>
+                <span className="block text-sm font-medium text-ink">Use this as my delivery address</span>
                 <span className="block text-xs text-muted">You can change it any time.</span>
               </span>
               <input type="checkbox" checked={makeDefault} onChange={(e) => setMakeDefault(e.target.checked)} className="peer sr-only" />
               <span aria-hidden="true" className="relative h-6 w-11 shrink-0 rounded-full bg-line transition-colors after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:shadow after:transition-transform peer-checked:bg-brand peer-checked:after:translate-x-5 peer-focus-visible:ring-2 peer-focus-visible:ring-brand peer-focus-visible:ring-offset-2" />
             </label>
           )}
-          {isFirst && !initial && <p className="text-xs text-muted">This will be your delivery address on the dashboard.</p>}
+          {isFirst && !initial && <p className="text-xs text-muted">This will be your delivery address.</p>}
 
           {serverError && <p role="alert" className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">{serverError}</p>}
           {unavailable && (
-            <p id="addr-save-hint" className="rounded-xl bg-danger-soft px-3 py-2 text-sm text-danger">
-              We can&apos;t save this address because we don&apos;t serve this pincode yet. Change the pincode or move the pin on the map.
+            <p id="addr-save-hint" role="status" className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              We don&apos;t serve this pincode yet. You can still save this address, but you won&apos;t be able to book a service here until we do.
             </p>
           )}
 
@@ -239,11 +217,11 @@ export default function AddressForm({ initial, isFirst, saving, serverError, onS
               </button>
               <button
                 type="submit"
-                disabled={saving || unavailable || checking}
+                disabled={saving}
                 aria-describedby={unavailable ? "addr-save-hint" : undefined}
                 className={clsx("min-h-[44px] rounded-full bg-brand px-8 sm:min-h-[48px] text-sm font-bold text-white shadow-sm transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 sm:min-w-[11rem]", FOCUS_RING)}
               >
-                {saving ? "Saving…" : checking ? "Checking area…" : initial ? "Save changes" : "Save address"}
+                {saving ? "Saving…" : initial ? "Save changes" : "Save address"}
               </button>
             </div>
           </div>

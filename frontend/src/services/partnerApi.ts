@@ -62,13 +62,6 @@ export interface PartnerMutationResult {
 const STORAGE_PREFIX = "homecarex:partner:";
 
 /* =========================================================
-   STORAGE
-========================================================= */
-
-const STORAGE_PREFIX =
-  "homecarex:partner:";
-
-/* =========================================================
    HELPERS
 ========================================================= */
 
@@ -341,7 +334,7 @@ const USE_MOCKS =
    PARTNER API
 
 export const partnerApi = {
-  /* DASHBOARD */
+  /* DASHBOARD 
    P02 - Partner Jobs / My Jobs
    ========================================================= */
 
