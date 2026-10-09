@@ -11,6 +11,7 @@ import {
   getSlotsQuerySchema,
   checkSlotBodySchema,
 } from './bookings.validation';
+import { listBookingsQuerySchema } from './bookings.query';
 
 export const bookingsRoutes = Router();
 
@@ -37,11 +38,12 @@ bookingsRoutes.post(
   asyncHandler(async (req, res) => bookingsController.createBooking(req, res))
 );
 
-// GET /bookings — List all customer bookings
+// GET /bookings?status&search&date&service&page&limit&sort — the signed-in customer's bookings, one page at a time
 bookingsRoutes.get(
   '/bookings',
   authMiddleware,
   roleMiddleware('customer'),
+  validationMiddleware({ query: listBookingsQuerySchema }),
   asyncHandler(async (req, res) => bookingsController.listBookings(req, res))
 );
 

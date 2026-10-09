@@ -12,6 +12,9 @@ import type {
   PartnerOption,
   BookingDetail,
 } from "@/types/booking";
+import type { PageMeta } from "@/types/catalog";
+import type { BookingListParams, BookingPage } from "@/types/bookingList";
+import type { BookingListItem } from "@/pages/customer/Bookings/bookingModel";
 
 export interface NormalizedApiError {
   status: number;
@@ -61,6 +64,21 @@ export function normalizeApiError(
  * Alias for internal backwards compatibility.
  */
 export const normalizeError = normalizeApiError;
+
+/** Drops undefined and blank values so the URL only carries filters the customer actually set. */
+function toQuery(params: BookingListParams): Record<string, string | number> {
+  const query: Record<string, string | number> = {};
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === null) continue;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) query[key] = trimmed;
+    } else {
+      query[key] = value;
+    }
+  }
+  return query;
+}
 
 export const bookingApi = {
   // =========================================================================
@@ -188,12 +206,49 @@ export const bookingApi = {
    */
   async getBookings(): Promise<BookingView[]> {
     try {
+      // Callers that want everything at once (tracking) ask for the largest page the server allows.
       const { data } =
         await http.get<ApiResponse<BookingView[]>>(
           "/bookings",
+          { params: { limit: 50 } },
         );
 
       return data.data ?? [];
+    } catch (err) {
+      throw normalizeApiError(err);
+    }
+  },
+
+  /**
+   * One page of the signed-in customer's bookings, filtered and sorted by the server.
+   *
+   * GET /bookings?status&search&date&service&sort&page&limit
+   *
+   * The customer is taken from the access token. There is no customer id to send.
+   */
+  async listBookings(
+    params: BookingListParams,
+    signal?: AbortSignal,
+  ): Promise<BookingPage> {
+    try {
+      const { data } =
+        await http.get<
+          ApiResponse<BookingListItem[]> & { meta?: PageMeta }
+        >("/bookings", {
+          params: toQuery(params),
+          signal,
+        });
+
+      const items = data.data ?? [];
+      return {
+        items,
+        meta: data.meta ?? {
+          page: 1,
+          limit: items.length,
+          total: items.length,
+          totalPages: 1,
+        },
+      };
     } catch (err) {
       throw normalizeApiError(err);
     }
