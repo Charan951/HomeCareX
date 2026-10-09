@@ -65,8 +65,8 @@ const STORAGE_PREFIX = "homecarex:partner:";
    STORAGE
 ========================================================= */
 
-const STORAGE_PREFIX =
-  "homecarex:partner:";
+// const STORAGE_PREFIX =
+//   "homecarex:partner:";
 
 /* =========================================================
    HELPERS
@@ -342,8 +342,8 @@ const USE_MOCKS =
 
 export const partnerApi = {
   /* DASHBOARD */
-   P02 - Partner Jobs / My Jobs
-   ========================================================= */
+  //  P02 - Partner Jobs / My Jobs
+  //  ========================================================= */
 
 /**
  * Mocks are ON unless VITE_USE_MOCKS=false.

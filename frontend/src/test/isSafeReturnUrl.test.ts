@@ -22,10 +22,19 @@ describe("isSafeReturnUrl", () => {
 
   it("rejects protocol-relative URLs", () => {
     expect(isSafeReturnUrl("//evil.com")).toBe(false);
+    expect(isSafeReturnUrl("//attacker.com/test")).toBe(false);
+  });
+
+  it("rejects backslash-based URL tricks", () => {
+    expect(isSafeReturnUrl("/\\evil.com")).toBe(false);
+    expect(isSafeReturnUrl("\\\\evil.com")).toBe(false);
+    expect(isSafeReturnUrl("\\evil.com")).toBe(false);
+    expect(isSafeReturnUrl("/customer\\test")).toBe(false);
   });
 
   it("rejects javascript URLs", () => {
     expect(isSafeReturnUrl("javascript:alert(1)")).toBe(false);
+    expect(isSafeReturnUrl("javascript:void(0)")).toBe(false);
   });
 
   it("rejects data URLs", () => {

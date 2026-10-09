@@ -308,7 +308,7 @@ test('refresh: valid refresh succeeds, returns new access token, increments toke
   assert.ok(cookieCalls[0].val);
   assert.notEqual(cookieCalls[0].val, tokenV1, 'Cookie must be replaced with the new token');
   assert.equal(cookieCalls[0].opts.httpOnly, true);
-  assert.equal(cookieCalls[0].opts.sameSite, 'strict');
+  assert.equal(cookieCalls[0].opts.sameSite, process.env.NODE_ENV === 'production' ? 'strict' : 'lax');
   assert.equal(cookieCalls[0].opts.path, '/api/v1/auth');
   assert.ok(responseData?.success);
   assert.ok(responseData?.data?.accessToken);

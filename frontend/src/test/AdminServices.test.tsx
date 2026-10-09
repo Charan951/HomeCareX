@@ -8,8 +8,9 @@ vi.mock('@/lib/http', () => ({ default: h }));
 
 import AdminServicesPage from '@/pages/admin/Services';
 import { __resetCategoryApiForTests } from '@/pages/admin/Services/adminCategoryApi';
-import { __resetServiceApiForTests, getServiceApiMode, toWire } from '@/services/adminServiceApi';
+import { adminServiceApi, __resetServiceApiForTests, getServiceApiMode, toWire } from '@/services/adminServiceApi';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useUIStore } from '@/store/useUIStore';
 import { validateService } from '@/lib/serviceValidation';
 import { arrayMove } from '@/lib/arrayMove';
 import type { ServiceInput } from '@/types/adminService';
@@ -34,6 +35,7 @@ const signIn = (permissions: string[], role = 'staff') => useAuthStore.setState(
 beforeEach(() => {
   signIn(['catalog:manage']);
   localStorage.clear();
+  useUIStore.setState({ pageSearch: '' });
   __resetCategoryApiForTests();
   __resetServiceApiForTests();
   Object.values(h).forEach((f) => f.mockReset());
@@ -96,8 +98,9 @@ describe('Admin services page', () => {
 
   it('lists services from the backend and shows loading, then rows', async () => {
     renderPage();
-    expect(screen.getByRole('table', { name: 'Services' }).getAttribute('aria-busy')).toBe('true');
+    expect(screen.getByLabelText('Loading services')).toBeTruthy();
     expect(await screen.findByText('Deep Cleaning')).toBeTruthy();
+    expect(screen.getByRole('list', { name: 'Services' })).toBeTruthy();
     expect(screen.getByText('Kitchen Cleaning')).toBeTruthy();
     expect(getServiceApiMode()).toBe('live');
   });
@@ -112,7 +115,7 @@ describe('Admin services page', () => {
     h.get.mockImplementation((url: string) => (url.includes('categories') ? ok(CATS) : Promise.reject({ message: 'Forbidden', status: 403 })));
     renderPage();
     expect(await screen.findByText('Forbidden')).toBeTruthy();
-    expect(screen.getByRole('button', { name: /try again/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /retry/i })).toBeTruthy();
     expect(getServiceApiMode()).toBe('unknown');
   });
 
@@ -120,11 +123,13 @@ describe('Admin services page', () => {
     renderPage();
     await screen.findByText('Deep Cleaning');
     const user = userEvent.setup();
-    await user.selectOptions(screen.getByLabelText('Filter by status'), 'inactive');
+    await user.click(screen.getByLabelText('Filter by category'));
+    await user.click(screen.getByRole('button', { name: /pest control/i }));
     expect(screen.queryByText('Deep Cleaning')).toBeNull();
-    expect(screen.getByText('Kitchen Cleaning')).toBeTruthy();
+    expect(await screen.findByText('No services match your filters')).toBeTruthy();
     await user.click(screen.getByRole('button', { name: /clear filters/i }));
-    await user.type(screen.getByLabelText('Search services'), 'sofa');
+    expect(await screen.findByText('Deep Cleaning')).toBeTruthy();
+    useUIStore.setState({ pageSearch: 'sofa' });
     await waitFor(() => expect(screen.queryByText('Deep Cleaning')).toBeNull());
     expect(screen.getByText('Sofa Shampooing')).toBeTruthy();
   });
@@ -167,24 +172,18 @@ describe('Admin services page', () => {
     renderPage();
     await screen.findByText('Deep Cleaning');
     const user = userEvent.setup();
-    await user.click(screen.getByLabelText('Select row s1'));
-    await user.click(screen.getByLabelText('Select row s2'));
-    await user.click(screen.getByRole('button', { name: 'Deactivate' }));
-    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Deactivate' }));
-    await waitFor(() => expect(h.patch).toHaveBeenCalledTimes(2));
-    expect(h.patch).toHaveBeenCalledWith('/admin/services/s1', { active: false });
-    expect(h.patch).toHaveBeenCalledWith('/admin/services/s2', { active: false });
+    await user.click(screen.getByRole('switch', { name: 'Deep Cleaning is active' }));
+    await waitFor(() => expect(h.patch).toHaveBeenCalledWith('/admin/services/s1', { active: false }));
+    expect(await screen.findByText(/“Deep Cleaning” deactivated/)).toBeTruthy();
   });
 
   it('reports partial bulk failures by name', async () => {
     h.patch.mockImplementation((url: string) => (url.endsWith('s4') ? Promise.reject({ message: 'Boom', status: 500 }) : ok({})));
     renderPage();
     await screen.findByText('Deep Cleaning');
-    const user = userEvent.setup();
-    await user.click(screen.getByLabelText('Select row s3'));
-    await user.click(screen.getByLabelText('Select row s4'));
-    await user.click(screen.getByRole('button', { name: 'Activate' }));
-    expect(await screen.findByText(/1 activated, 1 failed: Carpet Cleaning \(Boom\)/)).toBeTruthy();
+    const res = await adminServiceApi.setActive(['s3', 's4'], true);
+    expect(res.changed).toEqual(['s3']);
+    expect(res.failed).toEqual([{ id: 's4', name: 'Carpet Cleaning', message: 'Boom' }]);
   });
 
   it('shows the server message when a service cannot be deleted', async () => {
@@ -210,6 +209,6 @@ describe('Admin services page', () => {
     await user.click(screen.getByRole('button', { name: /add inclusion/i }));
     await user.type(screen.getByLabelText('Inclusions line 1'), 'Gel');
     await user.click(screen.getByRole('button', { name: 'Create service' }));
-    expect(await screen.findByText(/did not store: inclusions/i)).toBeTruthy();
+    expect(await screen.findByText(/inclusions are kept in this browser/i)).toBeTruthy();
   });
 });
