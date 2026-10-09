@@ -22,7 +22,7 @@ export default function ActiveJobCard({ job }: { job: ActiveJob | null }) {
 
   return (
     <Link
-      to={`/partner/work/${job.id}`}
+      to={`/partner/jobs/${job.id}`}
       className="flex items-center gap-4 rounded bg-brand-soft px-4 py-4 transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-white">

@@ -925,10 +925,6 @@ export const authService = {
     ) {
       await issuePasswordResetOtp(user);
     }
-
-      await issuePasswordResetOtp(user);
-
-    }
  
  
     return {
@@ -1348,4 +1344,3 @@ export const authService = {
   },
 
 };
- 
