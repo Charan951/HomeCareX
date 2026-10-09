@@ -1,20 +1,57 @@
-import http, { type ApiResponse } from "@/lib/http";
-import { mockDashboard, mockEarningsSummary, mockJobRequests, mockNotifications } from "@/mocks/partnerDashboard";
-import type { EarningsSummary, JobRequest, PartnerDashboard, PartnerNotification } from "@/types/partner";
+import http, {
+  type ApiResponse,
+} from "@/lib/http";
+
+import {
+  mockDashboard,
+  mockEarningsSummary,
+  mockNotifications,
+} from "@/mocks/partnerDashboard";
+
+import {
+  mockJobRequests,
+} from "@/services/mockPartnerJobs";
+
+import {
+  acceptMockJob,
+  rejectMockJob,
+  type MockJobActionResult,
+} from "@/services/mockPartnerJobActions";
+
+import type {
+  ActiveJob,
+  EarningsSummary,
+  JobRequest,
+  PartnerDashboard,
+  PartnerNotification,
+} from "@/types/partner";
+
+import {
+  PARTNER_DETAILS,
+  type PartnerDetails,
+  type AccountStatus,
+} from "@/mocks/partnerDetails";
+
+/* =========================================================
+   TYPES
+========================================================= */
 
 export interface PartnerProfileInput {
   name: string;
   phone: string;
 }
 
-export type { ActiveJob, EarningsSummary, JobRequest, PartnerDashboard, PartnerNotification } from "@/types/partner";
-import {
-  PARTNER_DETAILS,
-  PartnerDetails,
-  AccountStatus,
-} from "../mocks/partnerDetails";
+export type {
+  ActiveJob,
+  EarningsSummary,
+  JobRequest,
+  PartnerDashboard,
+  PartnerNotification,
+} from "@/types/partner";
 
-export type KycDecision = "approve" | "reject";
+export type KycDecision =
+  | "approve"
+  | "reject";
 
 export interface KycUpdatePayload {
   decision: KycDecision;
@@ -31,29 +68,62 @@ export interface PartnerMutationResult {
   partner: PartnerDetails;
 }
 
-const STORAGE_PREFIX = "homecarex:partner:";
+/** Result of POST /partner/jobs/:id/accept or /reject */
+export type JobActionResult = Pick<
+  MockJobActionResult,
+  "status" | "message"
+>;
 
-const delay = (milliseconds: number) =>
+/* =========================================================
+   STORAGE
+========================================================= */
+
+const STORAGE_PREFIX =
+  "homecarex:partner:";
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+const delay = (
+  milliseconds: number,
+) =>
   new Promise<void>((resolve) => {
-    window.setTimeout(resolve, milliseconds);
+    window.setTimeout(
+      resolve,
+      milliseconds,
+    );
   });
 
-const getStorageKey = (id: string): string =>
+const getStorageKey = (
+  id: string,
+): string =>
   `${STORAGE_PREFIX}${id}`;
 
-const savePartner = (partner: PartnerDetails): void => {
+/* =========================================================
+   SAVE PARTNER
+========================================================= */
+
+const savePartner = (
+  partner: PartnerDetails,
+): void => {
   window.localStorage.setItem(
     getStorageKey(partner.id),
-    JSON.stringify(partner)
+    JSON.stringify(partner),
   );
 };
 
+/* =========================================================
+   GET STORED PARTNER
+========================================================= */
+
 const getStoredPartner = (
-  id: string
+  id: string,
 ): PartnerDetails | null => {
-  const storedPartner = window.localStorage.getItem(
-    getStorageKey(id)
-  );
+  const storedPartner =
+    window.localStorage.getItem(
+      getStorageKey(id),
+    );
 
   if (!storedPartner) {
     return null;
@@ -61,23 +131,28 @@ const getStoredPartner = (
 
   try {
     return JSON.parse(
-      storedPartner
+      storedPartner,
     ) as PartnerDetails;
   } catch {
     window.localStorage.removeItem(
-      getStorageKey(id)
+      getStorageKey(id),
     );
 
     return null;
   }
 };
 
+/* =========================================================
+   GET MOCK PARTNER
+========================================================= */
+
 const getMockPartner = (
-  id: string
+  id: string,
 ): PartnerDetails | null => {
-  const partner = PARTNER_DETAILS.find(
-    (item) => item.id === id
-  );
+  const partner =
+    PARTNER_DETAILS.find(
+      (item) => item.id === id,
+    );
 
   if (!partner) {
     return null;
@@ -86,8 +161,12 @@ const getMockPartner = (
   return structuredClone(partner);
 };
 
+/* =========================================================
+   GET CURRENT PARTNER
+========================================================= */
+
 const getCurrentPartner = (
-  id: string
+  id: string,
 ): PartnerDetails | null => {
   const storedPartner =
     getStoredPartner(id);
@@ -99,12 +178,17 @@ const getCurrentPartner = (
   return getMockPartner(id);
 };
 
+/* =========================================================
+   GET PARTNER BY ID
+========================================================= */
+
 export async function getPartnerById(
-  id: string
+  id: string,
 ): Promise<PartnerDetails | null> {
   await delay(500);
 
-  const partner = getCurrentPartner(id);
+  const partner =
+    getCurrentPartner(id);
 
   if (!partner) {
     return null;
@@ -113,24 +197,36 @@ export async function getPartnerById(
   return structuredClone(partner);
 }
 
+/* =========================================================
+   UPDATE PARTNER KYC
+========================================================= */
+
 export async function updatePartnerKyc(
   id: string,
-  payload: KycUpdatePayload
+  payload: KycUpdatePayload,
 ): Promise<PartnerMutationResult> {
   await delay(500);
 
-  const partner = getCurrentPartner(id);
+  const partner =
+    getCurrentPartner(id);
 
   if (!partner) {
-    throw new Error("Partner not found.");
+    throw new Error(
+      "Partner not found.",
+    );
   }
 
-  if (payload.decision === "reject") {
-    const reason = payload.reason?.trim();
+  /* REJECT */
+
+  if (
+    payload.decision === "reject"
+  ) {
+    const reason =
+      payload.reason?.trim();
 
     if (!reason) {
       throw new Error(
-        "Rejection reason is required."
+        "Rejection reason is required.",
       );
     }
 
@@ -143,10 +239,14 @@ export async function updatePartnerKyc(
 
     return {
       success: true,
-      message: "Partner KYC rejected.",
-      partner: structuredClone(partner),
+      message:
+        "Partner KYC rejected.",
+      partner:
+        structuredClone(partner),
     };
   }
+
+  /* APPROVE */
 
   partner.kycStatus = "Approved";
 
@@ -154,30 +254,41 @@ export async function updatePartnerKyc(
     new Date().toISOString();
 
   partner.kyc.checklist =
-    partner.kyc.checklist.map((item) => ({
-      ...item,
-      completed: true,
-    }));
+    partner.kyc.checklist.map(
+      (item) => ({
+        ...item,
+        completed: true,
+      }),
+    );
 
   savePartner(partner);
 
   return {
     success: true,
-    message: "Partner KYC approved.",
-    partner: structuredClone(partner),
+    message:
+      "Partner KYC approved.",
+    partner:
+      structuredClone(partner),
   };
 }
 
+/* =========================================================
+   UPDATE PARTNER STATUS
+========================================================= */
+
 export async function updatePartnerStatus(
   id: string,
-  payload: StatusUpdatePayload
+  payload: StatusUpdatePayload,
 ): Promise<PartnerMutationResult> {
   await delay(500);
 
-  const partner = getCurrentPartner(id);
+  const partner =
+    getCurrentPartner(id);
 
   if (!partner) {
-    throw new Error("Partner not found.");
+    throw new Error(
+      "Partner not found.",
+    );
   }
 
   partner.accountStatus =
@@ -188,25 +299,34 @@ export async function updatePartnerStatus(
   return {
     success: true,
     message: `Partner status changed to ${payload.status}.`,
-    partner: structuredClone(partner),
+    partner:
+      structuredClone(partner),
   };
 }
 
+/* =========================================================
+   NOTIFY PARTNER
+========================================================= */
+
 export async function notifyPartner(
   id: string,
-  message: string
+  message: string,
 ): Promise<void> {
   await delay(200);
 
   console.info(
-    `[MOCK NOTIFY] ${id}: ${message}`
+    `[MOCK NOTIFY] ${id}: ${message}`,
   );
 }
+
+/* =========================================================
+   PARTNER AUDIT
+========================================================= */
 
 export async function recordPartnerAudit(
   id: string,
   action: string,
-  details: Record<string, string>
+  details: Record<string, string>,
 ): Promise<void> {
   await delay(100);
 
@@ -218,36 +338,176 @@ export async function recordPartnerAudit(
       details,
       timestamp:
         new Date().toISOString(),
-    })
+    }),
   );
 }
 
+/* =========================================================
+   MOCK CONFIGURATION
 
+   Mocks are ON by default. To use the backend later set
+   VITE_USE_MOCKS=false
+========================================================= */
 
-/** Mocks are ON unless VITE_USE_MOCKS=false. Requests, earnings and notifications have no backend endpoint yet. */
-const USE_MOCKS = String(import.meta.env.VITE_USE_MOCKS ?? "true") !== "false";
+const USE_MOCKS =
+  String(
+    import.meta.env
+      .VITE_USE_MOCKS ?? "true",
+  ) !== "false";
+
+/* =========================================================
+   PARTNER API
+========================================================= */
 
 export const partnerApi = {
+  /* DASHBOARD */
+
   async getDashboard(): Promise<PartnerDashboard> {
-    if (USE_MOCKS) return mockDashboard();
-    const res = await http.get<ApiResponse<PartnerDashboard>>("/partner/dashboard");
+    if (USE_MOCKS) {
+      return mockDashboard();
+    }
+
+    const res =
+      await http.get<
+        ApiResponse<PartnerDashboard>
+      >("/partner/dashboard");
+
     return res.data.data;
   },
-  // TODO(backend): GET /partner/job-requests
-  async getJobRequests(): Promise<JobRequest[]> {
-    return mockJobRequests();
+
+  /* -------------------------------------------------------
+     JOB REQUESTS
+
+     Backend later: GET /partner/job-requests
+     (the backend knows the partner from the login token)
+  ------------------------------------------------------- */
+
+  async getJobRequests(
+    partnerId?: string,
+  ): Promise<JobRequest[]> {
+    if (USE_MOCKS) {
+      return mockJobRequests(partnerId);
+    }
+
+    const res =
+      await http.get<
+        ApiResponse<JobRequest[]>
+      >("/partner/job-requests");
+
+    return res.data.data;
   },
-  // TODO(backend): GET /partner/earnings/summary
+
+  /* -------------------------------------------------------
+     ACCEPT JOB
+
+     POST /partner/jobs/:id/accept
+       200 → you got the job (first wins)
+       404 → no such job for you
+       409 → expired, rejected, taken, or not eligible
+  ------------------------------------------------------- */
+
+  async acceptJob(
+    id: string,
+    partnerId: string,
+  ): Promise<JobActionResult> {
+    if (USE_MOCKS) {
+      return acceptMockJob(id, partnerId);
+    }
+
+    /* validateStatus lets 404 / 409 come back as results.
+       This assumes @/lib/http is an axios instance. */
+    const res = await http.post(
+      `/partner/jobs/${id}/accept`,
+      undefined,
+      { validateStatus: () => true },
+    );
+
+    return {
+      status: res.status,
+      message: res.data?.message ?? "",
+    };
+  },
+
+  /* -------------------------------------------------------
+     REJECT JOB
+
+     POST /partner/jobs/:id/reject  →  200 | 404 | 409
+  ------------------------------------------------------- */
+
+  async rejectJob(
+    id: string,
+    partnerId: string,
+  ): Promise<JobActionResult> {
+    if (USE_MOCKS) {
+      return rejectMockJob(id, partnerId);
+    }
+
+    const res = await http.post(
+      `/partner/jobs/${id}/reject`,
+      undefined,
+      { validateStatus: () => true },
+    );
+
+    return {
+      status: res.status,
+      message: res.data?.message ?? "",
+    };
+  },
+
+  /* EARNINGS SUMMARY */
+
   async getEarningsSummary(): Promise<EarningsSummary> {
-    return mockEarningsSummary();
+    if (USE_MOCKS) {
+      return mockEarningsSummary();
+    }
+
+    const res =
+      await http.get<
+        ApiResponse<EarningsSummary>
+      >(
+        "/partner/earnings/summary",
+      );
+
+    return res.data.data;
   },
-  // TODO(backend): PATCH /partner/profile  (no endpoint yet, so this only simulates a save)
-  async updateProfile(input: PartnerProfileInput): Promise<PartnerProfileInput> {
-    await new Promise((r) => setTimeout(r, 500));
-    return input;
+
+  /* UPDATE PROFILE */
+
+  async updateProfile(
+    input: PartnerProfileInput,
+  ): Promise<PartnerProfileInput> {
+    if (USE_MOCKS) {
+      await delay(500);
+      return input;
+    }
+
+    const res =
+      await http.patch<
+        ApiResponse<PartnerProfileInput>
+      >(
+        "/partner/profile",
+        input,
+      );
+
+    return res.data.data;
   },
-  // TODO(backend): GET /partner/notifications
-  async getNotifications(): Promise<PartnerNotification[]> {
-    return mockNotifications();
+
+  /* NOTIFICATIONS */
+
+  async getNotifications(): Promise<
+    PartnerNotification[]
+  > {
+    if (USE_MOCKS) {
+      return mockNotifications();
+    }
+
+    const res =
+      await http.get<
+        ApiResponse<PartnerNotification[]>
+      >(
+        "/partner/notifications",
+      );
+
+    return res.data.data;
   },
 };

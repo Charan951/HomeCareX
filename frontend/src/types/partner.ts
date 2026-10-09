@@ -24,6 +24,8 @@ export interface JobRequest {
   id: string;
   service: string;
   area: string;
+  /** Full street address. Shown to the partner only after they accept. */
+  address?: string;
   price: number;
   scheduledAt: string;
   /** ISO time after which the offer can no longer be accepted. */
