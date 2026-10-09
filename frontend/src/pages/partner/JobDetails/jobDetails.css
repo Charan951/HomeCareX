@@ -1,0 +1,631 @@
+/* Job details: full-width page of blocks. Summary strip on top, two-column body below. */
+
+.jd-page {
+  --jd-ink: #171727;
+  --jd-muted: #77778a;
+  --jd-line: #e8e8ee;
+  --jd-brand: #4034c7;
+  --jd-brand-deep: #2b2290;
+  --jd-brand-soft: #ffffff; /* was light blue, now white */
+  --jd-pos: #12805c;
+  --jd-neg: #c23a3a;
+  --jd-px: 32px;
+
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  min-height: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: var(--jd-ink);
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.jd-page *,
+.jd-page *::before,
+.jd-page *::after {
+  box-sizing: border-box;
+}
+.jd-page p,
+.jd-page h2,
+.jd-page h3,
+.jd-page ol,
+.jd-page ul,
+.jd-page dl,
+.jd-page dd {
+  margin: 0;
+  padding: 0;
+}
+
+/* header band */
+.jd-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 28px var(--jd-px) 24px;
+  border-bottom: 1px solid var(--jd-line);
+}
+.jd-title {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+.jd-sub {
+  margin-top: 6px;
+  color: var(--jd-muted);
+  font-size: 13px;
+}
+
+.jd-badge {
+  flex: none;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #f0f1f5;
+  color: #565a70;
+  font-size: 12px;
+  font-weight: 700;
+}
+.jd-badge-assigned,
+.jd-badge-en_route { background: #fff; color: var(--jd-brand); border: 1px solid var(--jd-line); }
+.jd-badge-arrived,
+.jd-badge-in_progress { background: #fff3e4; color: #b45309; }
+.jd-badge-completed,
+.jd-badge-rated { background: #e9f7f0; color: var(--jd-pos); }
+.jd-badge-cancelled_by_customer,
+.jd-badge-cancelled_by_partner,
+.jd-badge-cancelled_by_admin,
+.jd-badge-no_show,
+.jd-badge-disputed { background: #fdeeee; color: var(--jd-neg); }
+
+/* progress band */
+.jd-progress {
+  padding: 24px var(--jd-px);
+  border-bottom: 1px solid var(--jd-line);
+}
+.jd-steps {
+  display: flex;
+  list-style: none;
+  counter-reset: jd-step;
+}
+.jd-step {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+  text-align: center;
+  color: var(--jd-muted);
+  font-size: 12px;
+  counter-increment: jd-step;
+}
+.jd-step::before {
+  content: counter(jd-step);
+  position: relative;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--jd-line);
+  background: #fff;
+  color: var(--jd-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+.jd-step::after {
+  content: "";
+  position: absolute;
+  top: 13px;
+  right: 50%;
+  width: 100%;
+  height: 3px;
+  background: var(--jd-line);
+}
+.jd-step:first-child::after { display: none; }
+
+.jd-step-done,
+.jd-step-current { color: var(--jd-ink); font-weight: 600; }
+.jd-step-done::after,
+.jd-step-current::after { background: var(--jd-brand); }
+.jd-step-done::before {
+  content: "\2713";
+  background: var(--jd-brand);
+  border-color: var(--jd-brand);
+  color: #fff;
+}
+.jd-step-current::before {
+  border-color: var(--jd-brand);
+  color: var(--jd-brand);
+}
+
+/* next-step band (JobStatusActions renders inside) */
+.jd-actionwrap {
+  padding: 16px var(--jd-px);
+  background: #fff;
+  border-bottom: 1px solid var(--jd-line);
+}
+.jd-actionwrap:empty { display: none; }
+
+.jd-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.jd-btn {
+  min-height: 44px;
+  padding: 9px 22px;
+  border: 1px solid var(--jd-brand);
+  border-radius: 10px;
+  background: var(--jd-brand);
+  color: #fff;
+  font: 600 14px "Poppins", sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.jd-btn:hover:not(:disabled) { background: var(--jd-brand-deep); border-color: var(--jd-brand-deep); }
+.jd-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.jd-btn-link { background: #fff; color: var(--jd-brand); border-color: var(--jd-line); }
+.jd-btn-link:hover { background: #f7f7fa; border-color: var(--jd-line); }
+.jd-btn:focus-visible { outline: 3px solid rgba(64, 52, 199, 0.35); outline-offset: 2px; }
+.jd-inline-btn { margin-top: 14px; }
+
+.jd-hint { color: var(--jd-muted); font-size: 13px; }
+
+.jd-error {
+  padding: 12px 14px;
+  border-left: 3px solid var(--jd-neg);
+  border-radius: 4px;
+  background: #fff7f7;
+  color: #b42323;
+  font-size: 13px;
+}
+.jd-offline {
+  margin: 0;
+  padding: 12px var(--jd-px);
+  border-bottom: 1px solid #f7d9b4;
+  background: #fffaf3;
+  color: #9a5a0a;
+  font-size: 13px;
+}
+.jd-emptycard {
+  padding: 72px var(--jd-px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.jd-empty-title { font-size: 16px; font-weight: 700; }
+.jd-empty { color: var(--jd-muted); font-size: 14px; }
+
+/* shared block */
+.jd-block {
+  min-width: 0;
+  padding: 24px var(--jd-px);
+  background: #fff;
+}
+.jd-h2 { margin-bottom: 14px; font-size: 14px; font-weight: 700; }
+.jd-h2-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.jd-h2-row .jd-h2 { margin-bottom: 0; }
+.jd-text { color: #3b3b4f; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.jd-strong { font-size: 14px; font-weight: 600; }
+.jd-muted { color: var(--jd-muted); font-size: 13px; }
+
+/* summary strip: four short blocks, equal height, hairlines between */
+.jd-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--jd-line);
+  border-bottom: 1px solid var(--jd-line);
+}
+.jd-strip .jd-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+.jd-k-label { color: var(--jd-muted); font-size: 13px; }
+.jd-k-value { font-size: 18px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+
+.jd-person { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.jd-person-text { min-width: 0; }
+.jd-avatar {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid var(--jd-line);
+  color: var(--jd-brand);
+  font-weight: 700;
+}
+
+/* earnings: the one blue block, white text */
+.jd-strip .jd-earn {
+  background: linear-gradient(160deg, var(--jd-brand) 0%, var(--jd-brand-deep) 100%);
+  color: #fff;
+}
+.jd-earn .jd-k-label { color: #fff; opacity: 0.85; }
+.jd-earn-amount { font-size: 34px; font-weight: 700; line-height: 1.1; letter-spacing: -1px; color: #fff; }
+.jd-earn-meta { font-size: 12px; color: #fff; opacity: 0.8; }
+
+/* body: two columns separated by one vertical line */
+.jd-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  align-items: stretch;
+}
+.jd-body-main { min-width: 0; border-right: 1px solid var(--jd-line); }
+.jd-body-side { min-width: 0; }
+.jd-body .jd-block + .jd-block { border-top: 1px solid var(--jd-line); }
+
+/* key/value lists */
+.jd-list { display: grid; grid-template-columns: minmax(90px, 45%) minmax(0, 1fr); gap: 10px 0; font-size: 14px; }
+.jd-list dt { color: var(--jd-muted); }
+.jd-list dd { padding-left: 16px; font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.jd-row { display: contents; }
+.jd-total { padding-top: 10px; border-top: 1px solid var(--jd-line); font-weight: 700; color: var(--jd-ink); }
+
+.jd-chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #fff3e4;
+  color: #b45309;
+  font-size: 12px;
+  font-weight: 600;
+}
+.jd-chip-paid,
+.jd-chip-success,
+.jd-chip-completed { background: #e9f7f0; color: var(--jd-pos); }
+.jd-chip-failed,
+.jd-chip-refunded { background: #fdeeee; color: var(--jd-neg); }
+
+/* checklist */
+.jd-checklist { list-style: none; font-size: 14px; }
+.jd-check { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f4; }
+.jd-check:last-child { border-bottom: 0; }
+.jd-tick {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--jd-line);
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+}
+.jd-check-done { color: var(--jd-muted); }
+.jd-check-done .jd-tick { background: var(--jd-pos); border-color: var(--jd-pos); color: #fff; }
+
+/* status history timeline */
+.jd-history { list-style: none; }
+.jd-history li {
+  position: relative;
+  margin-left: 5px;
+  padding: 0 0 16px 22px;
+  border-left: 2px solid var(--jd-line);
+}
+.jd-history li:last-child { padding-bottom: 0; border-left-color: transparent; }
+.jd-history li::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--jd-brand);
+  border: 2px solid #fff;
+}
+
+.jd-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* loading */
+.jd-skel {
+  height: 72px;
+  margin: 24px var(--jd-px) 0;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #f1f1f4 25%, #fafafa 50%, #f1f1f4 75%);
+  background-size: 200% 100%;
+  animation: jd-shimmer 1.25s infinite;
+}
+.jd-skel-tall { height: 110px; }
+@keyframes jd-shimmer { to { background-position: -200% 0; } }
+
+/* medium screens: strip becomes 2 x 2, body keeps two columns */
+@media (max-width: 1100px) {
+  .jd-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* narrow: body stacks */
+@media (max-width: 900px) {
+  .jd-body { grid-template-columns: 1fr; }
+  .jd-body-main { border-right: 0; border-bottom: 1px solid var(--jd-line); }
+}
+
+/* location tile in the summary strip is phone-only */
+.jd-strip .jd-loc-tile { display: none; }
+
+/* =========================================================
+   PHONE (720px and below): same layout and full width, polished look
+   ========================================================= */
+@media (max-width: 720px) {
+  .jd-page {
+    --jd-outer: 20px; /* padding the partner layout puts around pages on phones */
+    --jd-soft-line: #efeff5;
+
+    /* stretch over the layout's padding so there is no grey gap */
+    width: 100vw !important;
+    max-width: 100vw !important;
+    min-height: 100dvh;
+    margin: calc(-1 * var(--jd-outer)) calc(50% - 50vw) 0 !important;
+    /* room so the last section is not hidden behind the bottom tab bar */
+    padding: 0 0 calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+    overflow-x: hidden;
+    background: #fff !important;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 1. Header: plain white */
+  .jd-page .jd-header {
+    padding: 22px 18px 20px !important;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #fff !important;
+    border-bottom: 0;
+  }
+  .jd-page .jd-title { font-size: 22px; font-weight: 700; line-height: 1.3; letter-spacing: -0.3px; }
+  .jd-page .jd-sub { margin-top: 4px; font-size: 12.5px; }
+  .jd-page .jd-badge {
+    padding: 7px 14px;
+    font-size: 12px;
+    box-shadow: 0 1px 2px rgba(23, 23, 39, 0.08);
+  }
+
+  /* 2. Progress tracker: larger dots, current step stands out */
+  .jd-page .jd-progress {
+    margin: 0 !important;
+    padding: 6px 10px 24px !important;
+    background: #fff !important;
+    border: 0;
+    border-bottom: 1px solid var(--jd-soft-line);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .jd-page .jd-step { font-size: 9.5px; gap: 8px; }
+  .jd-page .jd-step::before { width: 30px; height: 30px; font-size: 12px; }
+  .jd-page .jd-step::after { top: 14px; height: 3px; }
+  .jd-page .jd-step-current { color: var(--jd-brand); }
+
+  /* 3. Next step / message: white with a thin edge */
+  .jd-page .jd-actionwrap {
+    position: static !important;
+    margin: 0 !important;
+    padding: 14px 18px !important;
+    background: #fff !important;
+    border: 0;
+    border-left: 4px solid var(--jd-line);
+    border-bottom: 0;
+    border-radius: 0;
+    box-shadow: none;
+    text-align: left;
+  }
+  .jd-page .jd-actionwrap:empty { display: none; }
+  .jd-page .jd-actions { flex-direction: column; align-items: stretch; gap: 10px; }
+  .jd-page .jd-hint { color: var(--jd-ink); font-size: 13.5px; font-weight: 500; }
+  .jd-page .jd-btn {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 12px;
+    font-size: 15px;
+    transition: transform 0.1s;
+  }
+  .jd-page .jd-btn:active { transform: scale(0.98); }
+
+  /* 4. Earning, customer, schedule, payment: one predictable column */
+  .jd-page .jd-strip {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch;
+    gap: 0 !important;
+    padding: 0 18px !important;
+    background: #fff !important;
+    border: 0;
+  }
+  .jd-page .jd-strip > .jd-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: auto;
+    margin: 0;
+    padding: 18px 0;
+    background: #fff;
+    color: var(--jd-ink);
+    border: 0;
+    border-bottom: 1px solid var(--jd-soft-line);
+    border-radius: 0;
+    box-shadow: none;
+  }
+  /* earning first, edge to edge, blue with white text */
+  .jd-page .jd-strip > .jd-earn {
+    order: -1;
+    width: calc(100% + 36px);
+    margin: 0 -18px;
+    padding: 22px 18px;
+    background: linear-gradient(160deg, var(--jd-brand) 0%, var(--jd-brand-deep) 100%);
+    color: #fff;
+  }
+  .jd-page .jd-earn .jd-k-label,
+  .jd-page .jd-earn .jd-earn-meta { color: #fff; opacity: 0.85; }
+  .jd-page .jd-earn .jd-earn-amount {
+    color: #fff;
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -1px;
+  }
+  .jd-page .jd-earn .jd-earn-meta { font-size: 12.5px; }
+  .jd-page .jd-k-label { font-size: 12.5px; color: #85859a; }
+  .jd-page .jd-earn .jd-k-label { color: #fff; }
+  .jd-page .jd-k-value { font-size: 16px; font-weight: 700; line-height: 1.5; }
+
+  /* 5. Remaining details in natural order */
+  .jd-page .jd-body {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    padding: 0 18px 20px !important;
+  }
+  /* flatten the two columns so blocks can be ordered across them */
+  .jd-page .jd-body-main,
+  .jd-page .jd-body-side { display: contents !important; }
+
+  /* phone order: price first, then instructions, checklist, history.
+     Location lives at the top in the summary instead. */
+  .jd-page .jd-body .jd-price-block { order: -1; }
+  .jd-page .jd-body .jd-history-block { order: 1; }
+  .jd-page .jd-body .jd-loc-block { display: none !important; }
+  .jd-page .jd-body .jd-block,
+  .jd-page .jd-body .jd-block + .jd-block {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 22px 0;
+    background: #fff;
+    border: 0;
+    border-bottom: 1px solid var(--jd-soft-line);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* section headings with a small accent bar */
+  .jd-page .jd-h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+  .jd-page .jd-h2::before {
+    content: "";
+    flex: none;
+    width: 4px;
+    height: 16px;
+    border-radius: 2px;
+    background: var(--jd-brand);
+  }
+  .jd-page .jd-h2-row { margin-bottom: 14px; }
+  .jd-page .jd-h2-row .jd-h2 { margin-bottom: 0; }
+
+  .jd-page .jd-text { font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+  .jd-page .jd-strong { font-size: 14.5px; font-weight: 600; line-height: 1.5; }
+  .jd-page .jd-muted { font-size: 12.5px; line-height: 1.6; }
+
+  /* directions button: white, easy to tap */
+  .jd-page .jd-inline-btn,
+  .jd-page .jd-inline-btn:hover {
+    width: 100%;
+    margin-top: 14px;
+    background: #fff;
+    color: var(--jd-brand);
+    border-color: var(--jd-line);
+  }
+
+  /* customer row */
+  .jd-page .jd-person { display: flex; align-items: center; gap: 12px; }
+  .jd-page .jd-avatar {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #fff;
+    border: 1px solid var(--jd-line);
+    color: var(--jd-brand);
+    font-size: 16px;
+  }
+
+  /* price and key/value lists */
+  .jd-page .jd-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px 12px;
+    font-size: 14px;
+  }
+  .jd-page .jd-list dd { padding-left: 4px; text-align: right; overflow-wrap: anywhere; }
+  .jd-page .jd-row { display: contents; }
+  .jd-page .jd-total { padding-top: 14px; border-top-color: var(--jd-soft-line); }
+  .jd-page .jd-list dd.jd-total { color: var(--jd-brand); font-size: 17px; }
+
+  .jd-page .jd-chip { padding: 4px 12px; font-size: 12px; }
+
+  /* checklist: bigger ticks, finished items fade */
+  .jd-page .jd-check { padding: 12px 0; border-bottom: 1px solid #f1f1f6; font-size: 14px; }
+  .jd-page .jd-check:last-child { border-bottom: 0; }
+  .jd-page .jd-tick { width: 24px; height: 24px; }
+  .jd-page .jd-check-done { text-decoration: line-through; text-decoration-color: #c9c9d6; }
+
+  /* status history timeline */
+  .jd-page .jd-history li {
+    padding-bottom: 18px;
+    border-left-color: var(--jd-line);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .jd-page .jd-emptycard { padding: 64px 18px; }
+}
+
+/* very small phones */
+@media (max-width: 360px) {
+  .jd-page .jd-header { padding-right: 13px !important; padding-left: 13px !important; }
+  .jd-page .jd-strip,
+  .jd-page .jd-body { padding-right: 14px !important; padding-left: 14px !important; }
+  .jd-page .jd-strip > .jd-earn { width: calc(100% + 28px); margin: 0 -14px; padding-right: 14px; padding-left: 14px; }
+  .jd-page .jd-progress { padding-right: 5px !important; padding-left: 5px !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jd-skel { animation: none; }
+  .jd-page .jd-btn { transition: none; }
+}
+/* ---- Earning block: white, same as the other blocks ---- */
+.jd-strip .jd-earn,
+.jd-page .jd-strip > .jd-earn {
+  background: #fff;
+  color: var(--jd-ink);
+}
+.jd-earn .jd-k-label,
+.jd-page .jd-earn .jd-k-label { color: var(--jd-muted); opacity: 1; }
+.jd-earn .jd-earn-amount,
+.jd-page .jd-earn .jd-earn-amount { color: var(--jd-ink); }
+.jd-earn .jd-earn-meta,
+.jd-page .jd-earn .jd-earn-meta { color: var(--jd-muted); opacity: 1; }
+
+/* remove any blue edge bar on the blocks */
+.jd-actionwrap,
+.jd-page .jd-actionwrap { border-left: 0 !important; }
+.jd-strip .jd-block { border-left: 0; }

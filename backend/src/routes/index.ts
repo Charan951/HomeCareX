@@ -26,7 +26,7 @@ import { bookingsRoutes } from '../modules/bookings/bookings.routes';
 import customerDashboardRoutes from '../modules/customer-dashboard/customer-dashboard.routes';
 import { addressesRoutes } from '../modules/addresses/addresses.routes';
 import { reviewsRoutes } from '../modules/reviews/reviews.routes';
-
+import { partnerJobsRoutes, bookingStatusRoutes } from '../modules/partner-jobs/partner-jobs.routes';
 
 import {
   couponsRoutes,
@@ -39,6 +39,11 @@ import {
 } from '../modules/marketing/marketing.routes';
 
 import refundsRoutes from '../modules/refunds/refunds.routes';
+
+import {
+  partnerWalletRoutes,
+  partnerWalletSummaryRoutes,
+} from '../modules/partner-wallet/partner-wallet.routes';
 
 export const rootRouter = Router();
 
@@ -235,5 +240,8 @@ rootRouter.use(
   '/banners',
   publicMarketingRoutes,
 );
+
+rootRouter.use('/partner/jobs', partnerJobsRoutes);
+rootRouter.use('/bookings', bookingStatusRoutes);
 
 export default rootRouter;

@@ -242,7 +242,8 @@ export default function PartnerLayout() {
 
   const cleanPath = pathname.replace(/\/+$/, "") || "/";
   const current = NAV.find((n) => (n.end ? pathname === n.to : pathname.startsWith(n.to)));
-  const title = PAGE_TITLES[cleanPath] ?? EXTRA_TITLES[cleanPath] ?? current?.label ?? "Partner";
+  const isJobDetails = /^\/partner\/jobs\/[^/]+$/.test(cleanPath);
+  const title = isJobDetails ? "Job details" : (PAGE_TITLES[cleanPath] ?? EXTRA_TITLES[cleanPath] ?? current?.label ?? "Partner");
   // Availability / Working Hours / Blackout Dates / Schedule / Earnings on mobile: header shows only [Back] + page name
   const minimalHeader = Object.keys(PAGE_TITLES).includes(cleanPath);
   // Partner Incentives / Payouts / Transactions / Wallet pages: no Online/Offline pill (every other page keeps it)
