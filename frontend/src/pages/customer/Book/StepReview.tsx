@@ -44,6 +44,10 @@ import {
 } from "@/features/payments";
 import type { CheckoutMethod } from "@/types/payment";
 
+/* -------------------------------------------------------------------------- */
+/* Constants & helpers                                                        */
+/* -------------------------------------------------------------------------- */
+
 type RazorpayCheckoutMethod = "upi" | "card" | "netbanking" | "wallet";
 
 function toRazorpayCheckoutMethod(method: Exclude<CheckoutMethod, "cod">): RazorpayCheckoutMethod | undefined {
@@ -58,8 +62,7 @@ function toRazorpayCheckoutMethod(method: Exclude<CheckoutMethod, "cod">): Razor
   }
 }
 
-const PRE_POPUP_DELAY_MS = 2000; // Reduced delay so it opens faster
-
+const PRE_POPUP_DELAY_MS = 2000;
 const MAX_PAYMENT_RETRIES = 3;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -79,6 +82,14 @@ const SLOT_ERRORS = new Set(["SLOT_UNAVAILABLE", "SLOT_BUSY", "INVALID_DATE"]);
 const SLOT_TAKEN_NOTICE = "That time slot was just taken by someone else. Please pick another slot.";
 
 const COUPON_ERROR_CODES: string[] = Object.values(COUPON_ERROR);
+
+const METHOD_ICONS: Partial<Record<CheckoutMethod, LucideIcon>> = {
+  upi: Smartphone,
+  card: CreditCard,
+  netbanking: Landmark,
+  wallet: Wallet,
+  cod: Banknote,
+};
 
 interface PriceNotice {
   from: number;
@@ -479,21 +490,38 @@ export default function StepReview() {
             <Sparkles className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <h3 className="text-xl font-bold tracking-tight text-ink sm:text-2xl">Almost done — review &amp; pay</h3>
-            <p className="mt-0.5 text-sm text-muted">Check your details, add an offer if you have one, and choose how to pay.</p>
+            <h3 className="text-xl font-bold tracking-tight text-ink sm:text-2xl">
+              Almost done — review &amp; pay
+            </h3>
+            <p className="mt-0.5 text-sm text-muted">
+              Check your details, add an offer if you have one, and choose how
+              to pay.
+            </p>
           </div>
         </div>
-        <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-brand">Final step</span>
+        <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-semibold text-brand">
+          Final step
+        </span>
       </div>
 
       {!online && (
-        <div role="status" className="rounded-2xl border border-line bg-accent-soft px-4 py-3 text-sm text-ink">
+        <div
+          role="status"
+          className="rounded-2xl border border-line bg-accent-soft px-4 py-3 text-sm text-ink"
+        >
           You're offline. Reconnect to refresh the latest price and continue.
         </div>
       )}
+
       {isSubmitting && (
         <PaymentResult
-          phase={clickedWhileProcessing ? "processing" : method === "cod" ? "processing" : "pending"}
+          phase={
+            clickedWhileProcessing
+              ? "processing"
+              : method === "cod"
+                ? "processing"
+                : "pending"
+          }
           message={
             clickedWhileProcessing
               ? "Please wait a moment. You will not be charged twice."
@@ -501,42 +529,69 @@ export default function StepReview() {
           }
         />
       )}
+
       {error && (
-        <div role="alert" className="rounded-2xl border border-danger bg-danger-soft px-4 py-3 text-sm text-ink">
+        <div
+          role="alert"
+          className="rounded-2xl border border-danger bg-danger-soft px-4 py-3 text-sm text-ink"
+        >
           {error.message}
         </div>
       )}
+
       {priceNotice && (
-        <div role="alert" className="rounded-2xl border border-amber-500 bg-amber-50 px-4 py-3 text-sm text-ink">
-          The price changed from {formatINR(priceNotice.from)} to {formatINR(priceNotice.to)}. Review the updated total and confirm again.
+        <div
+          role="alert"
+          className="rounded-2xl border border-amber-500 bg-amber-50 px-4 py-3 text-sm text-ink"
+        >
+          The price changed from {formatINR(priceNotice.from)} to{" "}
+          {formatINR(priceNotice.to)}. Review the updated total and confirm
+          again.
         </div>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start lg:gap-8">
+        {/* ------------------------------ Left column ---------------------- */}
         <div className="min-w-0 space-y-5">
           {/* Booking details */}
-          <section aria-labelledby="rv-details" className="overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)]">
+          <section
+            aria-labelledby="rv-details"
+            className="overflow-hidden rounded-3xl border border-line bg-panel shadow-[0_24px_60px_-48px_rgba(67,56,202,.55)]"
+          >
             <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-6">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">Service</p>
-                <h4 id="rv-details" className="truncate text-base font-bold text-ink">
-                  {draft.serviceName ?? "Home service"} <span className="font-medium text-muted">× {draft.quantity}</span>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted">
+                  Service
+                </p>
+                <h4
+                  id="rv-details"
+                  className="truncate text-base font-bold text-ink"
+                >
+                  {draft.serviceName ?? "Home service"}{" "}
+                  <span className="font-medium text-muted">
+                    × {draft.quantity}
+                  </span>
                 </h4>
               </div>
               {draft.addOns.length > 0 && (
                 <span className="shrink-0 rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand">
-                  +{draft.addOns.length} add-on{draft.addOns.length > 1 ? "s" : ""}
+                  +{draft.addOns.length} add-on
+                  {draft.addOns.length > 1 ? "s" : ""}
                 </span>
               )}
             </div>
+
             <div className="grid divide-y divide-line sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+              {/* Address */}
               <div className="flex items-start gap-3.5 px-5 py-4 sm:px-6">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
                   <MapPin className="h-5 w-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-xs font-semibold text-muted">{address?.label ?? "Address"}</p>
+                    <p className="text-xs font-semibold text-muted">
+                      {address?.label ?? "Address"}
+                    </p>
                     <button
                       type="button"
                       onClick={() => draft.setStep(2)}

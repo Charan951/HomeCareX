@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams, useLocation } from 'react-router-dom';
-import { Lock, ArrowRight, ArrowLeft, CheckCircle2, AlertCircle, AlertTriangle, WifiOff } from 'lucide-react';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { ArrowRight, ArrowLeft, AlertCircle, AlertTriangle, WifiOff } from 'lucide-react';
 import { authApi } from '@/services/authApi';
 import { classifyApiError } from '@/lib/apiError';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { resetStateStore } from '@/features/auth/resetStateStore';
 import PasswordField from '@/components/auth/PasswordField';
 import PasswordStrength from '@/components/auth/PasswordStrength';
+import AuthFormHeader from '@/components/auth/AuthFormHeader';
 
 export const ResetPasswordPage: React.FC = () => {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const location = useLocation();
   const isOnline = useOnlineStatus();
 
-  // Retrieve resetToken from router state, in-memory store, or URL query param (legacy)
-  const stateToken = (location.state as { resetToken?: string } | null)?.resetToken;
-  const token = (stateToken || resetStateStore.getResetToken() || searchParams.get('token') || '').trim();
+  // Retrieve resetToken strictly from in-memory store (or legacy URL query param if present)
+  const token = (resetStateStore.getResetToken() || searchParams.get('token') || '').trim();
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -79,6 +79,7 @@ export const ResetPasswordPage: React.FC = () => {
       // Clear in-memory token immediately upon successful reset
       resetStateStore.clear();
       setSuccess(true);
+      navigate('/login', { replace: true, state: { resetSuccess: true } });
     } catch (err) {
       const classified = classifyApiError(err);
       setErrorStatus(classified.status ?? null);
@@ -109,174 +110,161 @@ export const ResetPasswordPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-gray-100 shadow-[0_20px_60px_-15px_rgba(67,56,202,0.3)] p-6 sm:p-8">
-        {!isOnline && (
-          <div
-            role="status"
-            className="mb-4 text-xs sm:text-sm rounded-lg p-3 flex items-start gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 animate-fadeUp"
-          >
-            <WifiOff size={17} className="shrink-0 mt-0.5 text-amber-600" aria-hidden="true" />
-            <span className="leading-snug">You&apos;re offline. Check your internet connection and try again.</span>
-          </div>
-        )}
+    <div className="w-full">
+      {!isOnline && (
+        <div
+          role="status"
+          className="mb-4 text-xs sm:text-sm rounded-lg p-3 flex items-start gap-2.5 bg-amber-50 border border-amber-200 text-amber-800 animate-fadeUp"
+        >
+          <WifiOff size={17} className="shrink-0 mt-0.5 text-amber-600" aria-hidden="true" />
+          <span className="leading-snug">You&apos;re offline. Check your internet connection and try again.</span>
+        </div>
+      )}
 
-        {!token ? (
-          <div className="text-center py-2 animate-fadeUp">
-            <div className="h-12 w-12 rounded-xl bg-amber-50 flex items-center justify-center mx-auto mb-4 border border-amber-100">
-              <AlertTriangle size={26} className="text-amber-500" />
+      {!token ? (
+        <div className="text-center py-2 animate-fadeUp">
+          <AuthFormHeader
+            title="Invalid Reset Session"
+            subtitle="This password reset session is missing a valid verification token or has expired. Please restart the password reset process to proceed."
+          />
+          <div className="space-y-3 pt-2">
+            <Link
+              to="/forgot-password"
+              className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-lg
+                         hover:shadow-lg hover:shadow-brand-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm"
+            >
+              Request new code
+              <ArrowRight size={16} />
+            </Link>
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-medium"
+            >
+              <ArrowLeft size={16} />
+              Back to Login
+            </Link>
+          </div>
+        </div>
+      ) : success ? (
+        <div className="text-center py-2 animate-fadeUp">
+          <AuthFormHeader
+            title="Password reset successful"
+            subtitle="Your password has been reset successfully and all active sessions have been signed out. You can now log in with your new password."
+          />
+          <Link
+            to="/login"
+            className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-lg
+                       hover:shadow-lg hover:shadow-brand-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm"
+          >
+            Log in now
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+      ) : (
+        <>
+          <AuthFormHeader
+            title="Set new password"
+            subtitle="Create a strong new password for your account."
+          />
+
+          {error && (
+            <div
+              role="alert"
+              className={`mb-4 text-xs sm:text-sm rounded-lg p-3 flex items-start gap-2.5 animate-fadeUp ${
+                errorStatus === 429
+                  ? 'bg-amber-50 border border-amber-200 text-amber-800'
+                  : 'bg-red-50 border border-red-200 text-red-700'
+              }`}
+            >
+              {errorStatus === 429 ? (
+                <AlertTriangle size={17} className="shrink-0 mt-0.5 text-amber-600" aria-hidden="true" />
+              ) : (
+                <AlertCircle size={17} className="shrink-0 mt-0.5 text-red-500" aria-hidden="true" />
+              )}
+              <div className="leading-snug">
+                <span>{error}</span>
+                {(errorStatus === 400 || error.includes('expired') || error.includes('invalid')) && (
+                  <div className="mt-1">
+                    <Link to="/forgot-password" className="font-semibold underline hover:text-red-900">
+                      Request a new verification code
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
-            <h1 className="text-2xl font-bold text-accent-700 mb-2">Invalid Reset Session</h1>
-            <p className="text-gray-500 mb-6 text-sm">
-              This password reset session is missing a valid verification token or has expired.
-              Please restart the password reset process to proceed.
-            </p>
-            <div className="space-y-3">
-              <Link
-                to="/forgot-password"
-                className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-lg
-                           hover:shadow-lg hover:shadow-brand-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm"
-              >
-                Request new code
-                <ArrowRight size={16} />
-              </Link>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            <div>
+              <PasswordField
+                id="reset-password"
+                name="password"
+                label="New Password"
+                required
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
+                  if (error) setError('');
+                }}
+                error={fieldErrors.password}
+                disabled={loading || !isOnline}
+              />
+              <PasswordStrength password={password} />
+            </div>
+
+            <div>
+              <PasswordField
+                id="reset-confirm-password"
+                name="confirmPassword"
+                label="Confirm New Password"
+                required
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value);
+                  if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
+                  if (error) setError('');
+                }}
+                error={fieldErrors.confirmPassword}
+                disabled={loading || !isOnline}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !isOnline}
+              className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-lg
+                         hover:shadow-lg hover:shadow-brand-500/30 hover:-translate-y-0.5
+                         active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0 disabled:cursor-not-allowed
+                         transition-all duration-200 flex items-center justify-center gap-2 text-sm"
+            >
+              {loading ? (
+                <>
+                  <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <span>Resetting password...</span>
+                </>
+              ) : (
+                <>
+                  <span>Reset password</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+
+            <div className="text-center pt-2">
               <Link
                 to="/login"
-                className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 font-medium"
+                className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-accent-700 transition-colors"
               >
                 <ArrowLeft size={16} />
                 Back to Login
               </Link>
             </div>
-          </div>
-        ) : success ? (
-          <div className="text-center py-2 animate-fadeUp">
-            <div className="h-12 w-12 rounded-xl bg-green-50 flex items-center justify-center mx-auto mb-4 border border-green-100">
-              <CheckCircle2 size={26} className="text-green-500" />
-            </div>
-            <h1 className="text-2xl font-bold text-accent-700 mb-1">Password reset successful</h1>
-            <p className="text-gray-500 mb-6 text-sm">
-              Your password has been reset successfully and all active sessions have been signed out. You can now log in with your new password.
-            </p>
-            <Link
-              to="/login"
-              className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-lg
-                         hover:shadow-lg hover:shadow-brand-500/30 transition-all duration-200 flex items-center justify-center gap-2 text-sm"
-            >
-              Log in now
-              <ArrowRight size={16} />
-            </Link>
-          </div>
-        ) : (
-          <>
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/30 mb-5">
-              <Lock size={22} className="text-white" />
-            </div>
-
-            <h1 className="text-2xl font-bold text-accent-700 mb-1">Set new password</h1>
-            <p className="text-gray-500 mb-6 text-sm">
-              Create a strong new password for your account.
-            </p>
-
-            {error && (
-              <div
-                role="alert"
-                className={`mb-4 text-xs sm:text-sm rounded-lg p-3 flex items-start gap-2.5 animate-fadeUp ${
-                  errorStatus === 429
-                    ? 'bg-amber-50 border border-amber-200 text-amber-800'
-                    : 'bg-red-50 border border-red-200 text-red-700'
-                }`}
-              >
-                {errorStatus === 429 ? (
-                  <AlertTriangle size={17} className="shrink-0 mt-0.5 text-amber-600" aria-hidden="true" />
-                ) : (
-                  <AlertCircle size={17} className="shrink-0 mt-0.5 text-red-500" aria-hidden="true" />
-                )}
-                <div className="leading-snug">
-                  <span>{error}</span>
-                  {(errorStatus === 400 || error.includes('expired') || error.includes('invalid')) && (
-                    <div className="mt-1">
-                      <Link to="/forgot-password" className="font-semibold underline hover:text-red-900">
-                        Request a new verification code
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-              <div>
-                <PasswordField
-                  id="reset-password"
-                  name="password"
-                  label="New Password"
-                  required
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (fieldErrors.password) setFieldErrors((prev) => ({ ...prev, password: undefined }));
-                    if (error) setError('');
-                  }}
-                  error={fieldErrors.password}
-                  disabled={loading || !isOnline}
-                />
-                <PasswordStrength password={password} />
-              </div>
-
-              <div>
-                <PasswordField
-                  id="reset-confirm-password"
-                  name="confirmPassword"
-                  label="Confirm New Password"
-                  required
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    if (fieldErrors.confirmPassword) setFieldErrors((prev) => ({ ...prev, confirmPassword: undefined }));
-                    if (error) setError('');
-                  }}
-                  error={fieldErrors.confirmPassword}
-                  disabled={loading || !isOnline}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || !isOnline}
-                className="w-full bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-lg
-                           hover:shadow-lg hover:shadow-brand-500/30 hover:-translate-y-0.5
-                           active:translate-y-0 disabled:opacity-60 disabled:hover:translate-y-0 disabled:cursor-not-allowed
-                           transition-all duration-200 flex items-center justify-center gap-2 text-sm"
-              >
-                {loading ? (
-                  <>
-                    <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    <span>Resetting password...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Reset password</span>
-                    <ArrowRight size={16} />
-                  </>
-                )}
-              </button>
-
-              <div className="text-center pt-2">
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-accent-700 transition-colors"
-                >
-                  <ArrowLeft size={16} />
-                  Back to Login
-                </Link>
-              </div>
-            </form>
-          </>
-        )}
-      </div>
+          </form>
+        </>
+      )}
     </div>
   );
 };
