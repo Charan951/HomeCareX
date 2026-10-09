@@ -27,6 +27,7 @@ import customerDashboardRoutes from '../modules/customer-dashboard/customer-dash
 import { addressesRoutes } from '../modules/addresses/addresses.routes';
 import { reviewsRoutes } from '../modules/reviews/reviews.routes';
 
+
 import {
   couponsRoutes,
   couponCustomerRoutes,
@@ -145,6 +146,16 @@ rootRouter.use(
   '/partner/earnings',
   earningsRoutes,
 ); // GET /partner/earnings/summary
+
+rootRouter.use(
+  '/partner/transactions',
+  partnerWalletRoutes,
+); // GET /partner/transactions ?type&from&to&page&limit
+
+rootRouter.use(
+  '/partner/wallet',
+  partnerWalletSummaryRoutes,
+); // GET /partner/wallet (available, pending, recent)
 
 rootRouter.use(
   '/addresses',

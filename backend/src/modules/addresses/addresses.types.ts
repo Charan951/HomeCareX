@@ -1,8 +1,14 @@
+import type { AddressLabel } from '../../models/Address';
+
 export interface CreateAddressInput {
-  label?: string;
+  label?: AddressLabel;
   contactName?: string;
   contactPhone?: string;
-  line1: string;
+  house?: string;
+  street?: string;
+  area?: string;
+  /** Legacy single-line form; used when house/street are not sent. */
+  line1?: string;
   line2?: string;
   landmark?: string;
   city: string;
@@ -18,6 +24,9 @@ export interface AddressView {
   label: string;
   contactName?: string;
   contactPhone?: string;
+  house?: string;
+  street?: string;
+  area?: string;
   line1: string;
   line2?: string;
   landmark?: string;

@@ -9,13 +9,17 @@ import { CSS } from '@dnd-kit/utilities';
 import { ChevronLeft, ChevronRight, GripVertical, ImagePlus, Star, Trash2, UploadCloud } from 'lucide-react';
 import clsx from 'clsx';
 import type { CategoryImage } from '@/types/adminCatalog';
-import { fileToDataUrl } from '@/lib/imageFile';
+import { fileToDataUrl, readImageSize } from '@/lib/imageFile';
 
 interface Props {
   images: CategoryImage[];
   onChange: (images: CategoryImage[]) => void;
   max?: number;
   maxSizeMB?: number;
+  /** Smallest allowed width AND height in px (0 = no check). */
+  minEdge?: number;
+  /** Accessible name of the image list, e.g. "Service images". */
+  label?: string;
   disabled?: boolean;
 }
 
@@ -63,7 +67,7 @@ const Tile: React.FC<{
 };
 
 /** Multi-image gallery: drop / pick many, preview, drag or arrow reorder, pick the primary. */
-export const MultiImageUploader: React.FC<Props> = ({ images, onChange, max = 8, maxSizeMB = 3, disabled }) => {
+export const MultiImageUploader: React.FC<Props> = ({ images, onChange, max = 8, maxSizeMB = 3, minEdge = 0, label = 'Images', disabled }) => {
   const input = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [dragging, setDragging] = useState(false);
@@ -86,6 +90,10 @@ export const MultiImageUploader: React.FC<Props> = ({ images, onChange, max = 8,
       if (!ALLOWED.includes(f.type)) { errs.push(`${f.name}: use JPG, PNG or WebP`); continue; }
       if (f.size > maxSizeMB * 1024 * 1024) { errs.push(`${f.name}: over ${maxSizeMB} MB`); continue; }
       try {
+        if (minEdge > 0) {
+          const { width, height } = await readImageSize(f);
+          if (Math.min(width, height) < minEdge) { errs.push(`${f.name}: at least ${minEdge}×${minEdge}px needed (this is ${width}×${height})`); continue; }
+        }
         next.push({ id: uid(), url: await fileToDataUrl(f), alt: f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' '), isPrimary: false });
       } catch (e) { errs.push((e as Error).message); }
     }
@@ -116,7 +124,7 @@ export const MultiImageUploader: React.FC<Props> = ({ images, onChange, max = 8,
         >
           <span className="mig-drop__icon">{busy ? <UploadCloud size={22} /> : <ImagePlus size={22} />}</span>
           <p>{busy ? 'Processing…' : 'Drop images here or click to browse'}</p>
-          <small>JPG, PNG or WebP · up to {maxSizeMB} MB each · {images.length}/{max} added</small>
+          <small>JPG, PNG or WebP · up to {maxSizeMB} MB each{minEdge > 0 && ` · min ${minEdge}px`} · {images.length}/{max} added</small>
         </div>
       )}
       <input ref={input} type="file" hidden multiple accept={ALLOWED.join(',')} onChange={(e) => { if (e.target.files) void addFiles(e.target.files); e.target.value = ''; }} />
@@ -124,7 +132,7 @@ export const MultiImageUploader: React.FC<Props> = ({ images, onChange, max = 8,
       {images.length > 0 && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext items={images.map((i) => i.id)} strategy={rectSortingStrategy}>
-            <ul className="mig-grid" aria-label="Category images">
+            <ul className="mig-grid" aria-label={label}>
               {images.map((img, i) => (
                 <Tile
                   key={img.id} image={img} index={i} total={images.length} disabled={disabled}

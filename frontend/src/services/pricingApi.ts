@@ -1,6 +1,7 @@
 import http, { type ApiResponse } from "@/lib/http";
 import type { AvailableCoupon, CouponValidateRequest, CouponValidateResponse, PriceQuote, QuoteRequest } from "@/types/pricing";
 import { normalizeApiError, type NormalizedApiError } from "./bookingApi";
+import { COUPON_ERROR } from "@/types/pricing";
 import { pricingMock } from "./pricing.mock";
 
 /**
@@ -9,6 +10,13 @@ import { pricingMock } from "./pricing.mock";
  * Flip it with VITE_MOCK_PRICING=false in frontend/.env.
  */
 export const PRICING_IS_MOCK = import.meta.env.VITE_MOCK_PRICING !== "false";
+
+/**
+ * POST /pricing/quote is live, but the coupons backend is not. While this is false (and pricing is real),
+ * no coupons are offered, because POST /bookings rejects any coupon code. Set to true when
+ * /coupons/available and /coupons/validate ship.
+ */
+const COUPONS_BACKEND_READY = false;
 
 /** lib/http rejects with a plain { message, status, code, details }; other clients reject with AxiosError. */
 function toNormalized(err: unknown): NormalizedApiError {
@@ -33,6 +41,7 @@ export const pricingApi = {
   /** Assumed contract: POST /coupons/available with the same body as a quote, returns AvailableCoupon[]. */
   async listCoupons(req: QuoteRequest): Promise<AvailableCoupon[]> {
     if (PRICING_IS_MOCK) return pricingMock.listCoupons(req);
+    if (!COUPONS_BACKEND_READY) return [];
     try {
       const { data } = await http.post<ApiResponse<AvailableCoupon[]>>("/coupons/available", req);
       return data.data;
@@ -43,6 +52,10 @@ export const pricingApi = {
 
   async validateCoupon(req: CouponValidateRequest): Promise<CouponValidateResponse> {
     if (PRICING_IS_MOCK) return pricingMock.validateCoupon(req);
+    if (!COUPONS_BACKEND_READY) {
+      const err: NormalizedApiError = { status: 422, code: COUPON_ERROR.INVALID, message: "Coupons are not available yet." };
+      throw err;
+    }
     try {
       const { data } = await http.post<ApiResponse<CouponValidateResponse>>("/coupons/validate", req);
       return data.data;

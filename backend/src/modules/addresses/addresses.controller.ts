@@ -4,7 +4,7 @@ import { addressesService } from './addresses.service';
 export const addressesController = {
   async serviceability(req: Request, res: Response): Promise<void> {
     const pincode = req.query.pincode as string;
-    const result = addressesService.checkServiceability(pincode);
+    const result = await addressesService.checkServiceability(pincode);
     res.json({ success: true, data: result });
   },
 
@@ -22,15 +22,13 @@ export const addressesController = {
 
   async update(req: Request, res: Response) {
     const customerId = res.locals.auth.sub;
-    const addressId = req.params.id;
-    const address = await addressesService.update(customerId, addressId, req.body);
+    const address = await addressesService.update(customerId, req.params.id, req.body);
     res.json({ success: true, data: { address } });
   },
 
   async remove(req: Request, res: Response) {
     const customerId = res.locals.auth.sub;
-    const addressId = req.params.id;
-    await addressesService.remove(customerId, addressId);
+    await addressesService.remove(customerId, req.params.id);
     res.json({ success: true, data: null });
   },
 };

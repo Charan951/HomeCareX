@@ -103,7 +103,7 @@ export default function Addresses() {
   const saving = create.isPending || update.isPending;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {header}
 
       {actionError && mode === null && (
@@ -114,14 +114,14 @@ export default function Addresses() {
         <button
           type="button"
           onClick={() => setMode("adding")}
-          className={clsx("flex min-h-[64px] w-full items-center gap-3 rounded-xl border border-dashed border-brand/40 bg-brand-soft/50 px-4 py-3 text-left transition-colors hover:bg-brand-soft", FOCUS_RING)}
+          className={clsx("flex min-h-[52px] w-full items-center gap-3 rounded-xl border border-dashed border-brand/40 bg-brand-soft/50 px-3 py-2 text-left sm:min-h-[64px] sm:px-4 sm:py-3 transition-colors hover:bg-brand-soft", FOCUS_RING)}
         >
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand text-white">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-white sm:h-10 sm:w-10">
             <Plus className="h-5 w-5" aria-hidden="true" />
           </span>
-          <span>
+          <span className="min-w-0">
             <span className="block text-sm font-semibold text-brand">Add new address</span>
-            <span className="block text-xs text-muted">Home, office or anywhere we should reach you</span>
+            <span className="block truncate text-xs text-muted">Home, work or anywhere we should reach you</span>
           </span>
         </button>
       )}
@@ -142,7 +142,7 @@ export default function Addresses() {
         <EmptyState
           icon={MapPin}
           title="No saved addresses yet"
-          description="Add where you'd like services delivered. You can save Home, Office and more."
+          description="Add where you'd like services delivered. You can save Home, Work and more."
           action={
             <button type="button" onClick={() => setMode("adding")} className={clsx("min-h-[44px] rounded bg-brand px-4 text-sm font-medium text-white hover:opacity-90", FOCUS_RING)}>
               Add your first address
@@ -152,7 +152,7 @@ export default function Addresses() {
       )}
 
       {data.length > 0 && (
-        <ul className="space-y-3">
+        <ul className="space-y-2.5 sm:space-y-3">
           {[...data].sort((x, y) => Number(y.isDefault) - Number(x.isDefault)).map((a) => (
             <AddressCard
               key={a.id}

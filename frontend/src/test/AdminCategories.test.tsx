@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -8,7 +7,9 @@ const h = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), put: 
 vi.mock('@/lib/http', () => ({ default: h }));
 
 import AdminCategoriesPage from '@/pages/admin/Categories';
-import { __resetCategoryApiForTests, getApiMode } from '@/services/adminCategoryApi';
+import { useUIStore } from '@/store/useUIStore';
+import { __resetServiceApiForTests } from '@/services/adminServiceApi';
+import { __resetCategoryApiForTests, getApiMode } from '@/pages/admin/Services/adminCategoryApi';
 
 /** Exactly what categories.service.ts toDto() returns today: no parentId, images or timestamps. */
 const BACKEND_ROWS = [
@@ -22,6 +23,8 @@ const renderPage = () => render(<MemoryRouter><AdminCategoriesPage /></MemoryRou
 beforeEach(() => {
   localStorage.clear();
   __resetCategoryApiForTests();
+  __resetServiceApiForTests();
+  useUIStore.setState({ pageSearch: '' });
   Object.values(h).forEach((f) => f.mockReset());
 });
 
@@ -81,5 +84,30 @@ describe('Admin categories page', () => {
     expect(body).not.toHaveProperty('images');
     expect(body).not.toHaveProperty('parentId');
     expect(await screen.findByText('Gardening')).toBeTruthy();
+  });
+
+  it('drills from a parent category to its sub-categories and then to their services', async () => {
+    h.get.mockRejectedValue({ message: 'Unable to reach the server.', status: undefined }); // demo seed has parents, subs and services
+    renderPage();
+    await screen.findByText('Home Cleaning');
+    expect(screen.queryByText('Bathroom Cleaning')).toBeNull(); // sub-categories stay hidden until the parent is opened
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Open Home Cleaning' }));
+    expect(await screen.findByText('Bathroom Cleaning')).toBeTruthy();
+    expect(screen.getByText('Sofa & Carpet')).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Open Bathroom Cleaning' }));
+    expect(await screen.findByText('Bathroom Deep Cleaning')).toBeTruthy();
+    expect(screen.queryByText('Sofa Shampooing')).toBeNull(); // belongs to the other sub-category
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByText('Sofa & Carpet')).toBeTruthy();
+  });
+
+  it('uses the search bar under the navbar to find sub-categories across levels', async () => {
+    h.get.mockRejectedValue({ message: 'Unable to reach the server.', status: undefined });
+    renderPage();
+    await screen.findByText('Home Cleaning');
+    useUIStore.setState({ pageSearch: 'ac serv' });
+    expect(await screen.findByText('AC Service')).toBeTruthy();
+    expect(screen.queryByText('Salon & Spa')).toBeNull();
   });
 });

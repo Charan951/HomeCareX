@@ -1,7 +1,9 @@
 import { useEffect, useRef } from "react";
 import clsx from "clsx";
+import { Sparkles } from "lucide-react";
 import { Navigate, useParams, useSearchParams } from "react-router-dom";
 import { useBookingDraftStore } from "@/features/booking";
+import { useService } from "@/hooks/useService";
 import { customerPath } from "@/routes/customerPath";
 import BackToService from "./components/BackToService";
 import BookingStepper from "./components/BookingStepper";
@@ -25,8 +27,14 @@ export default function BookServiceShell() {
   const notice = useBookingDraftStore((s) => s.notice);
   const setNotice = useBookingDraftStore((s) => s.setNotice);
 
-  // A draft belongs to one service. Opening a different service's wizard starts clean.
-  const draftIsForOtherService = draftSlug !== null && draftSlug !== serviceSlug;
+  // A draft belongs to one service. Opening a different service's wizard starts clean. The draft is also
+  // dropped when its saved service id is not the id the catalog returns for this slug (an id from an older
+  // or reseeded database, which POST /bookings would reject with SERVICE_NOT_FOUND).
+  const { data: currentService } = useService(serviceSlug);
+  const draftIsForOtherService =
+    (draftSlug !== null && draftSlug !== serviceSlug) ||
+    (Boolean(serviceId) && draftSlug === null) ||
+    (Boolean(serviceId) && currentService !== undefined && currentService.id !== serviceId);
   useEffect(() => {
     if (draftIsForOtherService) clearDraft();
   }, [draftIsForOtherService, clearDraft]);
@@ -70,9 +78,17 @@ export default function BookServiceShell() {
   return (
     <div className={clsx("mx-auto w-full min-w-0", "max-w-5xl space-y-5 pb-4 sm:space-y-6 sm:pb-6 lg:max-w-6xl")}>
       <BackToService slug={serviceSlug} />
-      <div>
-        <h1 className={"text-2xl font-bold tracking-tight text-ink md:text-[28px]"}>Book a Service</h1>
-        <p className="mt-1 text-sm text-muted">Complete the steps below to confirm your booking.</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className={"text-2xl font-bold tracking-tight text-ink md:text-[28px]"}>Book a Service</h1>
+          <p className="mt-1 text-sm text-muted">Complete the steps below to confirm your booking.</p>
+        </div>
+        {currentService && (
+          <span className="inline-flex max-w-full items-center gap-2 rounded-full border border-line bg-panel px-3.5 py-2 text-sm font-semibold text-ink shadow-sm">
+            <Sparkles className="h-4 w-4 shrink-0 text-brand" aria-hidden="true" />
+            <span className="truncate">{currentService.name}</span>
+          </span>
+        )}
       </div>
       {notice && (
         <div role="alert" className="flex items-start justify-between gap-3 rounded-2xl border border-danger bg-danger-soft px-4 py-3 text-sm text-ink">
@@ -82,7 +98,7 @@ export default function BookServiceShell() {
           </button>
         </div>
       )}
-      <BookingStepper currentStep={effectiveStep} focusOnMount={redirectedByGuard.current} compact={false} />
+      <BookingStepper currentStep={effectiveStep} focusOnMount={redirectedByGuard.current} compact={false} onStepSelect={setStep} />
       <div className="min-w-0">
         {effectiveStep === 1 && <StepService serviceSlug={serviceSlug} />}
         {effectiveStep === 2 && <StepAddress />}

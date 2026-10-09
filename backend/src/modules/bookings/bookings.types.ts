@@ -29,10 +29,15 @@ export interface PriceLine {
 export interface PriceSnapshot {
   currency: 'INR';
   lines: PriceLine[];
+  addOnsTotal: number;
+  surge: number;
+  surgeLabel?: string;
+  /** base + add-ons + surge */
   subtotal: number;
   discount: number;
   couponCode?: string;
   convenienceFee: number;
+  gst: number;
   total: number;
   computedAt: Date;
 }

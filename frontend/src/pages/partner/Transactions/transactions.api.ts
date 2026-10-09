@@ -1,30 +1,106 @@
-import type { LedgerEntry, LedgerType } from '../Wallet/wallet.api';
+import type { LedgerType } from '../Wallet/wallet.api';
 
-// MOCK: same backend gap as Wallet. Swap for the real ledger endpoint once it exists.
-
-const ALL: LedgerEntry[] = [
-  { id: '1', type: 'earning', amount: 850, description: 'Booking #BK10231 completed', createdAt: '2026-10-06T14:20:00.000Z' },
-  { id: '2', type: 'incentive', amount: 150, description: 'Weekly streak bonus', createdAt: '2026-10-05T09:00:00.000Z' },
-  { id: '3', type: 'payout', amount: -2000, description: 'Payout to bank account', createdAt: '2026-10-03T11:30:00.000Z' },
-  { id: '4', type: 'adjustment', amount: -50, description: 'Late arrival adjustment', createdAt: '2026-10-02T16:45:00.000Z' },
-  { id: '5', type: 'refund_deduction', amount: -300, description: 'Customer refund — Booking #BK10190', createdAt: '2026-10-01T10:10:00.000Z' },
-  { id: '6', type: 'earning', amount: 620, description: 'Booking #BK10180 completed', createdAt: '2026-09-29T13:05:00.000Z' },
-  { id: '7', type: 'earning', amount: 900, description: 'Booking #BK10172 completed', createdAt: '2026-09-28T10:40:00.000Z' },
-  { id: '8', type: 'incentive', amount: 200, description: 'Referral bonus', createdAt: '2026-09-27T08:15:00.000Z' },
-];
-
-export interface TransactionsPage {
-  items: LedgerEntry[];
-  page: number;
-  limit: number;
-  total: number;
+export interface TransactionEntry {
+  id: string | number;
+  type: LedgerType;
+  description: string;
+  amount: number; // signed: positive = money in, negative = money out
+  createdAt: string;
 }
 
-export const getTransactions = (page: number, limit: number, type?: LedgerType): Promise<TransactionsPage> =>
-  new Promise((resolve) => {
-    setTimeout(() => {
-      const filtered = type ? ALL.filter((e) => e.type === type) : ALL;
-      const start = (page - 1) * limit;
-      resolve({ items: filtered.slice(start, start + limit), page, limit, total: filtered.length });
-    }, 350);
-  });
+export interface TransactionsPage {
+  items: TransactionEntry[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// ---- CHANGE THESE TWO TO MATCH wallet.api.ts (same base URL and token as your wallet call) ----
+// The backend mounts every route under /api/v1, so the base MUST end with /api/v1.
+const API_BASE: string =
+  (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:5000/api/v1';
+
+const getToken = (): string | null => localStorage.getItem('token');
+// -----------------------------------------------------------------------------------------------
+
+interface RawEntry {
+  id?: string | number;
+  _id?: string;
+  type: LedgerType;
+  description?: string;
+  amount: number;
+  createdAt: string;
+}
+
+interface RawResponse {
+  items?: RawEntry[];
+  transactions?: RawEntry[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  pagination?: { total?: number; page?: number; limit?: number };
+  data?: RawResponse;
+}
+
+/** Accepts { items, total, page, limit } or { transactions, pagination } (optionally wrapped in data). */
+function normalise(raw: RawResponse, page: number, limit: number): TransactionsPage {
+  const body = raw.data ?? raw;
+  const list = body.items ?? body.transactions ?? [];
+  const pg = body.pagination;
+  return {
+    items: list.map((e) => ({
+      id: e.id ?? e._id ?? `${e.createdAt}-${e.amount}`,
+      type: e.type,
+      description: e.description ?? '',
+      amount: e.amount,
+      createdAt: e.createdAt,
+    })),
+    total: body.total ?? pg?.total ?? list.length,
+    page: body.page ?? pg?.page ?? page,
+    limit: body.limit ?? pg?.limit ?? limit,
+  };
+}
+
+/**
+ * GET /partner/transactions
+ * @param from inclusive start date, YYYY-MM-DD
+ * @param to   inclusive end date, YYYY-MM-DD
+ */
+export async function getTransactions(
+  page: number,
+  limit: number,
+  type?: LedgerType,
+  from?: string,
+  to?: string,
+): Promise<TransactionsPage> {
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+  if (type) params.set('type', type);
+  if (from) params.set('from', from);
+  if (to) params.set('to', to);
+
+  const token = getToken();
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/partner/transactions?${params.toString()}`, {
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+  } catch {
+    throw new Error('Cannot reach the server. Check your connection.');
+  }
+
+  if (!res.ok) {
+    let message = 'Could not load transactions.';
+    try {
+      const body = (await res.json()) as { message?: string };
+      if (body.message) message = body.message;
+    } catch {
+      /* response had no JSON body */
+    }
+    throw new Error(message);
+  }
+
+  return normalise((await res.json()) as RawResponse, page, limit);
+}
