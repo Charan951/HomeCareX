@@ -1,7 +1,13 @@
+
 import { Router } from 'express';
 
 import paymentRoutes from '../modules/payments/payments.routes';
 import walletRoutes from '../modules/wallet/wallet.routes';
+
+import {
+  partnerWalletRoutes,
+  partnerWalletSummaryRoutes,
+} from '../modules/partner-wallet/partner-wallet.routes';
 
 import { authRoutes } from '../modules/auth/auth.routes';
 import { auditRoutes } from '../modules/audit/audit.routes';
@@ -26,7 +32,6 @@ import { bookingsRoutes } from '../modules/bookings/bookings.routes';
 import customerDashboardRoutes from '../modules/customer-dashboard/customer-dashboard.routes';
 import { addressesRoutes } from '../modules/addresses/addresses.routes';
 import { reviewsRoutes } from '../modules/reviews/reviews.routes';
-
 
 import {
   couponsRoutes,
@@ -74,7 +79,7 @@ rootRouter.use(
 
 rootRouter.use(
   catalogRoutes,
-); // PUBLIC: GET /categories, GET /services?q&category&rating&minPrice&maxPrice&duration&availability&sort&page&limit, GET /services/:idOrSlug
+); // Public catalog routes
 
 rootRouter.use(
   '/notifications',
@@ -100,9 +105,9 @@ rootRouter.use(
 // Refunds
 // =========================================================
 
-// GET    /api/v1/admin/refunds
-// POST   /api/v1/admin/refunds
-// PATCH  /api/v1/admin/refunds/:id
+// GET   /api/v1/admin/refunds
+// POST  /api/v1/admin/refunds
+// PATCH /api/v1/admin/refunds/:id
 
 rootRouter.use(
   '/admin',
@@ -140,7 +145,7 @@ rootRouter.use(
 
 rootRouter.use(
   bookingsRoutes,
-); // GET /services/:id/slots, POST /bookings/check-slot, POST /bookings, GET /bookings/:id
+); // Booking and service-slot routes
 
 rootRouter.use(
   '/partner/earnings',
@@ -150,12 +155,12 @@ rootRouter.use(
 rootRouter.use(
   '/partner/transactions',
   partnerWalletRoutes,
-); // GET /partner/transactions ?type&from&to&page&limit
+); // GET /partner/transactions
 
 rootRouter.use(
   '/partner/wallet',
   partnerWalletSummaryRoutes,
-); // GET /partner/wallet (available, pending, recent)
+); // GET /partner/wallet
 
 rootRouter.use(
   '/addresses',
@@ -165,7 +170,7 @@ rootRouter.use(
 rootRouter.use(
   '/payments',
   paymentRoutes,
-); // GET /payments, POST /payments/order, /cod, /verify, /attempt, /webhook (public, HMAC)
+); // Payment APIs and webhook
 
 rootRouter.use(
   '/wallet',
@@ -174,7 +179,7 @@ rootRouter.use(
 
 rootRouter.use(
   reviewsRoutes,
-); // POST /reviews, GET /reviews/mine, GET /admin/reviews, PATCH /admin/reviews/:id/status
+); // Reviews and admin review routes
 
 rootRouter.use(
   '/partner/incentives',
@@ -191,21 +196,12 @@ rootRouter.use(
 // =========================================================
 
 // Admin coupon CRUD
-// GET    /api/v1/admin/coupons
-// GET    /api/v1/admin/coupons/:id
-// POST   /api/v1/admin/coupons
-// PATCH  /api/v1/admin/coupons/:id
-// DELETE /api/v1/admin/coupons/:id
-
 rootRouter.use(
   '/admin/coupons',
   couponsRoutes,
 );
 
 // Customer coupon APIs
-// POST /api/v1/coupons/validate
-// POST /api/v1/coupons/available
-
 rootRouter.use(
   '/coupons',
   couponCustomerRoutes,
@@ -216,21 +212,12 @@ rootRouter.use(
 // =========================================================
 
 // Admin banner CRUD
-// GET    /api/v1/admin/banners
-// GET    /api/v1/admin/banners/:id
-// POST   /api/v1/admin/banners
-// PATCH  /api/v1/admin/banners/:id
-// DELETE /api/v1/admin/banners/:id
-
 rootRouter.use(
   '/admin/banners',
   marketingRoutes,
 );
 
 // Public banners
-// GET /api/v1/banners
-// GET /api/v1/banners?placement=HOME
-
 rootRouter.use(
   '/banners',
   publicMarketingRoutes,
